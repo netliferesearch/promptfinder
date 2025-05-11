@@ -1,0 +1,168 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  max-width: 400px; /* Set a reasonable max-width for the popup */
+  padding: 15px;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+h2 {
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+/* Prompt List Styling */
+#prompt-list {
+  margin-top: 10px;
+}
+
+.prompt-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.prompt-item:hover {
+  background-color: #f9f9f9;
+}
+
+/* Style for input fields and buttons */
+input[type="text"],
+textarea,
+button {
+  display: block; /* Make inputs and buttons take full width */
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
+}
+input[type="text"],
+textarea {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #007bff; /* Primary button color */
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  padding: 8px 12px; /* Adjust padding for better look */
+  transition: background-color 0.2s ease;
+  display: inline-block; /* Allow multiple buttons on a line */
+  width: auto; /* Revert width to auto for inline-block */
+  margin-right: 5px; /* Add spacing between buttons */
+}
+
+button#add-prompt-button {
+  background-color: #28a745; /* Success button color */
+  margin-top: 15px;
+}
+button#add-prompt-button:hover {
+  background-color: #218838;
+}
+
+button#back-button {
+  background-color: #6c757d; /* Secondary button color */
+  margin-bottom: 15px;
+}
+button#back-button:hover {
+  background-color: #5a6268;
+}
+
+button:hover {
+  background-color: #4cae4c;
+}
+
+/* Hide the prompt details section by default */
+#prompt-details {
+  display: none;
+}
+
+/* Prompt Details Styling */
+#prompt-details h3 {
+  margin-top: 0;
+  color: #007bff; /* Match primary button color */
+}
+#prompt-details p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+#prompt-details strong {
+  color: #555;
+}
+
+.prompt-meta {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.voting-buttons button,
+.favorite-button button {
+  font-size: 0.8em; /* Smaller size for voting buttons */
+}
+
+/* Visibility Classes */
+.hidden {
+  display: none !important; /* Use !important to ensure override */
+}
+.visible {
+  display: block !important; /* Use !important to ensure override */
+}
+
+#confirmation-message {
+  display: none;
+  background-color: #28a745; /* Green */
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+#error-message {
+  display: none;
+  background-color: #dc3545; /* Red */
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+/* Style for the star rating container */
+#star-rating {
+  display: inline-block; /* Or block, depending on your layout */
+  font-size: 20px; /* Adjust size as needed */
+  cursor: pointer;
+}
+
+/* Style for individual stars */
+#star-rating .star {
+  color: lightgray; /* Color for empty stars */
+}
+
+/* Style for filled stars */
+#star-rating .star.filled {
+  color: gold; /* Color for filled stars */
+}
+
+/* Hover effect */
+#star-rating .star:hover,
+#star-rating .star:hover ~ .star {
+  color: gold; /* Fill stars up to the hovered star */
+}
+
+/* Ensure Font Awesome pseudo-elements do not interfere with clicks */
+.fas::before,
+.far::before {
+  pointer-events: none;
+}

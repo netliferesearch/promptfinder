@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PromptFinder</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <h1>PromptFinder</h1>
+
+    <section id="search-section">
+      <h2>Search Prompts</h2>
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Search by keyword, category, or tag"
+      />
+    </section>
+
+    <section id="prompts-list-section">
+      <h2>All Prompts</h2>
+      <ul id="prompts-list">
+        <!-- Prompt items will be loaded here by JavaScript -->
+      </ul>
+    </section>
+
+    <!-- Add New Button -->
+    <button id="add-prompt-button">Add New</button>
+
+    <section id="prompt-details-section" class="hidden">
+      <h2 id="prompt-detail-title"></h2>
+      <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
+      <p>
+        <strong>Category:</strong> <span id="prompt-detail-category"></span>
+      </p>
+      <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
+      <!-- Star Rating Container -->
+      <div>
+        <strong>Rating:</strong>
+        <div id="star-rating" data-id=""></div>
+        <span id="rating-count">(0)</span>
+        <!-- Star icons will be added here by JavaScript -->
+      </div>
+      <p>
+        <strong>Favorites:</strong> <span id="prompt-detail-favorites"></span>
+      </p>
+      <div>
+        <button id="copy-prompt-button">Copy Prompt</button
+        ><button id="back-to-list-button">Back to List</button>
+      </div>
+    </section>
+
+    <section id="add-prompt-section" class="hidden">
+      <h2>Add New Prompt</h2>
+      <form id="add-prompt-form">
+        <div>
+          <label for="prompt-title">Title:</label>
+          <input type="text" id="prompt-title" required />
+        </div>
+        <div>
+          <label for="prompt-text">Prompt Text:</label>
+          <textarea id="prompt-text" required></textarea>
+        </div>
+        <div>
+          <label for="prompt-category">Category:</label>
+          <input type="text" id="prompt-category" />
+        </div>
+        <div>
+          <label for="prompt-tags">Tags (comma-separated):</label>
+          <input type="text" id="prompt-tags" />
+        </div>
+        <div>
+          <input type="checkbox" id="prompt-public" />
+          <label for="prompt-public">Make Public</label>
+        </div>
+        <button type="submit">Add Prompt</button>
+      </form>
+    </section>
+    <p id="confirmation-message" class="hidden"></p>
+    <p id="error-message" class="hidden"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>
