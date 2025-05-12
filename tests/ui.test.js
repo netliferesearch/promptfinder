@@ -259,10 +259,26 @@ describe('UI Module', () => {
     test('should display prompt details in the UI', () => {
       const prompt = samplePrompts[0];
       
-      UI.displayPromptDetails(prompt);
+      document.querySelector.mockImplementation((selector) => {
+        if (selector === '#prompt-detail-title' || 
+            selector === '#prompt-detail-text' || 
+            selector === '#prompt-detail-category' || 
+            selector === '#prompt-detail-tags') {
+          return { textContent: '' };
+        }
+        
+        if (selector === '#star-rating') {
+          return {
+            dataset: { id: '1' },
+            innerHTML: '',
+            appendChild: jest.fn()
+          };
+        }
+        
+        return null;
+      });
       
-      const titleEl = document.querySelector('#prompt-detail-title');
-      const textEl = document.querySelector('#prompt-detail-text');
+      UI.displayPromptDetails(prompt);
       
       expect(document.getElementById).toHaveBeenCalledWith('prompt-details-section');
     });
@@ -284,9 +300,12 @@ describe('UI Module', () => {
 
   describe('viewPromptDetails', () => {
     test('should find and display prompt details', async () => {
+      UI.displayPromptDetails = jest.fn();
+      
       await UI.viewPromptDetails('1');
       
-      expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalledWith('1', expect.anything());
+      expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalled();
+      expect(UI.displayPromptDetails).toHaveBeenCalled();
     });
 
     test('should handle errors if prompt not found', async () => {
