@@ -15,6 +15,7 @@ body {
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   height: 600px; /* Set a fixed height for the popup */
   overflow-y: auto; /* Enable vertical scrolling */
+  background-color: #f8f9fa; /* Light gray background */
 }
 
 /* Global favorite heart styling */
@@ -35,13 +36,14 @@ body {
   display: flex; /* Keep this enabled for layout structure */
   flex-direction: column;
   margin: 0;
-  background-color: #f4f4f4;
+  background-color: #ffffff;
   min-width: 320px; /* Ensure minimum width for usability */
   width: 100%;
   max-width: 500px; /* Allow expansion on larger screens */
   box-sizing: border-box;
   height: 100%; /* Fill the available height */
   overflow-y: auto; /* Enable vertical scrolling */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
 /* Header */
@@ -49,73 +51,101 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 1rem;
   border-bottom: 1px solid #eee;
   background: #fff;
 }
 .pf-header h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
 }
 .pf-header button {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 1.2rem;
+  color: #666;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.pf-header button:hover {
+  background-color: #f5f5f5;
 }
 
 /* Controls Row */
 .controls {
   display: flex;
   flex-wrap: wrap;
-  padding: 0.5rem 1rem;
-  gap: 0.5rem;
+  padding: 1rem;
+  gap: 0.75rem;
   background: #fff;
   box-sizing: border-box;
 }
 .controls input {
   flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
   font-size: 16px;
-  min-height: 44px;
+  min-height: 48px;
   width: 100%;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+.controls input:focus {
+  outline: none;
+  border-color: #7C4DFF;
+  box-shadow: 0 2px 8px rgba(124, 77, 255, 0.2);
 }
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: 100%;
 }
 .actions button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
   cursor: pointer;
   flex: 1;
-  min-height: 44px;
-  transition: background-color 0.2s, transform 0.1s;
+  min-height: 48px;
+  transition: all 0.2s ease;
+  color: #555;
+  font-weight: 500;
+}
+.actions button:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 .actions button:active {
   transform: scale(0.98);
 }
 .actions button.active {
-  background-color: #6c5ce7;
+  background-color: #7C4DFF;
   color: white;
-  border-color: #5a4ad1;
+  border-color: #6a3de0;
 }
 .actions button i {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 /* Add Prompt Bar (between search and tabs) */
 .add-prompt-bar {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background: #fff;
   text-align: center;
   border-bottom: 1px solid #eee;
@@ -125,53 +155,59 @@ body {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
-  background: #007bff;
+  background: #7C4DFF;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 24px;
   cursor: pointer;
-  min-height: 44px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   font-weight: 500;
-  transition: background-color 0.2s, transform 0.1s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(124, 77, 255, 0.2);
 }
 
 .add-prompt-bar button:hover {
-  background: #0069d9;
+  background: #6a3de0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.25);
 }
 
 .add-prompt-bar button:active {
   transform: scale(0.98);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(124, 77, 255, 0.2);
 }
 
 /* Tabs */
 .tabs {
   display: flex;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #eee;
   background: #fff;
   position: relative;
+  padding: 0 1rem;
 }
 .tabs button {
   flex: 1;
-  padding: 0.75rem 0.5rem;
+  padding: 1rem 0.5rem;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 1rem;
-  min-height: 44px;
+  min-height: 48px;
   position: relative;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  color: #666;
+  font-weight: 500;
 }
 .tabs button:hover {
-  background-color: #f5f5f5;
+  color: #7C4DFF;
 }
 .tabs button.active {
-  font-weight: bold;
+  color: #7C4DFF;
+  font-weight: 600;
 }
 .tabs button.active::after {
   content: "";
@@ -180,7 +216,7 @@ body {
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: #007bff;
+  background-color: #7C4DFF;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
 }
@@ -189,19 +225,19 @@ body {
 .cards-container {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem;
+  padding: 1rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  background: #f4f4f4;
+  gap: 1rem;
+  background: #f8f9fa;
 }
 
 /* Prompt Card */
 .prompt-item {
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 1.25rem;
   display: grid;
   grid-template-areas:
     "fav title"
@@ -209,41 +245,78 @@ body {
     "buttons buttons";
   grid-template-columns: auto 1fr;
   gap: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.prompt-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .prompt-item:active {
   transform: translateY(1px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 .prompt-item h3 {
   grid-area: title;
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
 }
 .prompt-item .tags {
   grid-area: tags;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 .prompt-item .tag {
-  background: #eee;
-  border-radius: 12px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  background: #EDE7F6;
+  color: #7C4DFF;
+  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 .prompt-item .buttons {
   grid-area: buttons;
   display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* Prompt Item Buttons */
+.prompt-item .buttons button {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+}
+
+.prompt-item .buttons button:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-item .buttons button:active {
+  background: #e5e5e5;
+  transform: translateY(0);
 }
 
 /* Bottom Bar */
 .bottom-bar {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid #eee;
   background: #fff;
   text-align: center;
@@ -252,35 +325,45 @@ body {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
-  background: #000;
+  background: #7C4DFF;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 24px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(124, 77, 255, 0.2);
+}
+
+.bottom-bar button:hover {
+  background: #6a3de0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.25);
 }
 
 /* --- Add New Prompt Card --- */
 #add-prompt-section {
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 1.25rem 1rem;
-  margin: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1rem;
   display: grid;
-  gap: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  gap: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 #add-prompt-section h2 {
   margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
   text-align: center;
 }
 
 #add-prompt-section form {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 /* Responsive form layout */
@@ -289,7 +372,7 @@ body {
     display: grid;
     grid-template-columns: 140px 1fr;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
   }
 }
 
@@ -299,51 +382,69 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   #add-prompt-section {
-    padding: 1rem 0.75rem;
+    padding: 1.25rem 1rem;
   }
 }
 
 #add-prompt-section form label {
   margin: 0;
   font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
   display: block;
+  letter-spacing: 0.5px;
 }
 
 #add-prompt-section form input[type="text"],
 #add-prompt-section form textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
   box-sizing: border-box;
   font-size: 16px; /* Prevents zoom on iOS */
-  min-height: 44px;
+  min-height: 48px;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+#add-prompt-section form input[type="text"]:focus,
+#add-prompt-section form textarea:focus {
+  outline: none;
+  border-color: #7C4DFF;
+  box-shadow: 0 2px 8px rgba(124, 77, 255, 0.2);
 }
 
 #add-prompt-section form textarea {
-  min-height: 100px;
+  min-height: 120px;
   resize: vertical;
+  border-radius: 16px;
+  padding: 1rem;
+  line-height: 1.5;
 }
 
 #add-prompt-section form button[type="submit"] {
-  background: #007bff;
+  background: #7C4DFF;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 24px;
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   font-size: 1rem;
-  font-weight: 500;
-  min-height: 44px;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  min-height: 48px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(124, 77, 255, 0.2);
 }
 
 #add-prompt-section form button[type="submit"]:hover {
-  background: #0069d9;
+  background: #6a3de0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.25);
 }
 
 /* Styles for buttons within the Add New Prompt form */
@@ -355,62 +456,71 @@ body {
 }
 
 .form-buttons button {
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 24px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
   text-align: center;
-  min-height: 44px;
-  transition: background-color 0.2s, transform 0.1s;
+  min-height: 48px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* Primary action button (Add Prompt) */
 .form-buttons button[type="submit"] {
-  background-color: #007bff;
+  background-color: #7C4DFF;
   color: white;
+  box-shadow: 0 4px 8px rgba(124, 77, 255, 0.2);
 }
 
 .form-buttons button[type="submit"]:hover {
-  background-color: #0069d9;
+  background-color: #6a3de0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(124, 77, 255, 0.25);
 }
 
 .form-buttons button:active {
-  transform: scale(0.98);
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Cancel button */
 #cancel-add-prompt {
-  background-color: #f2f2f2;
-  color: #333;
-  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  color: #555;
+  border: 1px solid #e0e0e0;
 }
 
 #cancel-add-prompt:hover {
-  background-color: #e6e6e6;
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
 }
 
 /* --- Prompt Detail Card --- */
 #prompt-details-section {
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 1.5rem;
   margin: 1rem;
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 #prompt-details-section h2#prompt-detail-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
 }
 #prompt-details-section p {
   margin: 0.5rem 0;
 }
 #prompt-details-section .detail-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 #prompt-details-section .detail-actions button {
@@ -420,32 +530,29 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
 }
-#prompt-details-section {
-  background: #f8f9fa;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin: 0.5rem;
-  display: grid;
-  gap: 0.5rem;
-  width: auto;
-  max-width: calc(100% - 1rem); /* Ensure section fits within container with margin */
-  box-sizing: border-box;
-  overflow-x: hidden; /* Prevent horizontal overflow */
+/* Mobile-specific styles for prompt details */
+@media (max-width: 600px) {
+  #prompt-details-section {
+    padding: 1rem;
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
 }
 
 /* Confirmation and Error Messages */
 #confirmation-message,
 #error-message {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin: 0.5rem;
+  background-color: #f0f4ff;
+  color: #4a4a4a;
+  border: 1px solid #e0e0e0;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  margin: 0.75rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -454,9 +561,10 @@ body {
 }
 
 #error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
+  background-color: #fff0f0;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.08);
 }
 
 #confirmation-message button,
@@ -465,37 +573,41 @@ body {
   background: none;
   border: 1px solid currentColor;
   color: inherit;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 24px;
   cursor: pointer;
   min-height: 36px;
   font-weight: 500;
   flex-shrink: 0;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 #confirmation-message button:hover,
 #error-message button:hover {
   background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 /* Delete Confirmation Notification */
 #delete-confirmation {
   display: grid;
-  gap: 0.5rem;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
-  margin: 0.5rem 1rem;
+  gap: 0.75rem;
+  background-color: #fff0f0;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  margin: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.08);
 }
 #delete-confirmation button {
   background: none;
-  border: 1px solid #721c24;
-  color: #721c24;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border: 1px solid #d32f2f;
+  color: #d32f2f;
+  padding: 0.5rem 1rem;
+  border-radius: 24px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .detail-card {
@@ -554,9 +666,9 @@ body {
 
 /* Add accessible focus styles */
 #star-rating .star:focus {
-  outline: 2px solid #007bff;
+  outline: 2px solid #7C4DFF;
   border-radius: 3px;
-  box-shadow: 0 0 3px #007bff;
+  box-shadow: 0 0 3px #7C4DFF;
 }
 
 /* Color for FILLED star icons */
