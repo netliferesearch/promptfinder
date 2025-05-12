@@ -1,7 +1,14 @@
 /**
  * Tests for the utils.js module
  */
-import { chromeStorageGet, chromeStorageSet, handleError } from '../js/utils';
+
+window.PromptFinder = window.PromptFinder || {};
+
+window.PromptFinder.Utils = {};
+
+require('../js/utils');
+
+const Utils = window.PromptFinder.Utils;
 
 describe('Chrome Storage Helpers', () => {
   beforeEach(() => {
@@ -16,7 +23,7 @@ describe('Chrome Storage Helpers', () => {
       callback(mockData);
     });
 
-    const result = await chromeStorageGet('prompts');
+    const result = await Utils.chromeStorageGet('prompts');
     expect(chrome.storage.local.get).toHaveBeenCalledWith('prompts', expect.any(Function));
     expect(result).toEqual(mockData);
   });
@@ -27,7 +34,7 @@ describe('Chrome Storage Helpers', () => {
       callback({});
     });
 
-    await expect(chromeStorageGet('prompts')).rejects.toEqual({ message: 'Test error' });
+    await expect(Utils.chromeStorageGet('prompts')).rejects.toEqual({ message: 'Test error' });
   });
 
   test('chromeStorageSet should resolve on success', async () => {
@@ -35,7 +42,7 @@ describe('Chrome Storage Helpers', () => {
       callback();
     });
 
-    await expect(chromeStorageSet({ prompts: [] })).resolves.toBeUndefined();
+    await expect(Utils.chromeStorageSet({ prompts: [] })).resolves.toBeUndefined();
     expect(chrome.storage.local.set).toHaveBeenCalledWith({ prompts: [] }, expect.any(Function));
   });
 
@@ -45,7 +52,7 @@ describe('Chrome Storage Helpers', () => {
       callback();
     });
 
-    await expect(chromeStorageSet({ prompts: [] })).rejects.toEqual({ message: 'Test error' });
+    await expect(Utils.chromeStorageSet({ prompts: [] })).rejects.toEqual({ message: 'Test error' });
   });
 });
 
@@ -74,22 +81,22 @@ describe('Error Handling', () => {
   });
 
   test('handleError should log to console', () => {
-    handleError('Test error');
+    Utils.handleError('Test error');
     expect(console.error).toHaveBeenCalledWith('Test error');
   });
 
   test('handleError should log with correct level', () => {
-    handleError('Test warning', { type: 'warning' });
+    Utils.handleError('Test warning', { type: 'warning' });
     expect(console.warning).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith('Test warning');
     
-    handleError('Test info', { type: 'info' });
+    Utils.handleError('Test info', { type: 'info' });
     expect(console.info).toHaveBeenCalledWith('Test info');
   });
 
   test('handleError should log original error if provided', () => {
     const originalError = new Error('Original');
-    handleError('Test with original', { originalError });
+    Utils.handleError('Test with original', { originalError });
     expect(console.error).toHaveBeenCalledWith('Test with original', originalError);
   });
 
@@ -100,7 +107,7 @@ describe('Error Handling', () => {
       style: {}
     };
     
-    handleError('Visible error', { 
+    Utils.handleError('Visible error', { 
       userVisible: true,
       errorElement: mockErrorElement
     });
@@ -119,7 +126,7 @@ describe('Error Handling', () => {
       style: {}
     };
     
-    handleError('Warning message', { 
+    Utils.handleError('Warning message', { 
       userVisible: true,
       type: 'warning',
       errorElement: mockErrorElement
