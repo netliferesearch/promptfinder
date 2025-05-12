@@ -240,47 +240,42 @@ window.PromptFinder.PromptData = (function () {
   };
 
   /**
-   * Get a prompt by ID
-   * @param {string} promptId ID of the prompt to find
-   * @returns {Promise<Object|null>} The found prompt or null
-   */
-  const getPromptById = async promptId => {
-    try {
-      const allPrompts = await loadPrompts();
-      const prompt = allPrompts.find(p => p.id === promptId);
-
-      if (!prompt) {
-        throw new Error(`Prompt with ID ${promptId} not found`);
-      }
-
-      return prompt;
-    } catch (error) {
-      Utils.handleError(`Error retrieving prompt`, {
-        userVisible: true,
-        originalError: error,
-      });
-      return null;
-    }
-  };
-
-  /**
    * Find a prompt by ID
    * @param {string} promptId ID of the prompt to find
    * @param {Array} [prompts] Optional array of prompts to search in
+   * @param {Object} [options] Additional options
+   * @param {boolean} [options.throwIfNotFound=false] Whether to throw an error if prompt not found
+   * @param {boolean} [options.handleError=false] Whether to handle errors with Utils.handleError
    * @returns {Promise<Object|null>} Promise resolving to the found prompt or null
    */
-  const findPromptById = async (promptId, prompts = null) => {
+  const findPromptById = async (promptId, prompts = null, options = {}) => {
+    const { throwIfNotFound = false, handleError = false } = options;
+    
     if (!promptId) return Promise.resolve(null);
 
-    if (prompts) {
-      return Promise.resolve(prompts.find(p => p.id === promptId) || null);
-    }
-
-    // If prompts not provided, load from storage
     try {
-      const allPrompts = await loadPrompts();
-      return allPrompts.find(p => p.id === promptId) || null;
+      let prompt = null;
+      
+      if (prompts) {
+        prompt = prompts.find(p => p.id === promptId) || null;
+      } else {
+        // If prompts not provided, load from storage
+        const allPrompts = await loadPrompts();
+        prompt = allPrompts.find(p => p.id === promptId) || null;
+      }
+      
+      if (!prompt && throwIfNotFound) {
+        throw new Error(`Prompt with ID ${promptId} not found`);
+      }
+      
+      return prompt;
     } catch (error) {
+      if (handleError) {
+        Utils.handleError(`Error retrieving prompt`, {
+          userVisible: true,
+          originalError: error,
+        });
+      }
       return null;
     }
   };
