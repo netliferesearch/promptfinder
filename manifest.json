@@ -4,15 +4,20 @@
   "version": "1.0",
   "description": "A community-powered tool for managing and sharing AI prompts.",
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage", "clipboardWrite"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": ["storage", "clipboardWrite", "sidePanel"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }
