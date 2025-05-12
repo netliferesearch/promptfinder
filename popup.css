@@ -1,168 +1,884 @@
+/* Utility to hide sections */
+.hidden {
+  display: none !important; /* Ensure this overrides other display properties */
+}
+
+/* Basic body styling for extension popup */
 body {
   margin: 0;
-  font-family: sans-serif;
-  max-width: 400px; /* Set a reasonable max-width for the popup */
-  padding: 15px;
-  background-color: #f4f4f4;
-  color: #333;
-}
-
-h2 {
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-  margin-top: 20px;
-  margin-bottom: 15px;
-}
-
-/* Prompt List Styling */
-#prompt-list {
-  margin-top: 10px;
-}
-
-.prompt-item {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-.prompt-item:hover {
-  background-color: #f9f9f9;
-}
-
-/* Style for input fields and buttons */
-input[type="text"],
-textarea,
-button {
-  display: block; /* Make inputs and buttons take full width */
+  padding: 0;
+  min-width: 320px;
   width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  box-sizing: border-box; /* Include padding and border in element's total width and height */
-}
-input[type="text"],
-textarea {
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  max-width: 500px;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
-button {
-  background-color: #007bff; /* Primary button color */
-  color: white;
+/* Global favorite heart styling */
+.toggle-favorite {
+  background: none;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.25rem;
+  color: #e74c3c;
+  padding: 0;
+}
+.toggle-favorite i {
+  pointer-events: none;
+}
+
+/* --- Popup Container --- */
+.popup-container {
+  display: flex; /* Keep this enabled for layout structure */
+  flex-direction: column;
+  margin: 0;
+  background-color: #f4f4f4;
+  min-width: 320px; /* Ensure minimum width for usability */
+  width: 100%;
+  max-width: 500px; /* Allow expansion on larger screens */
+  box-sizing: border-box;
+}
+
+/* Header */
+.pf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+.pf-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.pf-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+/* Controls Row */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  gap: 0.5rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+.controls input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  padding: 8px 12px; /* Adjust padding for better look */
-  transition: background-color 0.2s ease;
-  display: inline-block; /* Allow multiple buttons on a line */
-  width: auto; /* Revert width to auto for inline-block */
-  margin-right: 5px; /* Add spacing between buttons */
+  font-size: 16px;
+  min-height: 44px;
+  width: 100%;
 }
-
-button#add-prompt-button {
-  background-color: #28a745; /* Success button color */
-  margin-top: 15px;
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
 }
-button#add-prompt-button:hover {
-  background-color: #218838;
+.actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  min-height: 44px;
+  transition: background-color 0.2s, transform 0.1s;
 }
-
-button#back-button {
-  background-color: #6c757d; /* Secondary button color */
-  margin-bottom: 15px;
+.actions button:active {
+  transform: scale(0.98);
 }
-button#back-button:hover {
-  background-color: #5a6268;
-}
-
-button:hover {
-  background-color: #4cae4c;
-}
-
-/* Hide the prompt details section by default */
-#prompt-details {
-  display: none;
-}
-
-/* Prompt Details Styling */
-#prompt-details h3 {
-  margin-top: 0;
-  color: #007bff; /* Match primary button color */
-}
-#prompt-details p {
-  margin-bottom: 15px;
-  line-height: 1.5;
-}
-#prompt-details strong {
-  color: #555;
-}
-
-.prompt-meta {
-  font-size: 0.9em;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-.voting-buttons button,
-.favorite-button button {
-  font-size: 0.8em; /* Smaller size for voting buttons */
-}
-
-/* Visibility Classes */
-.hidden {
-  display: none !important; /* Use !important to ensure override */
-}
-.visible {
-  display: block !important; /* Use !important to ensure override */
-}
-
-#confirmation-message {
-  display: none;
-  background-color: #28a745; /* Green */
+.actions button.active {
+  background-color: #6c5ce7;
   color: white;
-  padding: 10px;
+  border-color: #5a4ad1;
+}
+.actions button i {
+  font-size: 0.9rem;
+}
+
+/* Add Prompt Bar (between search and tabs) */
+.add-prompt-bar {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.add-prompt-bar button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-prompt-bar button:hover {
+  background: #0069d9;
+}
+
+.add-prompt-bar button:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+  position: relative;
+}
+.tabs button {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  min-height: 44px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+.tabs button:hover {
+  background-color: #f5f5f5;
+}
+.tabs button.active {
+  font-weight: bold;
+}
+.tabs button.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #007bff;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}
+
+/* Card Grid */
+.cards-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  background: #f4f4f4;
+}
+
+/* Prompt Card */
+.prompt-item {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  grid-template-areas:
+    "fav title"
+    "tags tags"
+    "buttons buttons";
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prompt-item:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.prompt-item h3 {
+  grid-area: title;
+  margin: 0;
+  font-size: 1rem;
+}
+.prompt-item .tags {
+  grid-area: tags;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.prompt-item .tag {
+  background: #eee;
+  border-radius: 12px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+.prompt-item .buttons {
+  grid-area: buttons;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Bottom Bar */
+.bottom-bar {
+  padding: 0.5rem 1rem;
+  border-top: 1px solid #eee;
+  background: #fff;
+  text-align: center;
+}
+.bottom-bar button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background: #000;
+  color: #fff;
+  border: none;
   border-radius: 4px;
-  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+/* --- Add New Prompt Card --- */
+#add-prompt-section {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  margin: 0.75rem;
+  display: grid;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+#add-prompt-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+#add-prompt-section form {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Responsive form layout */
+@media (min-width: 481px) {
+  #add-prompt-section form > div {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+/* Mobile-first form styling */
+@media (max-width: 480px) {
+  #add-prompt-section form > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  #add-prompt-section {
+    padding: 1rem 0.75rem;
+  }
+}
+
+#add-prompt-section form label {
+  margin: 0;
+  font-weight: 600;
+  display: block;
+}
+
+#add-prompt-section form input[type="text"],
+#add-prompt-section form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 16px; /* Prevents zoom on iOS */
+  min-height: 44px;
+}
+
+#add-prompt-section form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+#add-prompt-section form button[type="submit"] {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  min-height: 44px;
+  transition: background-color 0.2s;
+}
+
+#add-prompt-section form button[type="submit"]:hover {
+  background: #0069d9;
+}
+
+/* Styles for buttons within the Add New Prompt form */
+.form-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-buttons button {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  min-height: 44px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+/* Primary action button (Add Prompt) */
+.form-buttons button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+}
+
+.form-buttons button[type="submit"]:hover {
+  background-color: #0069d9;
+}
+
+.form-buttons button:active {
+  transform: scale(0.98);
+}
+
+/* Cancel button */
+#cancel-add-prompt {
+  background-color: #f2f2f2;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+#cancel-add-prompt:hover {
+  background-color: #e6e6e6;
+}
+
+/* --- Prompt Detail Card --- */
+#prompt-details-section {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+#prompt-details-section h2#prompt-detail-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+#prompt-details-section p {
+  margin: 0.5rem 0;
+}
+#prompt-details-section .detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+#prompt-details-section .detail-actions button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+#prompt-details-section {
+  background: #f8f9fa;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Confirmation and Error Messages */
+#confirmation-message,
+#error-message {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 100;
 }
 
 #error-message {
-  display: none;
-  background-color: #dc3545; /* Red */
-  color: white;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
 }
 
-/* Style for the star rating container */
-#star-rating {
-  display: inline-block; /* Or block, depending on your layout */
-  font-size: 20px; /* Adjust size as needed */
+#confirmation-message button,
+#error-message button {
+  margin-left: 0.75rem;
+  background: none;
+  border: 1px solid currentColor;
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  min-height: 36px;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+#confirmation-message button:hover,
+#error-message button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+/* Delete Confirmation Notification */
+#delete-confirmation {
+  display: grid;
+  gap: 0.5rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin: 0.5rem 1rem;
+}
+#delete-confirmation button {
+  background: none;
+  border: 1px solid #721c24;
+  color: #721c24;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-/* Style for individual stars */
-#star-rating .star {
-  color: lightgray; /* Color for empty stars */
+.detail-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem;
+}
+.detail-header-icons {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.detail-header-icons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #555;
+}
+.detail-header-icons button:hover {
+  color: #000;
 }
 
-/* Style for filled stars */
-#star-rating .star.filled {
-  color: gold; /* Color for filled stars */
-}
-
-/* Hover effect */
-#star-rating .star:hover,
-#star-rating .star:hover ~ .star {
-  color: gold; /* Fill stars up to the hovered star */
-}
-
-/* Ensure Font Awesome pseudo-elements do not interfere with clicks */
+/* Star Rating - Make icons non-interactive */
 .fas::before,
 .far::before {
   pointer-events: none;
+}
+
+/* Ensure clicks on star icons pass through to the button */
+#star-rating .star i {
+  pointer-events: none;
+}
+
+/* New styles for star buttons and their icons */
+#star-rating .star {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 1px; /* Provides a small gap between stars */
+  cursor: pointer;
+  font-size: 1.25rem; /* Star icons will inherit this size, matching favorite icon */
+  color: #ccc; /* Default color for an empty star icon */
+  line-height: 1; /* Improves consistency */
+}
+
+/* Add accessible focus styles */
+#star-rating .star:focus {
+  outline: 2px solid #007bff;
+  border-radius: 3px;
+  box-shadow: 0 0 3px #007bff;
+}
+
+/* Color for FILLED star icons */
+#star-rating .star i.fas.fa-star {
+  color: #ffd700; /* Yellow/Gold */
+}
+
+/* Color for EMPTY star icons (explicit, though .star color is fallback) */
+#star-rating .star i.far.fa-star {
+  color: #ccc; /* Light grey */
+}
+/* End of new styles */
+
+/* Style the new star rating wrapper for horizontal layout */
+.star-rating-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
+
+#star-rating {
+  display: inline-flex;
+  align-items: center; /* Added for better vertical alignment of star buttons */
+  margin-right: 8px;
+}
+
+#average-rating-value {
+  font-weight: 500;
+  color: #333;
+}
+
+/* Filter Panel */
+.filter-panel {
+  display: flex;
+  align-items: center;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+  padding: 0.5rem 1rem;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-panel.hidden {
+  display: none;
+}
+
+.filter-panel label {
+  margin-right: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.filter-panel select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+/* Mobile-Friendly Responsive Design */
+/* Base responsive settings */
+:root {
+  --min-touch-size: 44px; /* Minimum touch target size */
+  --standard-spacing: 0.5rem;
+  --content-max-width: 600px;
+}
+
+/* Make the container responsive */
+.popup-container {
+  max-width: var(--content-max-width);
+  min-width: 280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Responsive controls for smaller screens */
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .actions button {
+    flex: 1;
+    justify-content: center;
+    min-height: var(--min-touch-size);
+  }
+
+  .filter-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-panel label {
+    margin-bottom: 0.25rem;
+    width: 100%;
+  }
+
+  .filter-panel select {
+    width: 100%;
+    min-height: var(--min-touch-size);
+  }
+}
+
+/* Improve touch targets for better mobile accessibility */
+button,
+.toggle-favorite,
+input[type="checkbox"] + label,
+select,
+.star {
+  min-height: var(--min-touch-size);
+  min-width: var(--min-touch-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure larger touch area for star ratings */
+.star {
+  padding: 0.25rem;
+}
+
+/* Improve form fields for mobile */
+@media (max-width: 480px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Make the cards container full-width */
+  .cards-container {
+    padding: 0.5rem;
+  }
+
+  /* Make the prompt-item more compact on mobile */
+  .prompt-item {
+    padding: 0.75rem;
+  }
+
+  .prompt-item .buttons {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .prompt-item .buttons button {
+    flex: 1;
+    padding: 0.5rem;
+  }
+
+  /* Style the detail view for better mobile experience */
+  .detail-card {
+    padding: 0.75rem;
+  }
+
+  /* Improved form layout for add prompt section */
+  #add-prompt-form div {
+    margin-bottom: 1rem;
+  }
+
+  #add-prompt-form label {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  #add-prompt-form input:not([type="checkbox"]),
+  #add-prompt-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem;
+  }
+
+  .form-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .form-buttons button {
+    flex: 1;
+  }
+}
+
+/* Improved scrolling experience - WebKit browsers (Chrome, Safari, etc.) */
+.cards-container::-webkit-scrollbar,
+#prompt-detail-text::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.cards-container::-webkit-scrollbar-track,
+#prompt-detail-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cards-container::-webkit-scrollbar-thumb,
+#prompt-detail-text::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.cards-container::-webkit-scrollbar-thumb:hover,
+#prompt-detail-text::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Prompt Item Button Improvements */
+.prompt-item .buttons button {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  transition: background-color 0.2s;
+}
+
+.prompt-item .buttons button:hover {
+  background: #f0f0f0;
+}
+
+.prompt-item .buttons button:active {
+  background: #e5e5e5;
+}
+
+/* Detail Card Improvements for Mobile */
+.detail-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  margin: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.detail-header-icons {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.detail-header-icons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #555;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.detail-header-icons button:hover {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+/* Make prompt text more readable */
+#prompt-detail-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
+
+/* Improve the delete confirmation dialog */
+#delete-confirmation {
+  background: #fff3f3;
+  border: 1px solid #ffcccb;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#delete-confirmation p {
+  margin-top: 0;
+  color: #ce2029;
+}
+
+#delete-confirmation button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  margin-right: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#confirm-delete-button {
+  background-color: #ce2029;
+  color: white;
+  border: none;
+}
+
+#cancel-delete-button {
+  background: none;
+  border: 1px solid #888;
+  color: #666;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 400px) {
+  .detail-card {
+    padding: 1rem 0.75rem;
+    margin: 0.5rem;
+  }
+
+  .detail-title {
+    font-size: 1.2rem;
+    padding-right: 80px; /* Space for the buttons */
+  }
+
+  #prompt-detail-text {
+    max-height: 150px;
+    font-size: 0.95rem;
+  }
 }

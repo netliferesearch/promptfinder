@@ -11,5 +11,8 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage", "clipboardWrite"]
+  "permissions": ["storage", "clipboardWrite"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
