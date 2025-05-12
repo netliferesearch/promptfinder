@@ -64,10 +64,12 @@ window.PromptFinder.Utils = (function () {
     } = options;
 
     // Always log to console with appropriate method
+    const consoleMethod = type === 'warning' ? 'warn' : type;
+    
     if (originalError) {
-      console[type](message, originalError);
+      console[consoleMethod](message, originalError);
     } else {
-      console[type](message);
+      console[consoleMethod](message);
     }
 
     // Only show to user if userVisible is true
