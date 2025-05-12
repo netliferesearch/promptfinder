@@ -87,7 +87,6 @@ describe('Error Handling', () => {
 
   test('handleError should log with correct level', () => {
     Utils.handleError('Test warning', { type: 'warning' });
-    expect(console.warning).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith('Test warning');
     
     Utils.handleError('Test info', { type: 'info' });
