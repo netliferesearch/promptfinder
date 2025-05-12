@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PromptFinder</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="sidepanel.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="sidebar-container">
+      <!-- Header -->
+      <header class="pf-header">
+        <h1>PromptFinder</h1>
+        <button id="settings-button" aria-label="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+      </header>
+
+      <!-- Search and filter/sort controls -->
+      <section class="controls">
+        <input type="text" id="search-input" placeholder="Search prompts..." />
+        <div class="actions">
+          <button id="filter-button"><i class="fas fa-filter"></i> Filters</button>
+          <button id="sort-button"><i class="fas fa-clock"></i> Sort</button>
+        </div>
+        <!-- Rating filter (initially hidden) -->
+        <div id="rating-filter" class="filter-panel hidden">
+          <label for="min-rating">Minimum Rating:</label>
+          <select id="min-rating" aria-label="Filter by minimum rating">
+            <option value="0">Any</option>
+            <option value="1">★</option>
+            <option value="2">★★</option>
+            <option value="3">★★★</option>
+            <option value="4">★★★★</option>
+          </select>
+        </div>
+      </section>
+      <!-- Confirmation & error messages -->
+      <p id="confirmation-message" class="hidden"></p>
+      <p id="error-message" class="hidden"></p>
+
+      <!-- Add prompt button section (moved from bottom) -->
+      <div class="add-prompt-bar">
+        <button id="add-prompt-button"><i class="fas fa-plus"></i> Add New Prompt</button>
+      </div>
+
+      <!-- Tab navigation -->
+      <nav class="tabs">
+        <button id="tab-all" class="active">All Prompts</button>
+        <button id="tab-favs">Favorites</button>
+        <button id="tab-private">Private</button>
+      </nav>
+
+      <!-- Card grid for prompt list -->
+      <section id="prompts-list" class="cards-container"></section>
+
+      <!-- Details and Add sections remain, hidden/toggled by JS -->
+      <section id="prompt-details-section" class="hidden">
+        <div class="detail-card">
+          <div class="detail-header-icons">
+            <button id="back-to-list-button" aria-label="Back to List">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="copy-prompt-button" aria-label="Copy prompt">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+          <h2 class="detail-title">
+            <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
+              <i class="far fa-heart"></i>
+            </button>
+            <span id="prompt-detail-title"></span>
+          </h2>
+          <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
+          <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
+          <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
+          <!-- Star Rating Container -->
+          <div>
+            <strong id="rating-label">Average rating: </strong
+            ><span id="average-rating-value">(0.0)</span>
+            <div class="star-rating-wrapper">
+              <div
+                id="star-rating"
+                data-id=""
+                role="radiogroup"
+                aria-labelledby="rating-label"
+              ></div>
+              <span id="rating-count">(0 ratings)</span>
+            </div>
+            <!-- Star icons will be added here by JavaScript -->
+          </div>
+          <div id="delete-confirmation" class="hidden">
+            <p>Are you sure you want to delete this prompt?</p>
+            <button id="confirm-delete-button">Delete Prompt</button>
+            <button id="cancel-delete-button">Cancel</button>
+          </div>
+        </div>
+        <!-- /.detail-card -->
+      </section>
+
+      <section id="add-prompt-section" class="hidden">
+        <h2>Add New Prompt</h2>
+        <form id="add-prompt-form">
+          <div>
+            <label for="prompt-title">Title:</label>
+            <input type="text" id="prompt-title" required />
+          </div>
+          <div>
+            <label for="prompt-text">Prompt Text:</label>
+            <textarea id="prompt-text" required></textarea>
+          </div>
+          <div>
+            <label for="prompt-category">Category:</label>
+            <input type="text" id="prompt-category" />
+          </div>
+          <div>
+            <label for="prompt-tags">Tags (comma-separated):</label>
+            <input type="text" id="prompt-tags" />
+          </div>
+          <div>
+            <input type="checkbox" id="prompt-private" />
+            <label for="prompt-private">Make Private</label>
+          </div>
+          <div class="form-buttons">
+            <button type="submit">Add Prompt</button>
+            <button type="button" id="cancel-add-prompt">Cancel</button>
+          </div>
+        </form>
+      </section>
+      <!-- Bottom bar - kept for spacing -->
+      <footer class="bottom-bar hidden">
+        <!-- Add Prompt button moved above tabs -->
+      </footer>
+    </div>
+
+    <!-- Load modules in the correct dependency order -->
+    <script src="js/utils.js"></script>
+    <script src="js/promptData.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="sidepanel.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
