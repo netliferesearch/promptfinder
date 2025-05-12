@@ -262,11 +262,12 @@ describe('PromptData Module', () => {
 
   describe('filterPrompts', () => {
     test('should filter prompts by search term', () => {
-      const filters = { searchTerm: 'Test Prompt 1' };
+      const filters = { searchTerm: 'test' };
       const result = PromptData.filterPrompts(samplePrompts, filters);
       
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe('1');
+      expect(result.length).toBe(2);
+      expect(result.some(p => p.id === '1')).toBe(true);
+      expect(result.some(p => p.id === '2')).toBe(true);
     });
 
     test('should filter prompts by tab (favorites)', () => {

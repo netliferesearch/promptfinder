@@ -189,6 +189,67 @@ describe('UI Module', () => {
       const prompt = samplePrompts.find(p => p.id === id);
       return Promise.resolve(prompt || null);
     });
+    
+    document.getElementById.mockImplementation((id) => {
+      if (id === 'tab-all' || id === 'tab-favs' || id === 'tab-private') {
+        return {
+          classList: { 
+            toggle: jest.fn(), 
+            add: jest.fn(), 
+            remove: jest.fn() 
+          },
+          addEventListener: jest.fn()
+        };
+      }
+      
+      if (id === 'prompts-list' || id === 'prompt-details-section' || id === 'add-prompt-section') {
+        return {
+          classList: { 
+            add: jest.fn(), 
+            remove: jest.fn(), 
+            contains: jest.fn().mockReturnValue(false) 
+          },
+          innerHTML: '',
+          appendChild: jest.fn(),
+          addEventListener: jest.fn(),
+          querySelector: jest.fn().mockImplementation((selector) => {
+            if (selector === '#prompt-detail-title' || 
+                selector === '#prompt-detail-text' || 
+                selector === '#prompt-detail-category' || 
+                selector === '#prompt-detail-tags') {
+              return { textContent: '' };
+            }
+            
+            if (selector === '#toggle-fav-detail') {
+              return { 
+                dataset: { id: '' },
+                querySelector: jest.fn().mockReturnValue({ className: '' })
+              };
+            }
+            
+            if (selector === '#star-rating') {
+              return {
+                dataset: { id: '' },
+                innerHTML: '',
+                appendChild: jest.fn()
+              };
+            }
+            
+            return null;
+          })
+        };
+      }
+      
+      if (id === 'search-input') {
+        return { value: 'test', addEventListener: jest.fn() };
+      }
+      
+      if (id === 'min-rating') {
+        return { value: '3', addEventListener: jest.fn() };
+      }
+      
+      return null;
+    });
   });
 
   describe('initializeUI', () => {
@@ -217,18 +278,35 @@ describe('UI Module', () => {
     });
 
     test('should update tab state in UI', () => {
-      UI.showTab('favs');
+      const tabAll = { classList: { toggle: jest.fn() } };
+      const tabFavs = { classList: { toggle: jest.fn() } };
+      const tabPrivate = { classList: { toggle: jest.fn() } };
       
-      const tabAll = document.getElementById('tab-all');
-      const tabFavs = document.getElementById('tab-favs');
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'tab-all') return tabAll;
+        if (id === 'tab-favs') return tabFavs;
+        if (id === 'tab-private') return tabPrivate;
+        return null;
+      });
+      
+      UI.showTab('favs');
       
       expect(tabAll.classList.toggle).toHaveBeenCalledWith('active', false);
       expect(tabFavs.classList.toggle).toHaveBeenCalledWith('active', true);
+      expect(tabPrivate.classList.toggle).toHaveBeenCalledWith('active', false);
     });
 
     test('should apply search filters', () => {
-      const searchInput = document.getElementById('search-input');
-      searchInput.value = 'test';
+      const searchInput = { value: 'test' };
+      
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'search-input') return searchInput;
+        if (id === 'min-rating') return { value: '0' };
+        if (id === 'prompts-list') return { innerHTML: '', appendChild: jest.fn() };
+        return null;
+      });
+      
+      window.PromptFinder.PromptData.filterPrompts.mockClear();
       
       UI.showTab('all');
       
@@ -241,8 +319,16 @@ describe('UI Module', () => {
     });
 
     test('should apply rating filters', () => {
-      const minRatingSelect = document.getElementById('min-rating');
-      minRatingSelect.value = '3';
+      const minRatingSelect = { value: '3' };
+      
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'min-rating') return minRatingSelect;
+        if (id === 'search-input') return { value: '' };
+        if (id === 'prompts-list') return { innerHTML: '', appendChild: jest.fn() };
+        return null;
+      });
+      
+      window.PromptFinder.PromptData.filterPrompts.mockClear();
       
       UI.showTab('all');
       
@@ -291,21 +377,35 @@ describe('UI Module', () => {
 
     test('should update star rating display', () => {
       const prompt = samplePrompts[0];
+      const starRating = { 
+        dataset: { id: '1' }, 
+        innerHTML: '',
+        appendChild: jest.fn()
+      };
+      
+      document.querySelector.mockImplementation((selector) => {
+        if (selector === '#star-rating') return starRating;
+        return null;
+      });
       
       UI.displayPromptDetails(prompt);
       
-      expect(document.querySelector).toHaveBeenCalledWith('#star-rating');
+      expect(window.PromptFinder.Utils.highlightStars).toHaveBeenCalled();
     });
   });
 
   describe('viewPromptDetails', () => {
     test('should find and display prompt details', async () => {
-      UI.displayPromptDetails = jest.fn();
+      const displaySpy = jest.spyOn(UI, 'displayPromptDetails');
+      
+      window.PromptFinder.PromptData.findPromptById.mockResolvedValue(samplePrompts[0]);
       
       await UI.viewPromptDetails('1');
       
       expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalled();
-      expect(UI.displayPromptDetails).toHaveBeenCalled();
+      expect(displaySpy).toHaveBeenCalled();
+      
+      displaySpy.mockRestore();
     });
 
     test('should handle errors if prompt not found', async () => {
@@ -319,11 +419,18 @@ describe('UI Module', () => {
 
   describe('section visibility', () => {
     test('showPromptList should show the prompt list section', () => {
-      UI.showPromptList();
+      const promptsListSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const promptDetailSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const addPromptSection = { classList: { add: jest.fn(), remove: jest.fn() } };
       
-      const promptsListSection = document.getElementById('prompts-list');
-      const promptDetailSection = document.getElementById('prompt-details-section');
-      const addPromptSection = document.getElementById('add-prompt-section');
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'prompts-list') return promptsListSection;
+        if (id === 'prompt-details-section') return promptDetailSection;
+        if (id === 'add-prompt-section') return addPromptSection;
+        return null;
+      });
+      
+      UI.showPromptList();
       
       expect(promptsListSection.classList.remove).toHaveBeenCalledWith('hidden');
       expect(promptDetailSection.classList.add).toHaveBeenCalledWith('hidden');
@@ -331,11 +438,18 @@ describe('UI Module', () => {
     });
 
     test('showPromptDetails should show the prompt details section', () => {
-      UI.showPromptDetails();
+      const promptsListSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const promptDetailSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const addPromptSection = { classList: { add: jest.fn(), remove: jest.fn() } };
       
-      const promptsListSection = document.getElementById('prompts-list');
-      const promptDetailSection = document.getElementById('prompt-details-section');
-      const addPromptSection = document.getElementById('add-prompt-section');
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'prompts-list') return promptsListSection;
+        if (id === 'prompt-details-section') return promptDetailSection;
+        if (id === 'add-prompt-section') return addPromptSection;
+        return null;
+      });
+      
+      UI.showPromptDetails();
       
       expect(promptsListSection.classList.add).toHaveBeenCalledWith('hidden');
       expect(promptDetailSection.classList.remove).toHaveBeenCalledWith('hidden');
@@ -343,11 +457,18 @@ describe('UI Module', () => {
     });
 
     test('showAddPrompt should show the add prompt section', () => {
-      UI.showAddPrompt();
+      const promptsListSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const promptDetailSection = { classList: { add: jest.fn(), remove: jest.fn() } };
+      const addPromptSection = { classList: { add: jest.fn(), remove: jest.fn() } };
       
-      const promptsListSection = document.getElementById('prompts-list');
-      const promptDetailSection = document.getElementById('prompt-details-section');
-      const addPromptSection = document.getElementById('add-prompt-section');
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'prompts-list') return promptsListSection;
+        if (id === 'prompt-details-section') return promptDetailSection;
+        if (id === 'add-prompt-section') return addPromptSection;
+        return null;
+      });
+      
+      UI.showAddPrompt();
       
       expect(promptsListSection.classList.add).toHaveBeenCalledWith('hidden');
       expect(promptDetailSection.classList.add).toHaveBeenCalledWith('hidden');
