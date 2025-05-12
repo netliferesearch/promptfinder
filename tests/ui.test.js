@@ -467,17 +467,25 @@ describe('UI Module', () => {
 
   describe('viewPromptDetails', () => {
     test('should find and display prompt details', async () => {
+      const originalDisplayPromptDetails = UI.displayPromptDetails;
+      
+      const mockDisplayPromptDetails = jest.fn();
+      UI.displayPromptDetails = mockDisplayPromptDetails;
+      
       const mockPrompt = { ...samplePrompts[0] };
-      window.PromptFinder.PromptData.findPromptById.mockImplementation(() => Promise.resolve(mockPrompt));
       
-      const displaySpy = jest.spyOn(UI, 'displayPromptDetails').mockImplementation(() => {});
+      window.PromptFinder.PromptData.findPromptById = jest.fn().mockImplementation(() => {
+        return Promise.resolve(mockPrompt);
+      });
       
-      await UI.viewPromptDetails('1');
-      
-      expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalledWith('1', expect.anything());
-      expect(displaySpy).toHaveBeenCalledWith(mockPrompt);
-      
-      displaySpy.mockRestore();
+      try {
+        await UI.viewPromptDetails('1');
+        
+        expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalledWith('1', expect.anything());
+        expect(mockDisplayPromptDetails).toHaveBeenCalledWith(mockPrompt);
+      } finally {
+        UI.displayPromptDetails = originalDisplayPromptDetails;
+      }
     });
 
     test('should handle errors if prompt not found', async () => {
