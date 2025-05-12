@@ -59,15 +59,37 @@ window.PromptFinder.UI = (function () {
     const ratingFilterPanel = document.getElementById('rating-filter');
     const minRatingSelect = document.getElementById('min-rating');
 
+    console.log('Filter elements found:', { 
+      filterButton: filterButton ? filterButton.id : null, 
+      ratingFilterPanel: ratingFilterPanel ? ratingFilterPanel.id : null, 
+      minRatingSelect: minRatingSelect ? minRatingSelect.id : null 
+    });
+
     if (filterButton && ratingFilterPanel) {
-      filterButton.addEventListener('click', () => {
+      const newFilterButton = filterButton.cloneNode(true);
+      filterButton.parentNode.replaceChild(newFilterButton, filterButton);
+      
+      // Add click listener to the new button
+      newFilterButton.addEventListener('click', (e) => {
+        console.log('Filter button clicked', e);
         ratingFilterPanel.classList.toggle('hidden');
-        filterButton.classList.toggle('active');
+        newFilterButton.classList.toggle('active');
+        console.log('Filter panel hidden:', ratingFilterPanel.classList.contains('hidden'));
       });
+    } else {
+      console.error('Missing filter elements');
     }
 
     if (minRatingSelect) {
-      minRatingSelect.addEventListener('change', () => showTab(activeTab));
+      const newMinRatingSelect = minRatingSelect.cloneNode(true);
+      minRatingSelect.parentNode.replaceChild(newMinRatingSelect, minRatingSelect);
+      
+      newMinRatingSelect.addEventListener('change', (e) => {
+        console.log('Min rating changed to:', newMinRatingSelect.value);
+        showTab(activeTab);
+      });
+    } else {
+      console.error('Missing minRatingSelect element');
     }
 
     // --- Add Prompt Button ---
