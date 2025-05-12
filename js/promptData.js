@@ -267,19 +267,22 @@ window.PromptFinder.PromptData = (function () {
    * Find a prompt by ID
    * @param {string} promptId ID of the prompt to find
    * @param {Array} [prompts] Optional array of prompts to search in
-   * @returns {Object|null} The found prompt or null
+   * @returns {Promise<Object|null>} Promise resolving to the found prompt or null
    */
-  const findPromptById = (promptId, prompts = null) => {
-    if (!promptId) return null;
+  const findPromptById = async (promptId, prompts = null) => {
+    if (!promptId) return Promise.resolve(null);
 
     if (prompts) {
-      return prompts.find(p => p.id === promptId) || null;
+      return Promise.resolve(prompts.find(p => p.id === promptId) || null);
     }
 
     // If prompts not provided, load from storage
-    return loadPrompts()
-      .then(allPrompts => allPrompts.find(p => p.id === promptId) || null)
-      .catch(() => null);
+    try {
+      const allPrompts = await loadPrompts();
+      return allPrompts.find(p => p.id === promptId) || null;
+    } catch (error) {
+      return null;
+    }
   };
 
   /**

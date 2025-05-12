@@ -584,7 +584,7 @@ window.PromptFinder.UI = (function () {
       Utils.highlightStars(rating, starRatingContainer);
 
       // Persist the rating
-      const updatedPrompt = await PromptData.ratePrompt(promptId, rating);
+      const updatedPrompt = await PromptData.updatePromptRating(promptId, rating);
 
       // Update in local array
       const index = allPrompts.findIndex(p => p.id === promptId);
