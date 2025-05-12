@@ -9,8 +9,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder extension initialized successfully');
 
-  // The PromptFinder.UI.initializeUI() is called in popup.js
-
-  // Once migration is complete, we'll move all initialization here and
-  // make popup.js just a thin wrapper that uses our modular structure.
+  // Initialize the UI module, which will handle all UI setup and event listeners
+  window.PromptFinder.UI.initializeUI();
 });
