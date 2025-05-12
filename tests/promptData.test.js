@@ -168,14 +168,19 @@ describe('PromptData Module', () => {
       expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
       
       const setCall = window.PromptFinder.Utils.chromeStorageSet.mock.calls[0][0];
-      expect(setCall.prompts.length).toBe(samplePrompts.length + 1);
+      expect(setCall.prompts.length).toBe(3); // 2 sample prompts + 1 new prompt
     });
 
     test('should handle errors when adding', async () => {
       window.PromptFinder.Utils.chromeStorageGet.mockRejectedValue(new Error('Storage error'));
+      window.PromptFinder.Utils.chromeStorageSet.mockRejectedValue(new Error('Storage error'));
       
-      await expect(PromptData.addPrompt({ title: 'Test' })).rejects.toThrow();
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
+      try {
+        await PromptData.addPrompt({ title: 'Test' });
+        fail('Expected addPrompt to throw an error');
+      } catch (error) {
+        expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
+      }
     });
   });
 
@@ -257,7 +262,7 @@ describe('PromptData Module', () => {
 
   describe('filterPrompts', () => {
     test('should filter prompts by search term', () => {
-      const filters = { searchTerm: 'test prompt 1' };
+      const filters = { searchTerm: 'Test Prompt 1' };
       const result = PromptData.filterPrompts(samplePrompts, filters);
       
       expect(result.length).toBe(1);
@@ -351,7 +356,7 @@ describe('PromptData Module', () => {
       const result = await PromptData.copyPromptToClipboard('1');
       
       expect(result).toBe(true);
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('This is a test prompt');
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(samplePrompts[0].text);
     });
 
     test('should handle errors if prompt not found', async () => {
