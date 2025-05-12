@@ -298,11 +298,29 @@ describe('UI Module', () => {
 
     test('should apply search filters', () => {
       const searchInput = { value: 'test' };
+      const promptsListSection = { 
+        classList: { add: jest.fn(), remove: jest.fn() },
+        innerHTML: '', 
+        appendChild: jest.fn() 
+      };
       
       document.getElementById.mockImplementation((id) => {
         if (id === 'search-input') return searchInput;
         if (id === 'min-rating') return { value: '0' };
-        if (id === 'prompts-list') return { innerHTML: '', appendChild: jest.fn() };
+        if (id === 'prompts-list') return promptsListSection;
+        if (id === 'prompt-details-section') return { classList: { add: jest.fn() } };
+        if (id === 'add-prompt-section') return { classList: { add: jest.fn() } };
+        if (id === 'tab-all') return { classList: { toggle: jest.fn() } };
+        if (id === 'tab-favs') return { classList: { toggle: jest.fn() } };
+        if (id === 'tab-private') return { classList: { toggle: jest.fn() } };
+        return null;
+      });
+      
+      document.querySelector.mockImplementation((selector) => {
+        if (selector === '.controls' || selector === '.tabs' || 
+            selector === '.bottom-bar' || selector === '.add-prompt-bar') {
+          return { classList: { remove: jest.fn() } };
+        }
         return null;
       });
       
@@ -320,11 +338,29 @@ describe('UI Module', () => {
 
     test('should apply rating filters', () => {
       const minRatingSelect = { value: '3' };
+      const promptsListSection = { 
+        classList: { add: jest.fn(), remove: jest.fn() },
+        innerHTML: '', 
+        appendChild: jest.fn() 
+      };
       
       document.getElementById.mockImplementation((id) => {
         if (id === 'min-rating') return minRatingSelect;
         if (id === 'search-input') return { value: '' };
-        if (id === 'prompts-list') return { innerHTML: '', appendChild: jest.fn() };
+        if (id === 'prompts-list') return promptsListSection;
+        if (id === 'prompt-details-section') return { classList: { add: jest.fn() } };
+        if (id === 'add-prompt-section') return { classList: { add: jest.fn() } };
+        if (id === 'tab-all') return { classList: { toggle: jest.fn() } };
+        if (id === 'tab-favs') return { classList: { toggle: jest.fn() } };
+        if (id === 'tab-private') return { classList: { toggle: jest.fn() } };
+        return null;
+      });
+      
+      document.querySelector.mockImplementation((selector) => {
+        if (selector === '.controls' || selector === '.tabs' || 
+            selector === '.bottom-bar' || selector === '.add-prompt-bar') {
+          return { classList: { remove: jest.fn() } };
+        }
         return null;
       });
       
@@ -377,35 +413,74 @@ describe('UI Module', () => {
 
     test('should update star rating display', () => {
       const prompt = samplePrompts[0];
-      const starRating = { 
-        dataset: { id: '1' }, 
+      
+      const titleEl = { textContent: '' };
+      const textEl = { textContent: '' };
+      const categoryEl = { textContent: '' };
+      const tagsEl = { textContent: '' };
+      const starRatingContainer = { 
+        dataset: { id: '' }, 
         innerHTML: '',
         appendChild: jest.fn()
       };
       
-      document.querySelector.mockImplementation((selector) => {
-        if (selector === '#star-rating') return starRating;
+      const promptDetailSection = {
+        querySelector: jest.fn().mockImplementation((selector) => {
+          if (selector === '#prompt-detail-title') return titleEl;
+          if (selector === '#prompt-detail-text') return textEl;
+          if (selector === '#prompt-detail-category') return categoryEl;
+          if (selector === '#prompt-detail-tags') return tagsEl;
+          if (selector === '#star-rating') return starRatingContainer;
+          if (selector === '#average-rating-value') return { textContent: '' };
+          if (selector === '#rating-count') return { textContent: '' };
+          if (selector === '#toggle-fav-detail') return { 
+            dataset: { id: '' },
+            querySelector: jest.fn().mockReturnValue({ className: '' })
+          };
+          if (selector === '#delete-confirmation') return { classList: { add: jest.fn() } };
+          return null;
+        }),
+        classList: { remove: jest.fn() }
+      };
+      
+      document.getElementById.mockImplementation((id) => {
+        if (id === 'prompt-details-section') return promptDetailSection;
         return null;
+      });
+      
+      document.createElement.mockReturnValue({
+        classList: { add: jest.fn() },
+        dataset: {},
+        setAttribute: jest.fn(),
+        addEventListener: jest.fn(),
+        innerHTML: ''
       });
       
       UI.displayPromptDetails(prompt);
       
-      expect(window.PromptFinder.Utils.highlightStars).toHaveBeenCalled();
+      expect(titleEl.textContent).toBe(prompt.title);
+      expect(textEl.textContent).toBe(prompt.text);
+      expect(categoryEl.textContent).toBe(prompt.category);
+      expect(starRatingContainer.appendChild).toHaveBeenCalled();
     });
   });
 
   describe('viewPromptDetails', () => {
     test('should find and display prompt details', async () => {
-      const displaySpy = jest.spyOn(UI, 'displayPromptDetails');
+      const originalDisplayPromptDetails = UI.displayPromptDetails;
       
-      window.PromptFinder.PromptData.findPromptById.mockResolvedValue(samplePrompts[0]);
+      UI.displayPromptDetails = jest.fn();
       
-      await UI.viewPromptDetails('1');
-      
-      expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalled();
-      expect(displaySpy).toHaveBeenCalled();
-      
-      displaySpy.mockRestore();
+      try {
+        window.PromptFinder.PromptData.findPromptById.mockResolvedValue(samplePrompts[0]);
+        
+        await UI.viewPromptDetails('1');
+        
+        expect(window.PromptFinder.PromptData.findPromptById).toHaveBeenCalledWith('1', expect.anything());
+        expect(UI.displayPromptDetails).toHaveBeenCalledWith(samplePrompts[0]);
+      } finally {
+        UI.displayPromptDetails = originalDisplayPromptDetails;
+      }
     });
 
     test('should handle errors if prompt not found', async () => {
