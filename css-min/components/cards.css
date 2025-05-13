@@ -7,11 +7,11 @@ border-radius:var(--border-radius-md);
 box-shadow:var(--shadow-sm);
 overflow:hidden;
 margin-bottom:var(--spacing-md);
-ransition:transform 0.2s, box-shadow 0.2s;
+transition:transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover{
-ransform:translateY(-2px);
+transform:translateY(-2px);
 box-shadow:var(--shadow-md);
 }
 
@@ -72,7 +72,7 @@ padding:var(--spacing-md);
 border-radius:var(--border-radius-md);
 background-color:var(--color-white);
 box-shadow:var(--shadow-sm);
-ransition:transform 0.2s, box-shadow 0.2s;
+transition:transform 0.2s, box-shadow 0.2s;
 cursor:pointer;
 display:flex;
 flex-direction:column;
@@ -81,13 +81,13 @@ margin-bottom:var(--spacing-md);
 
 .prompt-card:hover,
 .prompt-item:hover{
-ransform:translateY(-2px);
+transform:translateY(-2px);
 box-shadow:var(--shadow-md);
 }
 
 .prompt-card:active,
 .prompt-item:active{
-ransform:translateY(0);
+transform:translateY(0);
 }
 
 /* Card header and title */
@@ -154,7 +154,7 @@ color:var(--color-black);
 font-weight:500;
 font-size:var(--font-size-sm);
 cursor:pointer;
-ransition:background-color 0.2s;
+transition:background-color 0.2s;
 }
 
 .prompt-card__buttons button:hover,
@@ -164,7 +164,7 @@ background-color:var(--color-gray-300);
 
 .prompt-card__buttons button:active,
 .prompt-item .buttons button:active{
-ransform:translateY(1px);
+transform:translateY(1px);
 }
 
 /* Favorite button */

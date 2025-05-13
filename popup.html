@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptFinder</title>
-    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/pages/popup.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
+    <script src="js/css-class-helper.js"></script>
   </head>
 
   <body>
@@ -23,15 +25,19 @@
 
       <!-- Search and filter/sort controls -->
       <section class="controls">
-        <input type="text" id="search-input" placeholder="Search prompts..." />
+        <input type="text" id="search-input" placeholder="Search prompts..." class="form-input" />
         <div class="actions">
-          <button id="filter-button"><i class="fas fa-filter"></i> Filters</button>
-          <button id="sort-button"><i class="fas fa-clock"></i> Sort</button>
+          <button id="filter-button" class="button button-secondary button-sm">
+            <i class="fas fa-filter"></i> Filters
+          </button>
+          <button id="sort-button" class="button button-secondary button-sm">
+            <i class="fas fa-clock"></i> Sort
+          </button>
         </div>
         <!-- Rating filter (initially hidden) -->
         <div id="rating-filter" class="filter-panel hidden">
-          <label for="min-rating">Minimum Rating:</label>
-          <select id="min-rating" aria-label="Filter by minimum rating">
+          <label for="min-rating" class="form-label">Minimum Rating:</label>
+          <select id="min-rating" aria-label="Filter by minimum rating" class="form-input">
             <option value="0">Any</option>
             <option value="1">★</option>
             <option value="2">★★</option>
@@ -46,7 +52,9 @@
 
       <!-- Add prompt button section (moved from bottom) -->
       <div class="add-prompt-bar">
-        <button id="add-prompt-button"><i class="fas fa-plus"></i> Add New Prompt</button>
+        <button id="add-prompt-button" class="button button-primary">
+          <i class="fas fa-plus"></i> Add New Prompt
+        </button>
       </div>
 
       <!-- Tab navigation -->
@@ -130,8 +138,10 @@
             <label for="prompt-private">Make Private</label>
           </div>
           <div class="form-buttons">
-            <button type="submit">Add Prompt</button>
-            <button type="button" id="cancel-add-prompt">Cancel</button>
+            <button type="submit" class="button button-primary">Add Prompt</button>
+            <button type="button" id="cancel-add-prompt" class="button button-cancel">
+              Cancel
+            </button>
           </div>
         </form>
       </section>

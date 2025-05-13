@@ -75,12 +75,12 @@ justify-content:center;
 font-size:24px;
 box-shadow:var(--shadow-md);
 cursor:pointer;
-ransition:background-color 0.2s, transform 0.2s;
+transition:background-color 0.2s, transform 0.2s;
 }
 
 .add-button:hover{
 background-color:var(--color-primary-dark);
-ransform:scale(1.05);
+transform:scale(1.05);
 }
 
 /* Categories section */
@@ -93,7 +93,7 @@ padding:var(--spacing-sm) var(--spacing-md);
 border-radius:var(--border-radius-md);
 margin-bottom:var(--spacing-sm);
 cursor:pointer;
-ransition:background-color 0.2s;
+transition:background-color 0.2s;
 }
 
 .category-item:hover{
@@ -123,7 +123,7 @@ min-height:48px;
 width:100%;
 background-color:var(--color-gray-100);
 box-shadow:var(--shadow-sm);
-ransition:all 0.2s ease;
+transition:all 0.2s ease;
 }
 
 .controls input:focus{
@@ -152,7 +152,7 @@ align-items:center;
 gap:var(--spacing-xs);
 flex:1;
 justify-content:center;
-ransition:all 0.2s;
+transition:all 0.2s;
 }
 
 .controls .actions button:hover{
@@ -179,7 +179,7 @@ display:flex;
 align-items:center;
 gap:var(--spacing-sm);
 justify-content:center;
-ransition:background-color 0.2s;
+transition:background-color 0.2s;
 }
 
 .add-prompt-bar button:hover{
