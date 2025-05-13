@@ -118,6 +118,77 @@ function showConfirmation(message) {
 }
 
 /**
+ * Update form fields with verified data from storage
+ * @param {Object} prompt - The verified prompt data
+ */
+function updateFormWithVerifiedData(prompt) {
+  try {
+    const titleInput = document.getElementById('prompt-title');
+    const textInput = document.getElementById('prompt-text');
+    const categoryInput = document.getElementById('prompt-category');
+    const tagsInput = document.getElementById('prompt-tags');
+    const privateCheckbox = document.getElementById('prompt-private');
+    
+    if (!titleInput || !textInput) {
+      console.error('Form elements missing when trying to update with verified data');
+      return;
+    }
+    
+    titleInput.value = prompt.title || '';
+    textInput.value = prompt.text || '';
+    if (categoryInput) categoryInput.value = prompt.category || '';
+    if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
+    if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
+    
+    console.info('Form updated with verified data from storage');
+  } catch (error) {
+    console.error('Error updating form with verified data:', error);
+  }
+}
+
+/**
+ * Add a close button to the confirmation message
+ */
+function addCloseButton() {
+  try {
+    if (document.getElementById('close-button')) {
+      return;
+    }
+    
+    const formButtons = document.querySelector('.form-buttons');
+    if (!formButtons) {
+      console.error('Form buttons container not found');
+      return;
+    }
+    
+    formButtons.innerHTML = '';
+    
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.id = 'close-button';
+    closeButton.textContent = 'Close Window';
+    closeButton.className = 'close-button';
+    closeButton.style.backgroundColor = '#7C4DFF';
+    closeButton.style.color = 'white';
+    closeButton.style.padding = '0.75rem 1.5rem';
+    closeButton.style.borderRadius = '24px';
+    closeButton.style.border = 'none';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.width = '100%';
+    
+    closeButton.addEventListener('click', () => {
+      window.close();
+    });
+    
+    formButtons.appendChild(closeButton);
+    
+    console.info('Close button added successfully');
+  } catch (error) {
+    console.error('Error adding close button:', error);
+  }
+}
+
+/**
  * Handle form submission for editing a prompt
  * @param {Event} event - The submit event
  */
@@ -205,11 +276,11 @@ async function handleEditPromptSubmit(event) {
         throw new Error('Prompt update verification failed: data mismatch');
       }
       
+      updateFormWithVerifiedData(verifiedPrompt);
+      
       showConfirmation('Prompt updated successfully!');
       
-      setTimeout(() => {
-        window.close();
-      }, 3000);
+      addCloseButton();
     } catch (updateError) {
       console.error('Error updating prompt:', updateError);
       showError(`Failed to update prompt: ${updateError.message}`);
