@@ -1,0 +1,116 @@
+/* Page-specific styles for Edit Prompt page */
+
+/* Edit prompt specific styles */
+#edit-prompt-section {
+  padding: var(--spacing-lg);
+  flex: 1;
+  overflow-y: auto;
+}
+
+#edit-prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+#edit-prompt-form div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Checkbox container override */
+#edit-prompt-form .checkbox-container {
+  flex-direction: row;
+  align-items: center;
+  margin-top: var(--spacing-sm);
+}
+
+/* Success message */
+.success-message {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+}
+
+.success-message i {
+  margin-right: var(--spacing-sm);
+}
+
+/* Error message */
+.error-message {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+}
+
+.error-message i {
+  margin-right: var(--spacing-sm);
+}
+
+/* Delete confirmation */
+.delete-confirmation {
+  margin-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-gray-300);
+  padding-top: var(--spacing-lg);
+}
+
+.delete-confirmation h3 {
+  color: var(--color-error-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.delete-confirmation p {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Tag editing */
+.tags-container {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.tag-item {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.tag-item button {
+  border: none;
+  background: none;
+  margin-left: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--color-primary);
+}
+
+.add-tag-button {
+  background-color: var(--color-gray-200);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 4px var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.add-tag-button:hover {
+  background-color: var(--color-gray-300);
+}

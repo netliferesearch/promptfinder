@@ -1,0 +1,196 @@
+/* Card components for PromptFinder extension */
+
+/* Base card */
+.card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Card header */
+.card-header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-gray-300);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2,
+.card-header h3 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-black);
+}
+
+.card-header-icon {
+  color: var(--color-primary);
+  font-size: 1.25rem;
+}
+
+/* Card body */
+.card-body {
+  padding: var(--spacing-md);
+}
+
+.card-text {
+  color: var(--color-black);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.card-subtitle {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+}
+
+/* Card footer */
+.card-footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-300);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Prompt card specific styles */
+.prompt-card,
+.prompt-item {
+  position: relative;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--spacing-md);
+}
+
+.prompt-card:hover,
+.prompt-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.prompt-card:active,
+.prompt-item:active {
+  transform: translateY(0);
+}
+
+/* Card header and title */
+.prompt-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.prompt-card__title,
+.prompt-item h3 {
+  font-weight: 600;
+  color: var(--color-black);
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+/* Card description */
+.prompt-card__description {
+  color: var(--color-black);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Tags */
+.prompt-card__tags,
+.prompt-item .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.prompt-card__tag,
+.prompt-item .tag {
+  font-size: var(--font-size-xs);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+}
+
+/* Buttons section */
+.prompt-card__buttons,
+.prompt-item .buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: auto;
+}
+
+.prompt-card__buttons button,
+.prompt-item .buttons button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-gray-200);
+  color: var(--color-black);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.prompt-card__buttons button:hover,
+.prompt-item .buttons button:hover {
+  background-color: var(--color-gray-300);
+}
+
+.prompt-card__buttons button:active,
+.prompt-item .buttons button:active {
+  transform: translateY(1px);
+}
+
+/* Favorite button */
+.prompt-card .toggle-favorite,
+.prompt-item .toggle-favorite {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #e74c3c;
+  padding: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .prompt-card,
+  .prompt-item {
+    padding: var(--spacing-sm);
+  }
+
+  .prompt-card__buttons,
+  .prompt-item .buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

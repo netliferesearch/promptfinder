@@ -5,7 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder detached add prompt window initialized');
-  
+
   initializeForm();
 });
 
@@ -17,7 +17,7 @@ function initializeForm() {
   if (addPromptForm) {
     addPromptForm.addEventListener('submit', handleAddPromptSubmit);
   }
-  
+
   const cancelAddPromptButton = document.getElementById('cancel-add-prompt');
   if (cancelAddPromptButton) {
     cancelAddPromptButton.addEventListener('click', () => {
@@ -32,7 +32,7 @@ function initializeForm() {
  */
 async function handleAddPromptSubmit(event) {
   event.preventDefault();
-  
+
   const Utils = window.PromptFinder.Utils;
   const PromptData = window.PromptFinder.PromptData;
 
@@ -73,6 +73,11 @@ async function handleAddPromptSubmit(event) {
       isPrivate,
     });
 
+    // Notify main window that a prompt was updated
+    if (chrome && chrome.storage) {
+      chrome.storage.local.set({ promptUpdated: Date.now() });
+    }
+
     const form = document.getElementById('add-prompt-form');
     if (form) form.reset();
 
@@ -80,7 +85,7 @@ async function handleAddPromptSubmit(event) {
       withButton: true,
       timeout: 5000,
     });
-    
+
     setTimeout(() => {
       window.close();
     }, 2000);

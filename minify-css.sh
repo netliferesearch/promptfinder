@@ -32,6 +32,15 @@ minify_css() {
         -e 's/ }/}/g' \
         -e 's/; /;/g' \
         -e 's/: /:/g' > "$output_file"
+        
+  # Fix any potential issues with property names
+  sed -i '' \
+      -e 's/ransition/transition/g' \
+      -e 's/ransform/transform/g' \
+      -e 's/ttransition/transition/g' \
+      -e 's/ttransform/transform/g' \
+      -e 's/ext-transform/text-transform/g' \
+      "$output_file"
   
   # Calculate file size reduction
   local original_size=$(wc -c < "$input_file")
