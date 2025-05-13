@@ -167,7 +167,7 @@ To set up the development environment:
 * All new features should include proper error handling using the `handleError` utility
 * Follow accessibility best practices for all UI components
 
-## Development Setup
+## Development Setup 1
 
 To set up the development environment:
 
@@ -197,7 +197,7 @@ To set up the development environment:
    * Test in Chrome by loading the unpacked extension
    * Write tests for new functionality
 
-### Project Structure Conventions
+### Project Structure Conventions 2
 
 * Keep UI logic in `ui.js`
 * Keep data operations in `promptData.js`
