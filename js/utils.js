@@ -65,10 +65,8 @@ window.PromptFinder.Utils = (function () {
     const consoleMethod = type === 'warning' ? 'warn' : type;
 
     if (originalError) {
-      // eslint-disable-next-line no-console
       console[consoleMethod](message, originalError);
     } else {
-      // eslint-disable-next-line no-console
       console[consoleMethod](message);
     }
 
