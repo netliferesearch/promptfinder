@@ -43,7 +43,7 @@
 The extension icons are currently all 800x800 pixels, which is inefficient. As documented in `ICON_RESIZE_NEEDED.md`, they should be resized to:
 
 - icon16.png: 16x16 pixels
-- icon48.png: 48x48 pixels  
+- icon48.png: 48x48 pixels
 - icon128.png: 128x128 pixels
 
 This can be done using ImageMagick or a graphic editor.

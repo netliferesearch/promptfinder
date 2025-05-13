@@ -52,7 +52,9 @@ describe('Chrome Storage Helpers', () => {
       callback();
     });
 
-    await expect(Utils.chromeStorageSet({ prompts: [] })).rejects.toEqual({ message: 'Test error' });
+    await expect(Utils.chromeStorageSet({ prompts: [] })).rejects.toEqual({
+      message: 'Test error',
+    });
   });
 });
 
@@ -61,21 +63,21 @@ describe('Error Handling', () => {
     console.error = jest.fn();
     console.warn = jest.fn();
     console.info = jest.fn();
-    
-    document.getElementById.mockImplementation((id) => {
+
+    document.getElementById.mockImplementation(id => {
       if (id === 'error-message') {
         return {
           textContent: '',
           classList: { add: jest.fn(), remove: jest.fn() },
-          style: {}
+          style: {},
         };
       }
       return null;
     });
-    
+
     jest.useFakeTimers();
   });
-  
+
   afterEach(() => {
     jest.useRealTimers();
   });
@@ -88,7 +90,7 @@ describe('Error Handling', () => {
   test('handleError should log with correct level', () => {
     Utils.handleError('Test warning', { type: 'warning' });
     expect(console.warn).toHaveBeenCalledWith('Test warning');
-    
+
     Utils.handleError('Test info', { type: 'info' });
     expect(console.info).toHaveBeenCalledWith('Test info');
   });
@@ -103,17 +105,17 @@ describe('Error Handling', () => {
     const mockErrorElement = {
       textContent: '',
       classList: { add: jest.fn(), remove: jest.fn() },
-      style: {}
+      style: {},
     };
-    
-    Utils.handleError('Visible error', { 
+
+    Utils.handleError('Visible error', {
       userVisible: true,
-      errorElement: mockErrorElement
+      errorElement: mockErrorElement,
     });
-    
+
     expect(mockErrorElement.textContent).toBe('Visible error');
     expect(mockErrorElement.classList.remove).toHaveBeenCalledWith('hidden');
-    
+
     jest.advanceTimersByTime(5000);
     expect(mockErrorElement.classList.add).toHaveBeenCalledWith('hidden');
   });
@@ -122,15 +124,15 @@ describe('Error Handling', () => {
     const mockErrorElement = {
       textContent: '',
       classList: { add: jest.fn(), remove: jest.fn() },
-      style: {}
+      style: {},
     };
-    
-    Utils.handleError('Warning message', { 
+
+    Utils.handleError('Warning message', {
       userVisible: true,
       type: 'warning',
-      errorElement: mockErrorElement
+      errorElement: mockErrorElement,
     });
-    
+
     expect(mockErrorElement.style.backgroundColor).toBe('#fff3cd');
     expect(mockErrorElement.style.color).toBe('#856404');
   });

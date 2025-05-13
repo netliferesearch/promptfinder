@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Temporary test listener moved inside DOMContentLoaded
   document.body.addEventListener('click', function (event) {
     if (event.target.tagName === 'I' && event.target.classList.contains('fa')) {
-      console.log('Direct click on FA i tag detected!', event.target);
+      // console.log('Direct click on FA i tag detected!', event.target);
     }
   });
 
-  console.info('PromptFinder extension initialized via modular architecture');
+  // console.info('PromptFinder extension initialized via modular architecture');
 }); // End of DOMContentLoaded listener

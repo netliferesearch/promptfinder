@@ -7,12 +7,12 @@ global.chrome = {
   storage: {
     local: {
       get: jest.fn(),
-      set: jest.fn()
-    }
+      set: jest.fn(),
+    },
   },
   runtime: {
-    lastError: null
-  }
+    lastError: null,
+  },
 };
 
 // Set up fetch API mock
@@ -23,8 +23,8 @@ if (!navigator.clipboard) {
   Object.defineProperty(navigator, 'clipboard', {
     writable: true,
     value: {
-      writeText: jest.fn().mockImplementation(() => Promise.resolve())
-    }
+      writeText: jest.fn().mockImplementation(() => Promise.resolve()),
+    },
   });
 }
 
@@ -37,19 +37,19 @@ document.createElement = jest.fn().mockImplementation(tag => {
     classList: {
       add: jest.fn(),
       remove: jest.fn(),
-      toggle: jest.fn()
+      toggle: jest.fn(),
     },
     style: {},
     appendChild: jest.fn(),
     addEventListener: jest.fn(),
     setAttribute: jest.fn(),
     getAttribute: jest.fn(),
-    removeAttribute: jest.fn()
+    removeAttribute: jest.fn(),
   };
-  
+
   if (tag.toLowerCase() === 'div') {
     element.innerHTML = '';
   }
-  
+
   return element;
 });

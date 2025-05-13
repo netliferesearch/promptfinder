@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.info('PromptFinder detached add prompt window initialized');
+  // console.info('PromptFinder detached add prompt window initialized');
 
   initializeForm();
 });
@@ -65,7 +65,7 @@ async function handleAddPromptSubmit(event) {
   const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
 
   try {
-    const newPrompt = await PromptData.addPrompt({
+    await PromptData.addPrompt({
       title,
       text,
       category,

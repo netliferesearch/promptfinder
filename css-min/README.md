@@ -4,6 +4,7 @@ This directory contains minified versions of the CSS files for production use.
 The CSS structure is preserved but files have been optimized to reduce file size.
 
 ## Directory Structure
+
 - `/base`: Foundation styles (variables, reset, utilities)
 - `/components`: Reusable UI components (buttons, forms, etc.)
 - `/layout`: Layout structures

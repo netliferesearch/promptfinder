@@ -4,17 +4,17 @@
   "description": "A community-powered tool for managing and sharing AI prompts",
   "private": true,
   "scripts": {
-    "lint": "eslint js/*.js app.js",
-    "lint:fix": "eslint --fix js/*.js app.js",
+    "lint": "eslint app.js js/**/*.js pages/**/*.js",
+    "lint:fix": "eslint --fix app.js js/**/*.js pages/**/*.js",
     "format": "prettier --write \"**/*.{js,html,css,md,json}\"",
     "test": "jest",
-    "build": "npm run lint && npm run format && npm run css:minify && echo 'Build completed successfully'",
+    "build": "npm run lint && npm run format && npm run css:minify && echo \"Build completed successfully\"",
     "clean-install": "rm -rf node_modules package-lock.json && npm install",
-    "css:minify": "bash ./minify-css.sh",
-    "css:improve": "bash ./improve-css-quality.sh",
-    "css:analyze": "bash ./find-unused-css.sh",
-    "css:switch": "bash ./switch-css-env.sh",
-    "build:prod": "npm run lint && npm run format && npm run css:improve && npm run css:minify && echo 'Production build completed'"
+    "css:minify": "bash ./scripts/minify-css.sh",
+    "css:improve": "bash ./scripts/improve-css-quality.sh",
+    "css:analyze": "bash ./scripts/find-unused-css.sh",
+    "css:switch": "bash ./scripts/switch-css-env.sh",
+    "build:prod": "npm run lint && npm run format && npm run css:improve && npm run css:minify && echo \"Production build completed\""
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

@@ -89,6 +89,7 @@ This document tracks the current status of the CSS modularization effort for the
    ```
 
 2. **Test thoroughly**:
+
    - Check all pages in different screen sizes
    - Verify interactive elements work as expected
    - Ensure transitions and animations are smooth
