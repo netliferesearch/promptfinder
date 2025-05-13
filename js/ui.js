@@ -48,7 +48,7 @@ window.PromptFinder.UI = (function () {
   const setupStorageChangeListener = () => {
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === 'local' && changes.promptUpdated) {
-        console.log('Detected prompt update from detached window, refreshing prompt list');
+        console.log('Detected prompt update from detached window, refreshing prompt data');
         
         PromptData.loadPrompts().then(prompts => {
           allPrompts = prompts;
@@ -78,19 +78,25 @@ window.PromptFinder.UI = (function () {
             if (tabFavs) tabFavs.classList.toggle('active', activeTab === 'favs');
             if (tabPrivate) tabPrivate.classList.toggle('active', activeTab === 'private');
           } else {
-            // In detail view - get the current prompt ID
-            const promptIdField = document.querySelector('#prompt-details-section [data-prompt-id]');
-            if (promptIdField && promptIdField.dataset.promptId) {
-              const promptId = promptIdField.dataset.promptId;
+            // In detail view - get the current prompt ID from the star rating container
+            const starRatingContainer = document.querySelector('#star-rating');
+            if (starRatingContainer && starRatingContainer.dataset.id) {
+              const promptId = starRatingContainer.dataset.id;
+              console.log('Found prompt ID in detail view:', promptId);
+              
               // Find the updated prompt
               const updatedPrompt = allPrompts.find(p => p.id === promptId);
               if (updatedPrompt) {
+                console.log('Found updated prompt, refreshing detail view:', updatedPrompt.title);
                 displayPromptDetails(updatedPrompt);
+                Utils.showConfirmationMessage('Prompt details updated with recent changes');
+              } else {
+                console.warn('Could not find updated prompt with ID:', promptId);
               }
+            } else {
+              console.warn('Could not find prompt ID in detail view');
             }
           }
-          
-          Utils.showConfirmationMessage('Prompt list updated with recent changes');
         }).catch(error => {
           Utils.handleError('Failed to refresh prompts after update', {
             userVisible: true,
