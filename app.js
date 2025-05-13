@@ -7,6 +7,8 @@
 
 // Initialize when DOM content is loaded
 document.addEventListener('DOMContentLoaded', () => {
+  console.info('PromptFinder extension initialized successfully');
+
   // Initialize the UI module, which will handle all UI setup and event listeners
   window.PromptFinder.UI.initializeUI();
 });
