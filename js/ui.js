@@ -95,7 +95,7 @@ window.PromptFinder.UI = (function () {
     // --- Add Prompt Button ---
     const addPromptButton = document.getElementById('add-prompt-button');
     if (addPromptButton) {
-      addPromptButton.addEventListener('click', showAddPrompt);
+      addPromptButton.addEventListener('click', openDetachedAddPromptWindow);
     }
 
     // --- Add Prompt Form ---
@@ -251,6 +251,39 @@ window.PromptFinder.UI = (function () {
     if (tabsEl) tabsEl.classList.add('hidden');
     if (bottomBar) bottomBar.classList.add('hidden');
     if (addPromptBar) addPromptBar.classList.add('hidden');
+  };
+  
+  /**
+   * Open a detached window for adding a new prompt
+   * This allows users to keep the form open while browsing other pages
+   */
+  const openDetachedAddPromptWindow = () => {
+    try {
+      const width = 500;
+      const height = 600;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      
+      chrome.windows.create({
+        url: chrome.runtime.getURL('add-prompt.html'),
+        type: 'popup',
+        width: width,
+        height: height,
+        left: Math.round(left),
+        top: Math.round(top),
+        focused: true
+      }, (window) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error opening detached window:', chrome.runtime.lastError);
+          showAddPrompt();
+        } else {
+          console.log('Detached add prompt window opened successfully');
+        }
+      });
+    } catch (error) {
+      console.error('Failed to open detached window:', error);
+      showAddPrompt();
+    }
   };
 
   /**
@@ -702,6 +735,7 @@ window.PromptFinder.UI = (function () {
     showPromptList,
     showPromptDetails,
     showAddPrompt,
+    openDetachedAddPromptWindow,
     showTab,
     displayPromptDetails,
     viewPromptDetails,

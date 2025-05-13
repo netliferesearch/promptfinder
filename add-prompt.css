@@ -1,0 +1,146 @@
+/* Styles for the detached Add Prompt window */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f8f9fa;
+  min-width: 400px;
+  min-height: 500px;
+}
+
+.detached-window-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.pf-header {
+  background-color: #7C4DFF;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pf-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+#add-prompt-section {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+#add-prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+#add-prompt-form div {
+  display: flex;
+  flex-direction: column;
+}
+
+#add-prompt-form label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+#add-prompt-form input[type="text"],
+#add-prompt-form textarea {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  font-size: 1rem;
+  background-color: white;
+  transition: border-color 0.2s;
+}
+
+#add-prompt-form input[type="text"]:focus,
+#add-prompt-form textarea:focus {
+  border-color: #7C4DFF;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 77, 255, 0.2);
+}
+
+#add-prompt-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+#add-prompt-form input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+#add-prompt-form div:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.form-buttons button[type="submit"] {
+  background-color: #7C4DFF;
+  color: white;
+}
+
+.form-buttons button[type="submit"]:hover {
+  background-color: #6a3de8;
+  transform: translateY(-1px);
+}
+
+.form-buttons button[type="button"] {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.form-buttons button[type="button"]:hover {
+  background-color: #e0e0e0;
+}
+
+/* Message styles */
+#confirmation-message,
+#error-message {
+  padding: 1rem;
+  margin: 1rem;
+  border-radius: 24px;
+  text-align: center;
+}
+
+#confirmation-message {
+  background-color: #e6f7e6;
+  color: #2e7d32;
+}
+
+#error-message {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.hidden {
+  display: none !important;
+}
