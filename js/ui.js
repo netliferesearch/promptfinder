@@ -55,8 +55,28 @@ window.PromptFinder.UI = (function () {
           
           // Update UI based on current view
           if (document.getElementById('prompt-details-section').classList.contains('hidden')) {
-            // In list view
-            showTab(activeTab);
+            // In list view - force immediate refresh
+            const searchInput = document.getElementById('search-input');
+            const minRatingSelect = document.getElementById('min-rating');
+            
+            const filters = {
+              tab: activeTab,
+              searchTerm: searchInput ? searchInput.value : '',
+              minRating: minRatingSelect ? parseInt(minRatingSelect.value) : 0,
+            };
+            
+            // Filter and display prompts directly without going through showTab
+            const filtered = PromptData.filterPrompts(allPrompts, filters);
+            displayPrompts(filtered);
+            
+            // Update tab state in UI to ensure visual consistency
+            const tabAll = document.getElementById('tab-all');
+            const tabFavs = document.getElementById('tab-favs');
+            const tabPrivate = document.getElementById('tab-private');
+            
+            if (tabAll) tabAll.classList.toggle('active', activeTab === 'all');
+            if (tabFavs) tabFavs.classList.toggle('active', activeTab === 'favs');
+            if (tabPrivate) tabPrivate.classList.toggle('active', activeTab === 'private');
           } else {
             // In detail view - get the current prompt ID
             const promptIdField = document.querySelector('#prompt-details-section [data-prompt-id]');
