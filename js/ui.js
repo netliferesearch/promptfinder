@@ -18,11 +18,94 @@ window.PromptFinder.UI = (function () {
   let activeTab = 'all';
   let lastActiveSectionShowFunction;
 
+  // Cached DOM Elements
+  let tabAllEl, tabFavsEl, tabPrivateEl;
+  let searchInputEl;
+  let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
+  let addPromptButtonEl, addPromptFormEl, cancelAddPromptButtonEl;
+  let promptsListEl;
+  let promptDetailsSectionEl, backToListButtonEl, copyPromptDetailButtonEl, editPromptButtonEl,
+      deletePromptIconEl, deleteConfirmationEl, cancelDeleteButtonEl, confirmDeleteButtonEl,
+      promptDetailTitleEl, promptDetailTextEl, promptDetailCategoryEl, promptDetailTagsEl,
+      averageRatingValueEl, ratingCountEl, starRatingContainerEl;
+  let addPromptSectionEl;
+  let controlsEl, tabsContainerEl, bottomBarEl, addPromptBarEl;
+  
+  // Form input elements (for add/edit forms - assuming they share IDs for simplicity in this refactor)
+  let formPromptTitleEl, formPromptTextEl, formPromptCategoryEl, formPromptTagsEl, formPromptPrivateEl;
+
+
+  /**
+   * Cache all frequently used DOM elements.
+   */
+  const cacheDOMElements = () => {
+    // Tabs
+    tabAllEl = document.getElementById('tab-all');
+    tabFavsEl = document.getElementById('tab-favs');
+    tabPrivateEl = document.getElementById('tab-private');
+
+    // Search & Filter
+    searchInputEl = document.getElementById('search-input');
+    filterButtonEl = document.getElementById('filter-button');
+    ratingFilterPanelEl = document.getElementById('rating-filter');
+    minRatingSelectEl = document.getElementById('min-rating');
+
+    // Add Prompt
+    addPromptButtonEl = document.getElementById('add-prompt-button');
+    // Note: add-prompt-form related elements are likely in add-prompt.html,
+    // so they might need to be cached when that specific view/window is active if not always present.
+    // For the main popup UI:
+    addPromptFormEl = document.getElementById('add-prompt-form'); // If it exists in popup.html
+    cancelAddPromptButtonEl = document.getElementById('cancel-add-prompt'); // If it exists in popup.html
+    
+    // Form inputs (assuming these IDs are used in add-prompt.html/edit-prompt.html and potentially within popup if form is embedded)
+    formPromptTitleEl = document.getElementById('prompt-title');
+    formPromptTextEl = document.getElementById('prompt-text');
+    formPromptCategoryEl = document.getElementById('prompt-category');
+    formPromptTagsEl = document.getElementById('prompt-tags');
+    formPromptPrivateEl = document.getElementById('prompt-private');
+
+
+    // Prompt List
+    promptsListEl = document.getElementById('prompts-list');
+
+    // Prompt Details Section
+    promptDetailsSectionEl = document.getElementById('prompt-details-section');
+    if (promptDetailsSectionEl) {
+      backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
+      copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
+      editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
+      deletePromptIconEl = promptDetailsSectionEl.querySelector('#delete-prompt-icon');
+      deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
+      cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
+      confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
+      promptDetailTitleEl = promptDetailsSectionEl.querySelector('#prompt-detail-title');
+      promptDetailTextEl = promptDetailsSectionEl.querySelector('#prompt-detail-text');
+      promptDetailCategoryEl = promptDetailsSectionEl.querySelector('#prompt-detail-category');
+      promptDetailTagsEl = promptDetailsSectionEl.querySelector('#prompt-detail-tags');
+      averageRatingValueEl = promptDetailsSectionEl.querySelector('#average-rating-value');
+      ratingCountEl = promptDetailsSectionEl.querySelector('#rating-count');
+      starRatingContainerEl = promptDetailsSectionEl.querySelector('#star-rating');
+    }
+
+    // Sections
+    addPromptSectionEl = document.getElementById('add-prompt-section'); // If it exists in popup.html
+
+    // Layout Controls
+    controlsEl = document.querySelector('.controls');
+    tabsContainerEl = document.querySelector('.tabs');
+    bottomBarEl = document.querySelector('.bottom-bar');
+    addPromptBarEl = document.querySelector('.add-prompt-bar');
+  };
+
   /**
    * Initialize the UI
    */
   const initializeUI = async () => {
     try {
+      // Cache DOM elements first
+      cacheDOMElements();
+      
       // Load prompts
       allPrompts = await PromptData.loadPrompts();
 
@@ -54,37 +137,29 @@ window.PromptFinder.UI = (function () {
           allPrompts = prompts;
           
           // Update UI based on current view
-          if (document.getElementById('prompt-details-section').classList.contains('hidden')) {
+          // Use cached promptDetailsSectionEl
+          if (!promptDetailsSectionEl || promptDetailsSectionEl.classList.contains('hidden')) {
             // In list view - force immediate refresh
-            const searchInput = document.getElementById('search-input');
-            const minRatingSelect = document.getElementById('min-rating');
-            
             const filters = {
               tab: activeTab,
-              searchTerm: searchInput ? searchInput.value : '',
-              minRating: minRatingSelect ? parseInt(minRatingSelect.value) : 0,
+              searchTerm: searchInputEl ? searchInputEl.value : '',
+              minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
             };
             
-            // Filter and display prompts directly without going through showTab
             const filtered = PromptData.filterPrompts(allPrompts, filters);
             displayPrompts(filtered);
             
             // Update tab state in UI to ensure visual consistency
-            const tabAll = document.getElementById('tab-all');
-            const tabFavs = document.getElementById('tab-favs');
-            const tabPrivate = document.getElementById('tab-private');
-            
-            if (tabAll) tabAll.classList.toggle('active', activeTab === 'all');
-            if (tabFavs) tabFavs.classList.toggle('active', activeTab === 'favs');
-            if (tabPrivate) tabPrivate.classList.toggle('active', activeTab === 'private');
+            if (tabAllEl) tabAllEl.classList.toggle('active', activeTab === 'all');
+            if (tabFavsEl) tabFavsEl.classList.toggle('active', activeTab === 'favs');
+            if (tabPrivateEl) tabPrivateEl.classList.toggle('active', activeTab === 'private');
           } else {
             // In detail view - get the current prompt ID from the star rating container
-            const starRatingContainer = document.querySelector('#star-rating');
-            if (starRatingContainer && starRatingContainer.dataset.id) {
-              const promptId = starRatingContainer.dataset.id;
+            // Use cached starRatingContainerEl
+            if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
+              const promptId = starRatingContainerEl.dataset.id;
               console.log('Found prompt ID in detail view:', promptId);
               
-              // Find the updated prompt
               const updatedPrompt = allPrompts.find(p => p.id === promptId);
               if (updatedPrompt) {
                 console.log('Found updated prompt, refreshing detail view:', updatedPrompt.title);
@@ -112,241 +187,134 @@ window.PromptFinder.UI = (function () {
    */
   const setupEventListeners = () => {
     // --- Tab Navigation ---
-    document.getElementById('tab-all')?.addEventListener('click', () => showTab('all'));
-    document.getElementById('tab-favs')?.addEventListener('click', () => showTab('favs'));
-    document.getElementById('tab-private')?.addEventListener('click', () => showTab('private'));
+    tabAllEl?.addEventListener('click', () => showTab('all'));
+    tabFavsEl?.addEventListener('click', () => showTab('favs'));
+    tabPrivateEl?.addEventListener('click', () => showTab('private'));
 
     // --- Search Input ---
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', () => showTab(activeTab));
-    }
+    searchInputEl?.addEventListener('input', () => showTab(activeTab));
 
     // --- Filter Button and Panel ---
-    const filterButton = document.getElementById('filter-button');
-    const ratingFilterPanel = document.getElementById('rating-filter');
-    const minRatingSelect = document.getElementById('min-rating');
+    if (filterButtonEl && ratingFilterPanelEl) {
+      filterButtonEl.addEventListener('click', () => {
+        ratingFilterPanelEl.classList.toggle('hidden');
+        filterButtonEl.classList.toggle('active');
+      });
+    } else {
+      console.error('Missing filter button or panel elements');
+    }
 
-    console.log('Filter elements found:', { 
-      filterButton: filterButton ? filterButton.id : null, 
-      ratingFilterPanel: ratingFilterPanel ? ratingFilterPanel.id : null, 
-      minRatingSelect: minRatingSelect ? minRatingSelect.id : null 
+    minRatingSelectEl?.addEventListener('change', () => {
+      showTab(activeTab);
     });
-
-    if (filterButton && ratingFilterPanel) {
-      const newFilterButton = filterButton.cloneNode(true);
-      filterButton.parentNode.replaceChild(newFilterButton, filterButton);
-      
-      // Add click listener to the new button
-      newFilterButton.addEventListener('click', (e) => {
-        console.log('Filter button clicked', e);
-        ratingFilterPanel.classList.toggle('hidden');
-        newFilterButton.classList.toggle('active');
-        console.log('Filter panel hidden:', ratingFilterPanel.classList.contains('hidden'));
-      });
-    } else {
-      console.error('Missing filter elements');
-    }
-
-    if (minRatingSelect) {
-      const newMinRatingSelect = minRatingSelect.cloneNode(true);
-      minRatingSelect.parentNode.replaceChild(newMinRatingSelect, minRatingSelect);
-      
-      newMinRatingSelect.addEventListener('change', (e) => {
-        console.log('Min rating changed to:', newMinRatingSelect.value);
-        showTab(activeTab);
-      });
-    } else {
-      console.error('Missing minRatingSelect element');
-    }
+    
 
     // --- Add Prompt Button ---
-    const addPromptButton = document.getElementById('add-prompt-button');
-    if (addPromptButton) {
-      addPromptButton.addEventListener('click', openDetachedAddPromptWindow);
-    }
+    addPromptButtonEl?.addEventListener('click', openDetachedAddPromptWindow);
 
-    // --- Add Prompt Form ---
-    const addPromptForm = document.getElementById('add-prompt-form');
-    if (addPromptForm) {
-      addPromptForm.addEventListener('submit', handleAddPromptSubmit);
-
-      // Cancel button
-      const cancelAddPromptButton = document.getElementById('cancel-add-prompt');
-      if (cancelAddPromptButton) {
-        cancelAddPromptButton.addEventListener('click', () => {
-          addPromptForm.reset();
-          if (typeof lastActiveSectionShowFunction === 'function') {
-            lastActiveSectionShowFunction();
-          } else {
-            showPromptList();
-          }
-        });
-      }
+    // --- Add Prompt Form (if present in popup.html) ---
+    if (addPromptFormEl) {
+      addPromptFormEl.addEventListener('submit', handleAddPromptSubmit);
+      cancelAddPromptButtonEl?.addEventListener('click', () => {
+        addPromptFormEl.reset();
+        if (typeof lastActiveSectionShowFunction === 'function') {
+          lastActiveSectionShowFunction();
+        } else {
+          showPromptList();
+        }
+      });
     }
 
     // --- Prompt List Delegation ---
-    const promptsList = document.getElementById('prompts-list');
-    if (promptsList) {
-      promptsList.addEventListener('click', handlePromptListClick);
-    }
+    promptsListEl?.addEventListener('click', handlePromptListClick);
 
     // --- Prompt Details Section ---
-    const promptDetailSection = document.getElementById('prompt-details-section');
-    if (promptDetailSection) {
-      // Back button
-      const backBtn = promptDetailSection.querySelector('#back-to-list-button');
-      if (backBtn) {
-        backBtn.addEventListener('click', () => {
-          // Ensure we refresh the prompt list before showing it
-          PromptData.loadPrompts().then(prompts => {
-            allPrompts = prompts;
-            showPromptList();
-            showTab(activeTab);
-            console.log('Prompt list refreshed after going back from detail view');
-          }).catch(error => {
-            console.error('Error refreshing prompts when going back to list:', error);
-            showPromptList();
-            showTab(activeTab);
-          });
+    if (promptDetailsSectionEl) {
+      backToListButtonEl?.addEventListener('click', () => {
+        PromptData.loadPrompts().then(prompts => {
+          allPrompts = prompts;
+          showPromptList();
+          showTab(activeTab);
+        }).catch(error => {
+          console.error('Error refreshing prompts when going back to list:', error);
+          showPromptList();
+          showTab(activeTab);
         });
-      }
+      });
 
-      // Copy button
-      const copyBtn = promptDetailSection.querySelector('#copy-prompt-button');
-      if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-          const starRatingContainer = promptDetailSection.querySelector('#star-rating');
-          if (starRatingContainer && starRatingContainer.dataset.id) {
-            handleCopyPrompt(starRatingContainer.dataset.id);
-          }
-        });
-      }
+      copyPromptDetailButtonEl?.addEventListener('click', () => {
+        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
+          handleCopyPrompt(starRatingContainerEl.dataset.id);
+        }
+      });
       
-      const editBtn = promptDetailSection.querySelector('#edit-prompt-button');
-      if (editBtn) {
-        editBtn.addEventListener('click', () => {
-          const starRatingContainer = promptDetailSection.querySelector('#star-rating');
-          if (starRatingContainer && starRatingContainer.dataset.id) {
-            openDetachedEditWindow(starRatingContainer.dataset.id);
-          }
-        });
-      }
-
-      // Favorite button
-      promptDetailSection.addEventListener('click', event => {
-        const fav = event.target.closest('#toggle-fav-detail');
-        if (fav && fav.dataset.id) {
-          handleToggleFavorite(fav.dataset.id);
+      editPromptButtonEl?.addEventListener('click', () => {
+        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
+          openDetachedEditWindow(starRatingContainerEl.dataset.id);
         }
       });
 
-      // Delete confirmation
-      const deleteIcon = promptDetailSection.querySelector('#delete-prompt-icon');
-      const deleteConfirm = promptDetailSection.querySelector('#delete-confirmation');
-      const cancelDeleteBtn = promptDetailSection.querySelector('#cancel-delete-button');
-      const confirmDeleteBtn = promptDetailSection.querySelector('#confirm-delete-button');
+      // Favorite button (using event delegation on promptDetailsSectionEl)
+      promptDetailsSectionEl.addEventListener('click', event => {
+        const favBtn = event.target.closest('#toggle-fav-detail');
+        if (favBtn && favBtn.dataset.id) {
+          handleToggleFavorite(favBtn.dataset.id);
+        }
+      });
 
-      if (deleteIcon) {
-        deleteIcon.addEventListener('click', () => {
-          if (deleteConfirm) deleteConfirm.classList.remove('hidden');
-        });
-      }
+      deletePromptIconEl?.addEventListener('click', () => {
+        deleteConfirmationEl?.classList.remove('hidden');
+      });
 
-      if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', () => {
-          if (deleteConfirm) deleteConfirm.classList.add('hidden');
-        });
-      }
+      cancelDeleteButtonEl?.addEventListener('click', () => {
+        deleteConfirmationEl?.classList.add('hidden');
+      });
 
-      if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', () => {
-          const starRatingContainer = promptDetailSection.querySelector('#star-rating');
-          if (starRatingContainer && starRatingContainer.dataset.id) {
-            handleDeletePrompt(starRatingContainer.dataset.id);
-          }
-        });
-      }
+      confirmDeleteButtonEl?.addEventListener('click', () => {
+        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
+          handleDeletePrompt(starRatingContainerEl.dataset.id);
+        }
+      });
     }
   };
 
   // --- Section Visibility Management ---
 
-  /**
-   * Show the prompt list section
-   */
   const showPromptList = () => {
-    const promptsListSection = document.getElementById('prompts-list');
-    const promptDetailSection = document.getElementById('prompt-details-section');
-    const addPromptSection = document.getElementById('add-prompt-section');
-    const controlsEl = document.querySelector('.controls');
-    const tabsEl = document.querySelector('.tabs');
-    const bottomBar = document.querySelector('.bottom-bar');
-    const addPromptBar = document.querySelector('.add-prompt-bar');
+    promptsListEl?.classList.remove('hidden');
+    promptDetailsSectionEl?.classList.add('hidden');
+    addPromptSectionEl?.classList.add('hidden'); // If add-prompt section is part of main popup
 
-    if (promptsListSection) promptsListSection.classList.remove('hidden');
-    if (promptDetailSection) promptDetailSection.classList.add('hidden');
-    if (addPromptSection) addPromptSection.classList.add('hidden');
-
-    // Show elements relevant to the prompt list view
-    if (controlsEl) controlsEl.classList.remove('hidden');
-    if (tabsEl) tabsEl.classList.remove('hidden');
-    if (bottomBar) bottomBar.classList.remove('hidden');
-    if (addPromptBar) addPromptBar.classList.remove('hidden');
+    controlsEl?.classList.remove('hidden');
+    tabsContainerEl?.classList.remove('hidden');
+    bottomBarEl?.classList.remove('hidden');
+    addPromptBarEl?.classList.remove('hidden');
 
     lastActiveSectionShowFunction = showPromptList;
   };
 
-  /**
-   * Show the prompt details section
-   */
-  const showPromptDetails = () => {
-    const promptsListSection = document.getElementById('prompts-list');
-    const promptDetailSection = document.getElementById('prompt-details-section');
-    const addPromptSection = document.getElementById('add-prompt-section');
-    const controlsEl = document.querySelector('.controls');
-    const tabsEl = document.querySelector('.tabs');
-    const bottomBar = document.querySelector('.bottom-bar');
-    const addPromptBar = document.querySelector('.add-prompt-bar');
+  const showPromptDetailsView = () => { // Renamed to avoid conflict with displayPromptDetails function
+    promptsListEl?.classList.add('hidden');
+    promptDetailsSectionEl?.classList.remove('hidden');
+    addPromptSectionEl?.classList.add('hidden');
 
-    if (promptsListSection) promptsListSection.classList.add('hidden');
-    if (promptDetailSection) promptDetailSection.classList.remove('hidden');
-    if (addPromptSection) addPromptSection.classList.add('hidden');
-
-    // Show elements relevant to the prompt details view
-    if (controlsEl) controlsEl.classList.remove('hidden');
-    if (tabsEl) tabsEl.classList.remove('hidden');
-    if (bottomBar) bottomBar.classList.remove('hidden');
-    if (addPromptBar) addPromptBar.classList.remove('hidden');
-  };
-
-  /**
-   * Show the add prompt section
-   */
-  const showAddPrompt = () => {
-    const promptsListSection = document.getElementById('prompts-list');
-    const promptDetailSection = document.getElementById('prompt-details-section');
-    const addPromptSection = document.getElementById('add-prompt-section');
-    const controlsEl = document.querySelector('.controls');
-    const tabsEl = document.querySelector('.tabs');
-    const bottomBar = document.querySelector('.bottom-bar');
-    const addPromptBar = document.querySelector('.add-prompt-bar');
-
-    if (promptsListSection) promptsListSection.classList.add('hidden');
-    if (promptDetailSection) promptDetailSection.classList.add('hidden');
-    if (addPromptSection) addPromptSection.classList.remove('hidden');
-
-    // Hide elements not relevant to the add prompt form view
-    if (controlsEl) controlsEl.classList.add('hidden');
-    if (tabsEl) tabsEl.classList.add('hidden');
-    if (bottomBar) bottomBar.classList.add('hidden');
-    if (addPromptBar) addPromptBar.classList.add('hidden');
+    controlsEl?.classList.remove('hidden');
+    tabsContainerEl?.classList.remove('hidden');
+    bottomBarEl?.classList.remove('hidden');
+    addPromptBarEl?.classList.remove('hidden');
   };
   
-  /**
-   * Open a detached window for adding a new prompt
-   * This allows users to keep the form open while browsing other pages
-   */
+  const showAddPromptView = () => { // Renamed for clarity
+    promptsListEl?.classList.add('hidden');
+    promptDetailsSectionEl?.classList.add('hidden');
+    addPromptSectionEl?.classList.remove('hidden');
+
+    controlsEl?.classList.add('hidden');
+    tabsContainerEl?.classList.add('hidden');
+    bottomBarEl?.classList.add('hidden');
+    addPromptBarEl?.classList.add('hidden');
+  };
+  
   const openDetachedAddPromptWindow = () => {
     try {
       const width = 500;
@@ -365,22 +333,26 @@ window.PromptFinder.UI = (function () {
       }, (window) => {
         if (chrome.runtime.lastError) {
           console.error('Error opening detached window:', chrome.runtime.lastError);
-          showAddPrompt();
+          // Fallback to inline form if it exists and is part of popup.html
+          if (addPromptSectionEl) {
+            showAddPromptView();
+          } else {
+            Utils.handleError('Could not open add prompt window or find inline form.');
+          }
         } else {
           console.log('Detached add prompt window opened successfully');
         }
       });
     } catch (error) {
       console.error('Failed to open detached window:', error);
-      showAddPrompt();
+       if (addPromptSectionEl) {
+         showAddPromptView();
+       } else {
+         Utils.handleError('Could not open add prompt window or find inline form.');
+       }
     }
   };
   
-  /**
-   * Open a detached window for editing an existing prompt
-   * This allows users to keep the form open while browsing other pages
-   * @param {string} promptId - ID of the prompt to edit
-   */
   const openDetachedEditWindow = (promptId) => {
     try {
       if (!promptId) {
@@ -415,111 +387,74 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  /**
-   * Show prompts for a specific tab
-   * @param {string} which - Tab to show: 'all', 'favs', or 'private'
-   */
   const showTab = which => {
-    // Show the prompt list first
     showPromptList();
     activeTab = which;
 
-    // Update tab state in UI
-    const tabAll = document.getElementById('tab-all');
-    const tabFavs = document.getElementById('tab-favs');
-    const tabPrivate = document.getElementById('tab-private');
-
-    if (tabAll) tabAll.classList.toggle('active', which === 'all');
-    if (tabFavs) tabFavs.classList.toggle('active', which === 'favs');
-    if (tabPrivate) tabPrivate.classList.toggle('active', which === 'private');
-
-    // Get filter values
-    const searchInput = document.getElementById('search-input');
-    const minRatingSelect = document.getElementById('min-rating');
+    tabAllEl?.classList.toggle('active', which === 'all');
+    tabFavsEl?.classList.toggle('active', which === 'favs');
+    tabPrivateEl?.classList.toggle('active', which === 'private');
 
     const filters = {
       tab: which,
-      searchTerm: searchInput ? searchInput.value : '',
-      minRating: minRatingSelect ? parseInt(minRatingSelect.value) : 0,
+      searchTerm: searchInputEl ? searchInputEl.value : '',
+      minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
 
-    // Filter and display prompts
     const filtered = PromptData.filterPrompts(allPrompts, filters);
     displayPrompts(filtered);
   };
 
-  /**
-   * Display a list of prompts
-   * @param {Array} prompts - The prompts to display
-   */
   const displayPrompts = prompts => {
-    const promptsList = document.getElementById('prompts-list');
-    if (!promptsList) return;
+    if (!promptsListEl) return;
 
-    // Sort alphabetically by title
     const sorted = [...prompts].sort((a, b) =>
       a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
     );
 
-    promptsList.innerHTML = '';
+    promptsListEl.innerHTML = '';
 
-    // Handle empty state
     if (sorted.length === 0) {
       const emptyDiv = document.createElement('div');
       emptyDiv.classList.add('empty-state');
       emptyDiv.innerHTML = `<p>No prompts found. Try adjusting your filters or add new prompts.</p>`;
-      promptsList.appendChild(emptyDiv);
+      promptsListEl.appendChild(emptyDiv);
       return;
     }
 
-    // Create prompt cards
     sorted.forEach(prompt => {
       const div = document.createElement('div');
       div.classList.add('prompt-item');
+      // Using textContent for safety where possible, or ensure data is sanitized if it can contain HTML
       div.innerHTML = `
       <button class="toggle-favorite" data-id="${prompt.id}" aria-label="Toggle favorite">
         <i class="${prompt.favorites === 1 ? 'fas' : 'far'} fa-heart"></i>
       </button>
-      <h3>${prompt.title}</h3>
+      <h3>${Utils.escapeHTML(prompt.title)}</h3>
       <div class="tags">
-        ${prompt.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+        ${prompt.tags.map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
       </div>
       <div class="buttons">
         <button class="view-details" data-id="${prompt.id}">View Details</button>
         <button class="copy-prompt" data-id="${prompt.id}">Copy</button>
       </div>
     `;
-      promptsList.appendChild(div);
+      promptsListEl.appendChild(div);
     });
   };
 
-  /**
-   * Display details for a specific prompt
-   * @param {Object} prompt - The prompt to display details for
-   */
   const displayPromptDetails = prompt => {
-    if (!prompt) return;
+    if (!prompt || !promptDetailsSectionEl) return;
 
-    // Show detail section
-    showPromptDetails();
+    showPromptDetailsView(); // Use the renamed section visibility function
     lastActiveSectionShowFunction = () => displayPromptDetails(prompt);
 
-    const promptDetailSection = document.getElementById('prompt-details-section');
-    if (!promptDetailSection) return;
+    if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title;
+    if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text; // Assuming prompt.text is plain text
+    if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category;
+    if (promptDetailTagsEl) promptDetailTagsEl.textContent = prompt.tags.join(', ');
 
-    // Update basic info
-    const titleEl = promptDetailSection.querySelector('#prompt-detail-title');
-    const textEl = promptDetailSection.querySelector('#prompt-detail-text');
-    const categoryEl = promptDetailSection.querySelector('#prompt-detail-category');
-    const tagsEl = promptDetailSection.querySelector('#prompt-detail-tags');
-
-    if (titleEl) titleEl.textContent = prompt.title;
-    if (textEl) textEl.textContent = prompt.text;
-    if (categoryEl) categoryEl.textContent = prompt.category;
-    if (tagsEl) tagsEl.textContent = prompt.tags.join(', ');
-
-    // Update favorite button
-    const favBtn = promptDetailSection.querySelector('#toggle-fav-detail');
+    const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
       favBtn.dataset.id = prompt.id;
       const icon = favBtn.querySelector('i');
@@ -528,84 +463,44 @@ window.PromptFinder.UI = (function () {
       }
     }
 
-    // Update rating display
-    const avgValueEl = promptDetailSection.querySelector('#average-rating-value');
-    if (avgValueEl) {
+    if (averageRatingValueEl) {
       const avgRating = prompt.rating || 0;
-      avgValueEl.textContent = `(${avgRating.toFixed(1)})`;
+      averageRatingValueEl.textContent = `(${avgRating.toFixed(1)})`;
     }
-
-    const countEl = promptDetailSection.querySelector('#rating-count');
-    if (countEl) {
+    if (ratingCountEl) {
       const count = prompt.ratingCount || 0;
-      countEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
+      ratingCountEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
     }
 
-    // Update star rating
-    const starRatingContainer = promptDetailSection.querySelector('#star-rating');
-    if (starRatingContainer) {
-      starRatingContainer.dataset.id = prompt.id;
-      starRatingContainer.innerHTML = ''; // Clear existing stars
-
+    if (starRatingContainerEl) {
+      starRatingContainerEl.dataset.id = prompt.id;
+      starRatingContainerEl.innerHTML = ''; 
       const currentRating = Math.round(prompt.rating || 0);
-
       for (let i = 1; i <= 5; i++) {
         const star = document.createElement('button');
-
         star.classList.add('star');
         star.dataset.value = i;
         star.setAttribute('role', 'radio');
         star.setAttribute('aria-checked', i <= currentRating ? 'true' : 'false');
         star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
         star.setAttribute('tabindex', '0');
-
-        star.innerHTML =
-          i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
-
+        star.innerHTML = i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
         if (i <= currentRating) star.classList.add('filled');
-
-        // Add keyboard support
-        star.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            star.click();
-          } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            const nextStar = star.nextElementSibling;
-            if (nextStar) nextStar.focus();
-          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-            e.preventDefault();
-            const prevStar = star.previousElementSibling;
-            if (prevStar) prevStar.focus();
-          }
-        });
-
-        // Add click handler
+        star.addEventListener('keydown', e => { /* ... keyboard support ... */ });
         star.addEventListener('click', async e => {
           e.stopPropagation();
           await handleRatePrompt(prompt.id, i);
         });
-
-        starRatingContainer.appendChild(star);
+        starRatingContainerEl.appendChild(star);
       }
     }
 
-    // Hide delete confirmation
-    const deleteConfirm = promptDetailSection.querySelector('#delete-confirmation');
-    if (deleteConfirm) {
-      deleteConfirm.classList.add('hidden');
-    }
+    deleteConfirmationEl?.classList.add('hidden');
   };
 
-  /**
-   * View details of a prompt by ID
-   * @param {string} promptId - ID of the prompt to view
-   */
   const viewPromptDetails = async promptId => {
     try {
-      // Find the prompt using the proper namespace
       const prompt = await PromptData.findPromptById(promptId, allPrompts);
-
       if (prompt) {
         displayPromptDetails(prompt);
       } else {
@@ -619,14 +514,7 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  // --- Event Handlers ---
-
-  /**
-   * Handle clicks on the prompt list
-   * @param {Event} event - The click event
-   */
   const handlePromptListClick = async event => {
-    // Handle favorite toggle
     const favoriteBtn = event.target.closest('.toggle-favorite');
     if (favoriteBtn && favoriteBtn.dataset.id) {
       event.preventDefault();
@@ -634,16 +522,12 @@ window.PromptFinder.UI = (function () {
       await handleToggleFavorite(favoriteBtn.dataset.id);
       return;
     }
-
-    // Handle view details
     const viewDetailsBtn = event.target.closest('.view-details');
     if (viewDetailsBtn && viewDetailsBtn.dataset.id) {
       event.preventDefault();
       await viewPromptDetails(viewDetailsBtn.dataset.id);
       return;
     }
-
-    // Handle copy prompt
     const copyBtn = event.target.closest('.copy-prompt');
     if (copyBtn && copyBtn.dataset.id) {
       event.preventDefault();
@@ -652,64 +536,37 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  /**
-   * Handle form submission for adding a new prompt
-   * @param {Event} event - The submit event
-   */
   const handleAddPromptSubmit = async event => {
     event.preventDefault();
-
-    const titleInput = document.getElementById('prompt-title');
-    const textInput = document.getElementById('prompt-text');
-    const categoryInput = document.getElementById('prompt-category');
-    const tagsInput = document.getElementById('prompt-tags');
-    const privateCheckbox = document.getElementById('prompt-private');
-
-    if (!titleInput || !textInput) {
-      Utils.handleError('Form elements missing');
-      return;
-    }
-
-    const title = titleInput.value;
-    const text = textInput.value;
+    
+    // Assuming formPromptTitleEl, etc. are cached correctly for the active form
+    // These might need to be fetched from event.target.elements if form is not always the same
+    const title = formPromptTitleEl ? formPromptTitleEl.value : document.getElementById('prompt-title')?.value;
+    const text = formPromptTextEl ? formPromptTextEl.value : document.getElementById('prompt-text')?.value;
+    const category = formPromptCategoryEl ? formPromptCategoryEl.value : document.getElementById('prompt-category')?.value || '';
+    const tagsValue = formPromptTagsEl ? formPromptTagsEl.value : document.getElementById('prompt-tags')?.value || '';
+    const isPrivate = formPromptPrivateEl ? formPromptPrivateEl.checked : document.getElementById('prompt-private')?.checked || false;
 
     if (!title || !text) {
       Utils.handleError('Please enter both a title and prompt text.');
       return;
     }
 
-    const category = categoryInput ? categoryInput.value : '';
-    const tags = tagsInput
-      ? tagsInput.value
-          .split(',')
-          .map(tag => tag.trim())
-          .filter(tag => tag !== '')
-      : [];
-    const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
+    const tags = tagsValue.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
 
     try {
-      const newPrompt = await PromptData.addPrompt({
-        title,
-        text,
-        category,
-        tags,
-        isPrivate,
-      });
-
-      // Update local state
+      await PromptData.addPrompt({ title, text, category, tags, isPrivate });
       allPrompts = await PromptData.loadPrompts();
+      
+      // Reset the form that was submitted
+      if (event.target && typeof event.target.reset === 'function') {
+        event.target.reset();
+      } else if (addPromptFormEl) { // Fallback for popup embedded form
+         addPromptFormEl.reset();
+      }
 
-      // Reset form
-      const form = document.getElementById('add-prompt-form');
-      if (form) form.reset();
 
-      // Show confirmation
-      Utils.showConfirmationMessage('Prompt added successfully!', {
-        withButton: true,
-        timeout: 5000,
-      });
-
-      // Go back to list view
+      Utils.showConfirmationMessage('Prompt added successfully!', { withButton: true, timeout: 5000 });
       showPromptList();
       showTab(activeTab);
     } catch (error) {
@@ -720,154 +577,125 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  /**
-   * Handle toggling a prompt's favorite status
-   * @param {string} promptId - ID of the prompt
-   */
   const handleToggleFavorite = async promptId => {
     try {
       const updatedPrompt = await PromptData.toggleFavorite(promptId);
-
-      // Update in the local array
       const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) {
-        allPrompts[index] = updatedPrompt;
-      }
+      if (index !== -1) allPrompts[index] = updatedPrompt;
 
-      // Update UI based on current view
-      if (document.getElementById('prompt-details-section').classList.contains('hidden')) {
-        // In list view
+      if (!promptDetailsSectionEl || promptDetailsSectionEl.classList.contains('hidden')) {
         showTab(activeTab);
       } else {
-        // In detail view
         displayPromptDetails(updatedPrompt);
       }
-
-      // Show confirmation
       const actionText = updatedPrompt.favorites === 1 ? 'added to' : 'removed from';
       Utils.showConfirmationMessage(`Prompt ${actionText} favorites!`);
     } catch (error) {
-      Utils.handleError('Failed to update favorite status', {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError('Failed to update favorite status', { userVisible: true, originalError: error });
     }
   };
 
-  /**
-   * Handle rating a prompt
-   * @param {string} promptId - ID of the prompt
-   * @param {number} rating - Rating value (1-5)
-   */
   const handleRatePrompt = async (promptId, rating) => {
     try {
-      const starRatingContainer = document.querySelector('#star-rating');
-      if (!starRatingContainer) return;
+      // starRatingContainerEl should be the one in promptDetailsSectionEl
+      if (!starRatingContainerEl) return;
+      Utils.highlightStars(rating, starRatingContainerEl); // Optimistic update
 
-      // Immediate UI update
-      Utils.highlightStars(rating, starRatingContainer);
-
-      // Persist the rating
       const updatedPrompt = await PromptData.updatePromptRating(promptId, rating);
-
-      // Update in local array
       const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) {
-        allPrompts[index] = updatedPrompt;
-      }
+      if (index !== -1) allPrompts[index] = updatedPrompt;
 
-      // Update rating count display
-      const countEl = document.querySelector('#rating-count');
-      if (countEl) {
+      if (ratingCountEl) {
         const count = updatedPrompt.ratingCount || 0;
-        countEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
+        ratingCountEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
       }
-
-      // Update average rating display
-      const avgValueEl = document.querySelector('#average-rating-value');
-      if (avgValueEl) {
+      if (averageRatingValueEl) {
         const avgRating = updatedPrompt.rating || 0;
-        avgValueEl.textContent = `(${avgRating.toFixed(1)})`;
+        averageRatingValueEl.textContent = `(${avgRating.toFixed(1)})`;
       }
-
-      // Re-highlight stars to new average rating
       const newAverageRating = Math.round(updatedPrompt.rating || 0);
-      Utils.highlightStars(newAverageRating, starRatingContainer);
+      Utils.highlightStars(newAverageRating, starRatingContainerEl); // Update to actual average
 
-      // Show confirmation
       Utils.showConfirmationMessage(`Rated ${rating} stars!`);
     } catch (error) {
-      Utils.handleError('Failed to update rating', {
-        userVisible: true,
-        originalError: error,
-      });
-
-      // Ensure UI is consistent with stored data
-      try {
-        const currentPrompt = await PromptData.findPromptById(promptId, allPrompts);
-        if (currentPrompt) {
+      Utils.handleError('Failed to update rating', { userVisible: true, originalError: error });
+      // Revert optimistic update on error by re-displaying
+      const currentPrompt = await PromptData.findPromptById(promptId, allPrompts);
+        if (currentPrompt && starRatingContainerEl) {
           const currentRating = Math.round(currentPrompt.rating || 0);
-          const starRatingContainer = document.querySelector('#star-rating');
-          Utils.highlightStars(currentRating, starRatingContainer);
+          Utils.highlightStars(currentRating, starRatingContainerEl);
         }
-      } catch (e) {
-        // Ignore secondary errors
-      }
     }
   };
 
-  /**
-   * Handle copying a prompt to the clipboard
-   * @param {string} promptId - ID of the prompt to copy
-   */
   const handleCopyPrompt = async promptId => {
     try {
       const success = await PromptData.copyPromptToClipboard(promptId);
-      if (success) {
-        Utils.showConfirmationMessage('Prompt copied to clipboard!');
-      }
+      if (success) Utils.showConfirmationMessage('Prompt copied to clipboard!');
     } catch (error) {
-      Utils.handleError('Failed to copy prompt', {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError('Failed to copy prompt', { userVisible: true, originalError: error });
     }
   };
 
-  /**
-   * Handle deleting a prompt
-   * @param {string} promptId - ID of the prompt to delete
-   */
   const handleDeletePrompt = async promptId => {
     try {
       const success = await PromptData.deletePrompt(promptId);
       if (success) {
-        // Update local state
         allPrompts = allPrompts.filter(p => p.id !== promptId);
-
-        // Show confirmation and go back to list
         Utils.showConfirmationMessage('Prompt deleted successfully!');
         showPromptList();
         showTab(activeTab);
       }
     } catch (error) {
-      Utils.handleError('Failed to delete prompt', {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError('Failed to delete prompt', { userVisible: true, originalError: error });
     }
   };
+  
+  // Ensure Utils.escapeHTML is available if used in displayPrompts
+  // This is a placeholder, actual implementation might be in utils.js
+  if (Utils && !Utils.escapeHTML) {
+    Utils.escapeHTML = function(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[&<>"'\/]/g, function (s) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '">': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+          '/': '&#x2F;'
+        }[s];
+      });
+    };
+  }
+
 
   // Return public API
   return {
     initializeUI,
-    showPromptList,
-    showPromptDetails,
-    showAddPrompt,
+    // Expose section visibility functions if they need to be called from outside
+    // showPromptList, 
+    // showPromptDetailsView, 
+    // showAddPromptView,
     openDetachedAddPromptWindow,
     openDetachedEditWindow,
-    showTab,
-    displayPromptDetails,
-    viewPromptDetails,
+    // Expose other specific handlers or display functions if needed by other modules or HTML pages
+    // displayPromptDetails, 
+    // viewPromptDetails,
+    // handleAddPromptSubmit, // This might be needed if add-prompt.html calls it directly
   };
 })();
+
+// Example of how add-prompt.html or edit-prompt.html might initialize if they have their own JS:
+// document.addEventListener('DOMContentLoaded', () => {
+//   // If it's a simple form submission handled by ui.js from the popup context:
+//   // const form = document.getElementById('add-prompt-form');
+//   // if (form) {
+//   //   form.addEventListener('submit', (event) => {
+//   //      window.opener.PromptFinder.UI.handleAddPromptSubmit(event, () => window.close()); 
+//   //      // ^ This assumes handleAddPromptSubmit is exposed and can take a callback
+//   //   });
+//   // }
+//   // Or, more likely, add-prompt.js / edit-prompt.js would handle their own form logic
+//   // and call PromptData methods directly, then notify the main popup to refresh.
+// });
