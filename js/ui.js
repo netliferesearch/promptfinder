@@ -610,9 +610,19 @@ window.PromptFinder.UI = (function () {
     };
   }
 
+  // Public API
   return {
     initializeUI,
     openDetachedAddPromptWindow,
     openDetachedEditWindow,
+    // For testing purposes - match what tests expect or update tests
+    showTab,
+    displayPrompts,
+    displayPromptDetails,
+    viewPromptDetails,
+    showPromptList,
+    showPromptDetails: showPromptDetailsView, // Alias for test compatibility
+    showAddPrompt: showAddPromptView,       // Alias for test compatibility
+    handleAddPromptSubmit, // Expose if detached windows need to call it via window.opener
   };
 })();
