@@ -1,0 +1,133 @@
+/* Tab components for PromptFinder extension */
+
+/* Tab container */
+.tabs{
+display:flex;
+flex-direction:column;
+width:100%;
+}
+
+/* Tab navigation */
+.tabs-nav{
+display:flex;
+border-bottom:1px solid var(--color-gray-300);
+background-color:var(--color-white);
+overflow-x:auto;
+scrollbar-width:none;/* Firefox */
+}
+
+.tabs-nav::-webkit-scrollbar{
+display:none;/* Chrome, Safari and Opera */
+}
+
+/* Tab buttons */
+.tab-button{
+padding:var(--spacing-md) var(--spacing-lg);
+background:none;
+border:none;
+border-bottom:3px solid transparent;
+font-weight:500;
+color:var(--color-gray-500);
+white-space:nowrap;
+ransition:all 0.2s;
+cursor:pointer;
+}
+
+.tab-button:hover{
+color:var(--color-primary);
+}
+
+.tab-button.active{
+color:var(--color-primary);
+border-bottom-color:var(--color-primary);
+}
+
+/* Tab content areas */
+.tab-content{
+padding:var(--spacing-md);
+background-color:var(--color-white);
+flex-grow:1;
+overflow-y:auto;
+}
+
+.tab-panel{
+display:none;
+}
+
+.tab-panel.active{
+display:block;
+}
+
+/* Pill style tabs alternative */
+.tabs-pills{
+display:flex;
+flex-wrap:wrap;
+gap:var(--spacing-sm);
+padding:var(--spacing-sm);
+background-color:var(--color-white);
+}
+
+.tab-pill{
+padding:var(--spacing-sm) var(--spacing-lg);
+border-radius:var(--border-radius-lg);
+background-color:var(--color-gray-200);
+color:var(--color-black);
+border:none;
+cursor:pointer;
+ransition:all 0.2s;
+}
+
+.tab-pill:hover{
+background-color:var(--color-gray-300);
+}
+
+.tab-pill.active{
+background-color:var(--color-primary);
+color:var(--color-white);
+}
+
+/* Category tabs (specific implementation) */
+.categories{
+padding:var(--spacing-sm);
+background-color:var(--color-white);
+}
+
+.category-item{
+padding:var(--spacing-sm) var(--spacing-md);
+border-radius:var(--border-radius-md);
+margin-bottom:var(--spacing-sm);
+cursor:pointer;
+ransition:background-color 0.2s;
+}
+
+.category-item:hover{
+background-color:var(--color-gray-200);
+}
+
+.category-item.active{
+background-color:var(--color-primary-light);
+color:var(--color-primary);
+font-weight:500;
+}
+
+/* Settings tabs */
+.settings-tabs{
+display:flex;
+flex-direction:column;
+gap:var(--spacing-md);
+}
+
+.settings-tab{
+padding:var(--spacing-md);
+border-radius:var(--border-radius-md);
+background-color:var(--color-white);
+box-shadow:var(--shadow-sm);
+}
+
+.settings-tab h2{
+margin-top:0;
+color:var(--color-black);
+border-bottom:1px solid var(--color-gray-300);
+padding-bottom:var(--spacing-xs);
+margin-bottom:var(--spacing-md);
+}

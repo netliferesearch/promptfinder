@@ -1,0 +1,209 @@
+/* Button components for PromptFinder extension */
+
+/* Base button */
+.button{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:var(--spacing-sm) var(--spacing-lg);
+border-radius:var(--border-radius-lg);
+font-weight:500;
+cursor:pointer;
+ransition:all 0.2s ease;
+border:none;
+font-size:var(--font-size-md);
+}
+
+/* Button variants */
+.button-primary{
+background-color:var(--color-primary);
+color:var(--color-white);
+}
+
+.button-primary:hover{
+background-color:var(--color-primary-dark);
+}
+
+.button-secondary{
+background-color:var(--color-white);
+color:var(--color-primary);
+border:1px solid var(--color-primary);
+}
+
+.button-secondary:hover{
+background-color:var(--color-primary-light);
+}
+
+.button-cancel{
+background-color:var(--color-gray-200);
+color:var(--color-black);
+}
+
+.button-cancel:hover{
+background-color:var(--color-gray-300);
+}
+
+.button-danger{
+background-color:var(--color-error-text);
+color:var(--color-white);
+}
+
+.button-danger:hover{
+background-color:#b71c1c;/* Darker red */
+}
+
+/* Button sizes */
+.button-sm{
+padding:calc(var(--spacing-xs) * 0.75) var(--spacing-sm);
+font-size:var(--font-size-sm);
+}
+
+.button-lg{
+padding:var(--spacing-md) var(--spacing-xl);
+font-size:var(--font-size-lg);
+}
+
+/* Icon buttons */
+.button-icon{
+width:40px;
+height:40px;
+border-radius:50%;
+padding:0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:transparent;
+}
+
+.button-icon:hover{
+background-color:var(--color-gray-200);
+}
+
+/* Favorites button */
+.toggle-favorite{
+background:none;
+border:none;
+cursor:pointer;
+font-size:1.25rem;
+color:#e74c3c;
+padding:0;
+}
+
+.toggle-favorite i{
+pointer-events:none;
+}
+
+/* Action buttons from the popup.css */
+.actions button{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:var(--spacing-xs);
+padding:var(--spacing-sm) var(--spacing-md);
+background:var(--color-gray-100);
+border:1px solid var(--color-gray-300);
+border-radius:var(--border-radius-lg);
+cursor:pointer;
+flex:1;
+min-height:48px;
+ransition:all 0.2s ease;
+color:var(--color-gray-500);
+font-weight:500;
+}
+
+.actions button:hover{
+background-color:var(--color-gray-200);
+ransform:translateY(-1px);
+box-shadow:var(--shadow-sm);
+}
+
+.actions button:active{
+ransform:scale(0.98);
+}
+
+.actions button.active{
+background-color:var(--color-primary);
+color:var(--color-white);
+border-color:var(--color-primary-dark);
+}
+
+.actions button i{
+font-size:1rem;
+}
+
+/* Add prompt button with enhanced styles */
+.add-prompt-button{
+width:100%;
+padding:var(--spacing-sm);
+font-size:var(--font-size-md);
+background:var(--color-primary);
+color:var(--color-white);
+border:none;
+border-radius:var(--border-radius-lg);
+cursor:pointer;
+min-height:48px;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:var(--spacing-xs);
+font-weight:500;
+ransition:all 0.2s ease;
+box-shadow:0 4px 8px rgba(124, 77, 255, 0.2);
+}
+
+.add-prompt-button:hover{
+background:var(--color-primary-dark);
+ransform:translateY(-1px);
+box-shadow:0 6px 12px rgba(124, 77, 255, 0.25);
+}
+
+.add-prompt-button:active{
+ransform:scale(0.98);
+box-shadow:0 2px 4px rgba(124, 77, 255, 0.2);
+}
+
+/* Form buttons with enhanced styling */
+.form-buttons button{
+padding:var(--spacing-sm) var(--spacing-lg);
+border:none;
+border-radius:var(--border-radius-lg);
+font-size:var(--font-size-md);
+font-weight:500;
+cursor:pointer;
+ransition:background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+/* Add more shadow to form buttons */
+.form-buttons-enhanced button{
+box-shadow:var(--shadow-sm);
+}
+
+.form-buttons-enhanced button:hover{
+ransform:translateY(-1px);
+box-shadow:var(--shadow-md);
+}
+
+/* Floating action button */
+.floating-button{
+position:fixed;
+bottom:var(--spacing-lg);
+right:var(--spacing-lg);
+width:56px;
+height:56px;
+border-radius:50%;
+background-color:var(--color-primary);
+color:var(--color-white);
+border:none;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:24px;
+box-shadow:var(--shadow-md);
+cursor:pointer;
+ransition:background-color 0.2s, transform 0.2s;
+}
+
+.floating-button:hover{
+background-color:var(--color-primary-dark);
+ransform:scale(1.05);
+}
