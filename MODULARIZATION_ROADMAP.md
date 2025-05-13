@@ -104,7 +104,7 @@ The extension currently uses a monolithic structure with all JavaScript in `popu
    - ✅ Replace duplicate functions with calls to module functions
    - ✅ Move Chrome API operations to Utils module
 
-### Phase 3: Integration & Testing (In Progress)
+### Phase 3: Integration & Testing (In Progress - not so much)
 
 1. 🔄 Continue migrating functionality from `popup.js` to modules
    - Move section visibility management to `UI` module
@@ -169,7 +169,7 @@ window.PromptFinder.Utils = (function() {
   };
 })();
 
-```
+```new
 
 ### Integration Strategy
 
