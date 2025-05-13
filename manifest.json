@@ -1,12 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "PromptFinder (Diagnostic)",
+  "name": "PromptFinder",
   "version": "1.0",
-  "description": "Diagnostic test.",
+  "description": "A community-powered tool for managing and sharing AI prompts.",
   "action": {
     "default_popup": "pages/popup.html"
   },
+  "permissions": ["storage", "clipboardWrite", "windows"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
