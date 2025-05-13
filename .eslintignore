@@ -1,9 +1,0 @@
-node_modules/
-dist/
-build/
-coverage/
-scripts/
-*.test.js
-*.config.js
-.vscode/
-.idx/

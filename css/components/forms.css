@@ -37,7 +37,9 @@
   border-radius: var(--border-radius-lg);
   font-size: 1rem;
   background-color: var(--color-white);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .form-input:focus,
