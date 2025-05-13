@@ -1,9 +1,8 @@
 // js/firebase-init.js
 
-// Import Firebase from local files instead of CDN
-import { initializeApp } from '../lib/firebase/firebase-app.esm.js';
-import { getAuth } from '../lib/firebase/firebase-auth.esm.js';
-// import { getAnalytics } from "../lib/firebase/firebase-analytics.esm.js"; // Optional: if you also copy analytics
+// Import Firebase from local files (downloaded from CDN)
+import { initializeApp } from '../lib/firebase/firebase-app.js';
+import { getAuth } from '../lib/firebase/firebase-auth.js';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -18,7 +17,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app); // Initialize if you plan to use Firebase Analytics
 
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
