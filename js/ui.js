@@ -197,7 +197,19 @@ window.PromptFinder.UI = (function () {
       // Back button
       const backBtn = promptDetailSection.querySelector('#back-to-list-button');
       if (backBtn) {
-        backBtn.addEventListener('click', showPromptList);
+        backBtn.addEventListener('click', () => {
+          // Ensure we refresh the prompt list before showing it
+          PromptData.loadPrompts().then(prompts => {
+            allPrompts = prompts;
+            showPromptList();
+            showTab(activeTab);
+            console.log('Prompt list refreshed after going back from detail view');
+          }).catch(error => {
+            console.error('Error refreshing prompts when going back to list:', error);
+            showPromptList();
+            showTab(activeTab);
+          });
+        });
       }
 
       // Copy button
