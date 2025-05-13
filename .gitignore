@@ -1,9 +1,16 @@
-# Dependencies
+# Node and build artifacts
 node_modules/
 
-# Build artifacts
+# CSS build output
+css-purged/
 css-min/
+css-combined/
+css-clean/
 
-# Optional editor/OS files
+# Reports and logs
+*.log
+coverage/
+
+# OS generated files
 .DS_Store
-*.swp
+Thumbs.db
