@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize form and event listeners
   initializeForm();
+  
+  setTimeout(() => {
+    loadPromptData(promptId);
+  }, 500);
 });
 
 /**
@@ -37,6 +41,54 @@ function initializeForm() {
     cancelEditPromptButton.addEventListener('click', () => {
       window.close();
     });
+  }
+}
+
+/**
+ * Load prompt data and populate form fields
+ * @param {string} promptId - ID of the prompt to load
+ */
+async function loadPromptData(promptId) {
+  try {
+    if (!window.PromptFinder || !window.PromptFinder.PromptData) {
+      console.warn('PromptFinder namespace not available yet, retrying in 500ms');
+      setTimeout(() => loadPromptData(promptId), 500);
+      return;
+    }
+    
+    const PromptData = window.PromptFinder.PromptData;
+    
+    const titleInput = document.getElementById('prompt-title');
+    const textInput = document.getElementById('prompt-text');
+    const categoryInput = document.getElementById('prompt-category');
+    const tagsInput = document.getElementById('prompt-tags');
+    const privateCheckbox = document.getElementById('prompt-private');
+    
+    if (!titleInput || !textInput) {
+      showError('Form elements missing');
+      return;
+    }
+    
+    titleInput.dataset.loaded = 'true';
+    
+    const allPrompts = await PromptData.loadPrompts();
+    const prompt = await PromptData.findPromptById(promptId, allPrompts);
+    
+    if (!prompt) {
+      showError(`Prompt with ID ${promptId} not found`);
+      return;
+    }
+    
+    titleInput.value = prompt.title || '';
+    textInput.value = prompt.text || '';
+    if (categoryInput) categoryInput.value = prompt.category || '';
+    if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
+    if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
+    
+    console.info('Prompt data loaded successfully');
+  } catch (error) {
+    console.error('Failed to load prompt data:', error);
+    showError('Failed to load prompt data. Please try again.');
   }
 }
 
@@ -73,7 +125,11 @@ async function handleEditPromptSubmit(event) {
   event.preventDefault();
   
   try {
-    const Utils = window.PromptFinder.Utils;
+    if (!window.PromptFinder || !window.PromptFinder.PromptData) {
+      showError('Extension not fully initialized. Please try again in a moment.');
+      return;
+    }
+    
     const PromptData = window.PromptFinder.PromptData;
     
     const promptIdField = document.getElementById('prompt-id');
@@ -110,32 +166,6 @@ async function handleEditPromptSubmit(event) {
           .filter(tag => tag !== '')
       : [];
     const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
-    
-    if (!titleInput.dataset.loaded) {
-      try {
-        const allPrompts = await PromptData.loadPrompts();
-        const prompt = await PromptData.findPromptById(promptId, allPrompts);
-        
-        if (!prompt) {
-          showError(`Prompt with ID ${promptId} not found`);
-          return;
-        }
-        
-        titleInput.value = prompt.title || '';
-        textInput.value = prompt.text || '';
-        if (categoryInput) categoryInput.value = prompt.category || '';
-        if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
-        if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
-        
-        titleInput.dataset.loaded = 'true';
-        
-        return;
-      } catch (loadError) {
-        console.error('Failed to load prompt data:', loadError);
-        showError('Failed to load prompt data. Please try again.');
-        return;
-      }
-    }
     
     await PromptData.updatePrompt(promptId, {
       title,
