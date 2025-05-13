@@ -29,6 +29,9 @@ window.PromptFinder.UI = (function () {
       // Set up event listeners
       setupEventListeners();
 
+      // Set up storage change listener for prompt updates
+      setupStorageChangeListener();
+
       // Show initial tab
       showTab(activeTab);
     } catch (error) {
@@ -37,6 +40,45 @@ window.PromptFinder.UI = (function () {
         originalError: error,
       });
     }
+  };
+  
+  /**
+   * Set up storage change listener to detect prompt updates from detached windows
+   */
+  const setupStorageChangeListener = () => {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'local' && changes.promptUpdated) {
+        console.log('Detected prompt update from detached window, refreshing prompt list');
+        
+        PromptData.loadPrompts().then(prompts => {
+          allPrompts = prompts;
+          
+          // Update UI based on current view
+          if (document.getElementById('prompt-details-section').classList.contains('hidden')) {
+            // In list view
+            showTab(activeTab);
+          } else {
+            // In detail view - get the current prompt ID
+            const promptIdField = document.querySelector('#prompt-details-section [data-prompt-id]');
+            if (promptIdField && promptIdField.dataset.promptId) {
+              const promptId = promptIdField.dataset.promptId;
+              // Find the updated prompt
+              const updatedPrompt = allPrompts.find(p => p.id === promptId);
+              if (updatedPrompt) {
+                displayPromptDetails(updatedPrompt);
+              }
+            }
+          }
+          
+          Utils.showConfirmationMessage('Prompt list updated with recent changes');
+        }).catch(error => {
+          Utils.handleError('Failed to refresh prompts after update', {
+            userVisible: true,
+            originalError: error,
+          });
+        });
+      }
+    });
   };
 
   /**

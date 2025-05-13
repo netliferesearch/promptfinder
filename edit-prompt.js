@@ -278,6 +278,10 @@ async function handleEditPromptSubmit(event) {
       
       updateFormWithVerifiedData(verifiedPrompt);
       
+      chrome.storage.local.set({ 'promptUpdated': Date.now() }, () => {
+        console.log('Sent prompt update signal to main extension');
+      });
+      
       showConfirmation('Prompt updated successfully!');
       
       addCloseButton();
