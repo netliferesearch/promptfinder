@@ -15,10 +15,12 @@ When running `npm install`, you might see warnings about deprecated packages. Th
 ## How We've Addressed These Issues
 
 1. **Compatible ESLint Configuration**:
+
    - Using ESLint v8 which is compatible with Node.js v20.1.0
    - Configuration lives in the standard `.eslintrc.js` file
 
 2. **Updated Package Versions**:
+
    - Selected compatible versions of dependencies that work with current Node.js
    - Avoided packages with strict Node.js version requirements
    - Replaced deprecated packages where possible

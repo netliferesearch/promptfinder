@@ -2,8 +2,6 @@
 // This script will help with migrating the old CSS to the new modular CSS structure
 
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('CSS Migration Helper loaded');
-
   // Add the old CSS files as fallbacks during transition
   // This ensures the extension keeps working while we're migrating
   // const oldCssFiles = ['popup.css', 'add-prompt.css', 'edit-prompt.css']; // These are file names
@@ -28,8 +26,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to check for CSS issues
   function checkCssIssues() {
-    console.log('Checking for CSS migration issues...');
-
     // Check if our new CSS classes are being applied correctly
     const elementsToCheck = [
       { selector: '.pf-header', property: 'background-color' },
@@ -37,15 +33,13 @@ document.addEventListener('DOMContentLoaded', function () {
       { selector: '.form-buttons button', property: 'border-radius' },
     ];
 
-    let issuesDetected = false;
-
     elementsToCheck.forEach(item => {
       const element = document.querySelector(item.selector);
       if (element) {
-        const computedStyle = window.getComputedStyle(element);
-        console.log(`${item.selector} ${item.property}: ${computedStyle[item.property]}`);
+        // const computedStyle = window.getComputedStyle(element);
+        // console.log(`${item.selector} ${item.property}: ${computedStyle[item.property]}`);
       } else {
-        console.log(`Element not found: ${item.selector}`);
+        // console.log(`Element not found: ${item.selector}`);
       }
     });
 

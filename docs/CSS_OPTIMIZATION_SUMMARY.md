@@ -3,21 +3,25 @@
 ## What We've Done
 
 1. **Created a Minification System**
+
    - Developed a script to generate minified CSS versions
    - Achieved ~8-9% file size reduction across all CSS files
    - Minified CSS available in `css-min` directory
 
 2. **Improved CSS Quality**
+
    - Added vendor prefixes for better cross-browser compatibility
    - Standardized formatting for improved readability
    - Enhanced comments to better document the CSS
    - Improved CSS available in `css-clean` directory
 
 3. **Environment Switching System**
+
    - Created a script to easily switch between development and production CSS
    - Simplified testing of minified CSS without manual file changes
 
 4. **Unused CSS Detection**
+
    - Developed a tool to identify potentially unused CSS classes
    - Provides insights for future CSS cleanup
 

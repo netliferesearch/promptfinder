@@ -131,13 +131,13 @@ For Chrome extensions, we're using the namespace pattern with IIFE (Immediately 
 // utils.js
 window.PromptFinder = window.PromptFinder || {};
 
-window.PromptFinder.Utils = (function() {
+window.PromptFinder.Utils = (function () {
   // Private functions and variables
-  
+
   // Return public API
   return {
     publicFunction1,
-    publicFunction2
+    publicFunction2,
   };
 })();
 ```
@@ -160,13 +160,13 @@ In the HTML file, modules must be loaded in the correct dependency order:
 
 window.PromptFinder = window.PromptFinder || {};
 window.PromptFinder.Utils = (function() {
-  // Private functions and variables
-  
-  // Public API
-  return {
-    handleError: function() { /*...*/ },
-    // other functions...
-  };
+// Private functions and variables
+
+// Public API
+return {
+handleError: function() { /_..._/ },
+// other functions...
+};
 })();
 
 ```new
@@ -181,3 +181,4 @@ Each module will be loaded in the proper order, and `popup.js` will be refactore
 - **Phase 2**: 2 weeks
 - **Phase 3**: 1 week
 - **Phase 4**: Ongoing
+```

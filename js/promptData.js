@@ -250,12 +250,12 @@ window.PromptFinder.PromptData = (function () {
    */
   const findPromptById = async (promptId, prompts = null, options = {}) => {
     const { throwIfNotFound = false, handleError = false } = options;
-    
+
     if (!promptId) return Promise.resolve(null);
 
     try {
       let prompt = null;
-      
+
       if (prompts) {
         prompt = prompts.find(p => p.id === promptId) || null;
       } else {
@@ -263,11 +263,11 @@ window.PromptFinder.PromptData = (function () {
         const allPrompts = await loadPrompts();
         prompt = allPrompts.find(p => p.id === promptId) || null;
       }
-      
+
       if (!prompt && throwIfNotFound) {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
-      
+
       return prompt;
     } catch (error) {
       if (handleError) {

@@ -54,7 +54,6 @@ window.PromptFinder.Utils = (function () {
    * @param {HTMLElement} [options.errorElement] - DOM element to show error in
    */
   const handleError = (message, options = {}) => {
-    // Set default options
     const {
       userVisible = true,
       timeout = 5000,
@@ -63,18 +62,17 @@ window.PromptFinder.Utils = (function () {
       errorElement = document.getElementById('error-message'),
     } = options;
 
-    // Always log to console with appropriate method
     const consoleMethod = type === 'warning' ? 'warn' : type;
-    
+
     if (originalError) {
+      // eslint-disable-next-line no-console
       console[consoleMethod](message, originalError);
     } else {
+      // eslint-disable-next-line no-console
       console[consoleMethod](message);
     }
 
-    // Only show to user if userVisible is true
     if (userVisible && errorElement) {
-      // Set appropriate styling based on error type
       const typeStyles = {
         error: {
           bgColor: '#f8d7da',
@@ -92,19 +90,12 @@ window.PromptFinder.Utils = (function () {
           borderColor: '#bee5eb',
         },
       };
-
       const style = typeStyles[type] || typeStyles.error;
-
-      // Apply styling
       errorElement.style.backgroundColor = style.bgColor;
       errorElement.style.color = style.textColor;
       errorElement.style.borderColor = style.borderColor;
-
-      // Set content and show
       errorElement.textContent = message;
       errorElement.classList.remove('hidden');
-
-      // Hide after timeout
       setTimeout(() => {
         errorElement.classList.add('hidden');
       }, timeout);
@@ -128,7 +119,6 @@ window.PromptFinder.Utils = (function () {
 
     if (messageElement) {
       messageElement.classList.remove('hidden');
-
       if (withButton) {
         messageElement.innerHTML = `${message} <button class="dismiss-btn">OK</button>`;
         const dismissBtn = messageElement.querySelector('.dismiss-btn');
@@ -140,8 +130,6 @@ window.PromptFinder.Utils = (function () {
       } else {
         messageElement.textContent = message;
       }
-
-      // Always set timeout to hide the message
       setTimeout(() => {
         messageElement.classList.add('hidden');
       }, timeout);
@@ -155,16 +143,11 @@ window.PromptFinder.Utils = (function () {
    */
   const highlightStars = (rating, container) => {
     if (!container) return;
-
     const stars = container.querySelectorAll('.star');
     stars.forEach((star, index) => {
       const starValue = index + 1;
       const icon = star.querySelector('i');
-
-      // Update ARIA state
       star.setAttribute('aria-checked', starValue <= rating ? 'true' : 'false');
-
-      // Update visual state
       if (starValue <= rating) {
         star.classList.add('filled');
         if (icon) icon.className = 'fas fa-star';
@@ -175,7 +158,6 @@ window.PromptFinder.Utils = (function () {
     });
   };
 
-  // Return public API
   return {
     chromeStorageGet,
     chromeStorageSet,
