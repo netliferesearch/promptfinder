@@ -18,9 +18,9 @@
         <h1>Edit Prompt</h1>
       </header>
 
-      <!-- Confirmation & error messages -->
-      <p id="confirmation-message" class="hidden"></p>
-      <p id="error-message" class="hidden"></p>
+      <!-- Confirmation & error messages with ARIA live regions -->
+      <p id="confirmation-message" class="hidden" aria-live="polite"></p>
+      <p id="error-message" class="hidden" aria-live="assertive"></p>
 
       <section id="edit-prompt-section">
         <form id="edit-prompt-form">
@@ -55,10 +55,8 @@
       </section>
     </div>
 
-    <!-- Load modules in the correct dependency order -->
     <script src="../js/utils.js"></script>
     <script src="../js/promptData.js"></script>
-    
     <script src="../js/css-class-helper.js"></script>
     <script src="edit-prompt.js"></script>
   </body>
