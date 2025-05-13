@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Add New Prompt - PromptFinder</title>
-    <link rel="stylesheet" href="css/global.css" />
-    <link rel="stylesheet" href="css/pages/add-prompt.css" />
+    <title>Edit Prompt - PromptFinder</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/pages/edit-prompt.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -15,15 +15,18 @@
   <body>
     <div class="detached-window-container">
       <header class="pf-header">
-        <h1>Add New Prompt</h1>
+        <h1>Edit Prompt</h1>
       </header>
 
       <!-- Confirmation & error messages -->
       <p id="confirmation-message" class="hidden"></p>
       <p id="error-message" class="hidden"></p>
 
-      <section id="add-prompt-section">
-        <form id="add-prompt-form">
+      <section id="edit-prompt-section">
+        <form id="edit-prompt-form">
+          <!-- Hidden input to store prompt ID -->
+          <input type="hidden" id="prompt-id" />
+
           <div>
             <label for="prompt-title">Title:</label>
             <input type="text" id="prompt-title" required />
@@ -45,18 +48,18 @@
             <label for="prompt-private">Make Private</label>
           </div>
           <div class="form-buttons">
-            <button type="submit" class="button button-primary">Add Prompt</button>
-            <button type="button" id="cancel-add-prompt" class="button button-cancel">Close</button>
+            <button type="submit" class="button button-primary">Save Changes</button>
+            <button type="button" id="cancel-edit-prompt" class="button button-cancel">Cancel</button>
           </div>
         </form>
       </section>
     </div>
 
     <!-- Load modules in the correct dependency order -->
-    <script src="js/utils.js"></script>
-    <script src="js/promptData.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/promptData.js"></script>
     
-    <script src="js/css-class-helper.js"></script>
-    <script src="add-prompt.js"></script>
+    <script src="../js/css-class-helper.js"></script>
+    <script src="edit-prompt.js"></script>
   </body>
 </html>

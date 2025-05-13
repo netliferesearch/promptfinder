@@ -51,9 +51,9 @@ analyze_css() {
     # Check in HTML files
     local html_found=false
     for html in $html_files; do
-      if grep -q "class=\"[^\"]*$class_name" "$html" || \
-         grep -q "classList.add(['\"]$class_name['\"]" "$html" || \
-         grep -q "className.*=.*['\"]$class_name['\"]" "$html"; then
+      if grep -q "class="[^"]*$class_name" "$html" || \
+         grep -q "classList.add(['"]$class_name['"]" "$html" || \
+         grep -q "className.*=.*['"]$class_name['"]" "$html"; then
         html_found=true
         break
       fi
@@ -63,9 +63,9 @@ analyze_css() {
     local js_found=false
     if [[ "$html_found" == "false" ]]; then
       for js in $js_files; do
-        if grep -q "classList.add(['\"]$class_name['\"]" "$js" || \
-           grep -q "className.*=.*['\"]$class_name['\"]" "$js" || \
-           grep -q "class=\"[^\"]*$class_name" "$js"; then
+        if grep -q "classList.add(['"]$class_name['"]" "$js" || \
+           grep -q "className.*=.*['"]$class_name['"]" "$js" || \
+           grep -q "class="[^"]*$class_name" "$js"; then
           js_found=true
           break
         fi
@@ -77,7 +77,8 @@ analyze_css() {
       echo "- \`$selector\`" >> "$report_file"
       unused_count=$((unused_count + 1))
     else
-      used_selectors="$used_selectors$selector\n"
+      used_selectors="$used_selectors$selector
+"
     fi
   done
   
