@@ -131,6 +131,7 @@ async function handleEditPromptSubmit(event) {
     }
     
     const PromptData = window.PromptFinder.PromptData;
+    const Utils = window.PromptFinder.Utils;
     
     const promptIdField = document.getElementById('prompt-id');
     const titleInput = document.getElementById('prompt-title');
@@ -167,19 +168,52 @@ async function handleEditPromptSubmit(event) {
       : [];
     const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
     
-    await PromptData.updatePrompt(promptId, {
-      title,
-      text,
-      category,
-      tags,
-      isPrivate
-    });
+    console.log('Updating prompt with ID:', promptId);
+    console.log('Update data:', { title, text, category, tags, isPrivate });
     
-    showConfirmation('Prompt updated successfully!');
+    const allPrompts = await PromptData.loadPrompts();
+    const existingPrompt = await PromptData.findPromptById(promptId, allPrompts);
     
-    setTimeout(() => {
-      window.close();
-    }, 2000);
+    if (!existingPrompt) {
+      showError(`Prompt with ID ${promptId} not found. Cannot update.`);
+      return;
+    }
+    
+    console.log('Existing prompt before update:', existingPrompt);
+    
+    try {
+      const updatedPrompt = await PromptData.updatePrompt(promptId, {
+        title,
+        text,
+        category,
+        tags,
+        isPrivate
+      });
+      
+      console.log('Updated prompt:', updatedPrompt);
+      
+      const verifyPrompts = await PromptData.loadPrompts();
+      const verifiedPrompt = verifyPrompts.find(p => p.id === promptId);
+      
+      console.log('Verified prompt after update:', verifiedPrompt);
+      
+      if (!verifiedPrompt) {
+        throw new Error('Failed to verify prompt update');
+      }
+      
+      if (verifiedPrompt.title !== title || verifiedPrompt.text !== text) {
+        throw new Error('Prompt update verification failed: data mismatch');
+      }
+      
+      showConfirmation('Prompt updated successfully!');
+      
+      setTimeout(() => {
+        window.close();
+      }, 3000);
+    } catch (updateError) {
+      console.error('Error updating prompt:', updateError);
+      showError(`Failed to update prompt: ${updateError.message}`);
+    }
   } catch (error) {
     console.error('Error in edit prompt form:', error);
     showError('Failed to update prompt. Please try again.');
