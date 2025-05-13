@@ -10,12 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const promptId = urlParams.get('id');
   
   if (!promptId) {
-    console.error('No prompt ID provided');
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'No prompt ID provided';
-      errorElement.classList.remove('hidden');
-    }
+    showError('No prompt ID provided');
     return;
   }
   
@@ -24,8 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     promptIdField.value = promptId;
   }
   
+  // Initialize form and event listeners
   initializeForm();
-  loadPromptData(promptId);
 });
 
 /**
@@ -46,45 +41,27 @@ function initializeForm() {
 }
 
 /**
- * Load prompt data and populate the form
- * @param {string} promptId - ID of the prompt to edit
+ * Show error message in the UI
+ * @param {string} message - Error message to display
  */
-async function loadPromptData(promptId) {
-  try {
-    const PromptData = window.PromptFinder.PromptData;
-    
-    const allPrompts = await PromptData.loadPrompts();
-    const prompt = await PromptData.findPromptById(promptId, allPrompts);
-    
-    if (!prompt) {
-      console.error(`Prompt with ID ${promptId} not found`);
-      const errorElement = document.getElementById('error-message');
-      if (errorElement) {
-        errorElement.textContent = `Prompt with ID ${promptId} not found`;
-        errorElement.classList.remove('hidden');
-      }
-      return;
-    }
-    
-    const titleInput = document.getElementById('prompt-title');
-    const textInput = document.getElementById('prompt-text');
-    const categoryInput = document.getElementById('prompt-category');
-    const tagsInput = document.getElementById('prompt-tags');
-    const privateCheckbox = document.getElementById('prompt-private');
-    
-    if (titleInput) titleInput.value = prompt.title || '';
-    if (textInput) textInput.value = prompt.text || '';
-    if (categoryInput) categoryInput.value = prompt.category || '';
-    if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
-    if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
-    
-  } catch (error) {
-    console.error('Failed to load prompt data:', error);
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'Failed to load prompt data';
-      errorElement.classList.remove('hidden');
-    }
+function showError(message) {
+  console.error(message);
+  const errorElement = document.getElementById('error-message');
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+  }
+}
+
+/**
+ * Show confirmation message in the UI
+ * @param {string} message - Confirmation message to display
+ */
+function showConfirmation(message) {
+  const confirmationElement = document.getElementById('confirmation-message');
+  if (confirmationElement) {
+    confirmationElement.textContent = message;
+    confirmationElement.classList.remove('hidden');
   }
 }
 
@@ -95,58 +72,70 @@ async function loadPromptData(promptId) {
 async function handleEditPromptSubmit(event) {
   event.preventDefault();
   
-  const promptIdField = document.getElementById('prompt-id');
-  const titleInput = document.getElementById('prompt-title');
-  const textInput = document.getElementById('prompt-text');
-  const categoryInput = document.getElementById('prompt-category');
-  const tagsInput = document.getElementById('prompt-tags');
-  const privateCheckbox = document.getElementById('prompt-private');
-  
-  if (!promptIdField || !titleInput || !textInput) {
-    console.error('Form elements missing');
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'Form elements missing';
-      errorElement.classList.remove('hidden');
-    }
-    return;
-  }
-  
-  const promptId = promptIdField.value;
-  const title = titleInput.value;
-  const text = textInput.value;
-  
-  if (!promptId) {
-    console.error('Prompt ID is missing');
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'Prompt ID is missing';
-      errorElement.classList.remove('hidden');
-    }
-    return;
-  }
-  
-  if (!title || !text) {
-    console.error('Please enter both a title and prompt text');
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'Please enter both a title and prompt text';
-      errorElement.classList.remove('hidden');
-    }
-    return;
-  }
-  
-  const category = categoryInput ? categoryInput.value : '';
-  const tags = tagsInput
-    ? tagsInput.value
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag !== '')
-    : [];
-  const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
-  
   try {
+    const Utils = window.PromptFinder.Utils;
     const PromptData = window.PromptFinder.PromptData;
+    
+    const promptIdField = document.getElementById('prompt-id');
+    const titleInput = document.getElementById('prompt-title');
+    const textInput = document.getElementById('prompt-text');
+    const categoryInput = document.getElementById('prompt-category');
+    const tagsInput = document.getElementById('prompt-tags');
+    const privateCheckbox = document.getElementById('prompt-private');
+    
+    if (!promptIdField || !titleInput || !textInput) {
+      showError('Form elements missing');
+      return;
+    }
+    
+    const promptId = promptIdField.value;
+    const title = titleInput.value;
+    const text = textInput.value;
+    
+    if (!promptId) {
+      showError('Prompt ID is missing');
+      return;
+    }
+    
+    if (!title || !text) {
+      showError('Please enter both a title and prompt text');
+      return;
+    }
+    
+    const category = categoryInput ? categoryInput.value : '';
+    const tags = tagsInput
+      ? tagsInput.value
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag !== '')
+      : [];
+    const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
+    
+    if (!titleInput.dataset.loaded) {
+      try {
+        const allPrompts = await PromptData.loadPrompts();
+        const prompt = await PromptData.findPromptById(promptId, allPrompts);
+        
+        if (!prompt) {
+          showError(`Prompt with ID ${promptId} not found`);
+          return;
+        }
+        
+        titleInput.value = prompt.title || '';
+        textInput.value = prompt.text || '';
+        if (categoryInput) categoryInput.value = prompt.category || '';
+        if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
+        if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
+        
+        titleInput.dataset.loaded = 'true';
+        
+        return;
+      } catch (loadError) {
+        console.error('Failed to load prompt data:', loadError);
+        showError('Failed to load prompt data. Please try again.');
+        return;
+      }
+    }
     
     await PromptData.updatePrompt(promptId, {
       title,
@@ -156,21 +145,13 @@ async function handleEditPromptSubmit(event) {
       isPrivate
     });
     
-    const confirmationElement = document.getElementById('confirmation-message');
-    if (confirmationElement) {
-      confirmationElement.textContent = 'Prompt updated successfully!';
-      confirmationElement.classList.remove('hidden');
-    }
+    showConfirmation('Prompt updated successfully!');
     
     setTimeout(() => {
       window.close();
     }, 2000);
   } catch (error) {
-    console.error('Failed to update prompt:', error);
-    const errorElement = document.getElementById('error-message');
-    if (errorElement) {
-      errorElement.textContent = 'Failed to update prompt';
-      errorElement.classList.remove('hidden');
-    }
+    console.error('Error in edit prompt form:', error);
+    showError('Failed to update prompt. Please try again.');
   }
 }
