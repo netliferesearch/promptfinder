@@ -142,6 +142,16 @@ window.PromptFinder.UI = (function () {
           }
         });
       }
+      
+      const editBtn = promptDetailSection.querySelector('#edit-prompt-button');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          const starRatingContainer = promptDetailSection.querySelector('#star-rating');
+          if (starRatingContainer && starRatingContainer.dataset.id) {
+            openDetachedEditWindow(starRatingContainer.dataset.id);
+          }
+        });
+      }
 
       // Favorite button
       promptDetailSection.addEventListener('click', event => {
@@ -283,6 +293,45 @@ window.PromptFinder.UI = (function () {
     } catch (error) {
       console.error('Failed to open detached window:', error);
       showAddPrompt();
+    }
+  };
+  
+  /**
+   * Open a detached window for editing an existing prompt
+   * This allows users to keep the form open while browsing other pages
+   * @param {string} promptId - ID of the prompt to edit
+   */
+  const openDetachedEditWindow = (promptId) => {
+    try {
+      if (!promptId) {
+        Utils.handleError('No prompt ID provided for editing');
+        return;
+      }
+      
+      const width = 500;
+      const height = 600;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      
+      chrome.windows.create({
+        url: chrome.runtime.getURL(`edit-prompt.html?id=${promptId}`),
+        type: 'popup',
+        width: width,
+        height: height,
+        left: Math.round(left),
+        top: Math.round(top),
+        focused: true
+      }, (window) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error opening detached edit window:', chrome.runtime.lastError);
+          Utils.handleError('Failed to open edit window. Please try again.');
+        } else {
+          console.log('Detached edit prompt window opened successfully');
+        }
+      });
+    } catch (error) {
+      console.error('Failed to open detached edit window:', error);
+      Utils.handleError('Failed to open edit window. Please try again.');
     }
   };
 
@@ -736,6 +785,7 @@ window.PromptFinder.UI = (function () {
     showPromptDetails,
     showAddPrompt,
     openDetachedAddPromptWindow,
+    openDetachedEditWindow,
     showTab,
     displayPromptDetails,
     viewPromptDetails,
