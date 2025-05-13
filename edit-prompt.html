@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Edit Prompt - PromptFinder</title>
-    <link rel="stylesheet" href="popup.css" />
-    <link rel="stylesheet" href="edit-prompt.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/pages/edit-prompt.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -26,7 +26,7 @@
         <form id="edit-prompt-form">
           <!-- Hidden input to store prompt ID -->
           <input type="hidden" id="prompt-id" />
-          
+
           <div>
             <label for="prompt-title">Title:</label>
             <input type="text" id="prompt-title" required />
@@ -48,8 +48,8 @@
             <label for="prompt-private">Make Private</label>
           </div>
           <div class="form-buttons">
-            <button type="submit">Save Changes</button>
-            <button type="button" id="cancel-edit-prompt">Cancel</button>
+            <button type="submit" class="button button-primary">Save Changes</button>
+            <button type="button" id="cancel-edit-prompt" class="button button-cancel">Cancel</button>
           </div>
         </form>
       </section>
@@ -58,6 +58,8 @@
     <!-- Load modules in the correct dependency order -->
     <script src="js/utils.js"></script>
     <script src="js/promptData.js"></script>
+    
+    <script src="js/css-class-helper.js"></script>
     <script src="edit-prompt.js"></script>
   </body>
 </html>

@@ -32,6 +32,24 @@ promptfinder/
 │   ├── utils.js             # Utility functions and helpers
 │   ├── promptData.js        # Prompt data management functions
 │   └── ui.js                # UI controller functions
+├── css/                     # Modular CSS structure
+│   ├── base/                # Foundation styles
+│   │   ├── variables.css    # CSS variables (colors, spacing, etc.)
+│   │   ├── reset.css        # CSS reset for consistent rendering
+│   │   └── utilities.css    # Utility classes
+│   ├── components/          # Reusable UI components
+│   │   ├── buttons.css      # Button styles
+│   │   ├── cards.css        # Card components
+│   │   ├── forms.css        # Form elements
+│   │   └── tabs.css         # Tab components
+│   ├── layout/              # Layout structures
+│   │   ├── containers.css   # Containers and grid layouts
+│   │   └── header.css       # Header styles
+│   ├── pages/               # Page-specific styles
+│   │   ├── popup.css        # Main popup styles
+│   │   ├── add-prompt.css   # Add prompt page styles
+│   │   └── edit-prompt.css  # Edit prompt page styles
+│   └── global.css           # Main CSS file that imports base styles
 ├── icons/                   # Extension icons and images
 │   ├── icon16.png
 │   ├── icon48.png
@@ -39,16 +57,37 @@ promptfinder/
 │   └── lightbulb.png
 ├── app.js                   # Main entry point
 ├── popup.html               # Main HTML structure
-├── popup.css                # Styles
+├── add-prompt.html          # Add prompt page
+├── edit-prompt.html         # Edit prompt page
 ├── manifest.json            # Extension configuration
 └── README.md                # Documentation
 ```
 
 ### Key Components
 
+#### JavaScript Modules
+
 * **utils.js**: Contains shared utility functions like error handling, Chrome storage helpers, and UI notification functions.
 * **promptData.js**: Manages all operations related to prompt data (CRUD operations).
 * **ui.js**: Handles UI rendering, event listeners, and display logic.
+
+#### CSS Structure
+
+* **global.css**: Main CSS file that imports all base styles.
+* **base/**: Foundation styles including variables, reset, and utilities.
+* **components/**: Reusable UI components like buttons, forms, tabs, and cards.
+* **layout/**: Page layout structures like containers and headers.
+* **pages/**: Page-specific styles for popup, add-prompt, and edit-prompt.
+
+### Design System
+
+The extension uses a consistent design system based on CSS variables:
+
+* **Colors**: Primary purple (#7C4DFF) with various gray shades for UI elements
+* **Typography**: System font stack with consistent sizing
+* **Spacing**: Standardized spacing scale (xs, sm, md, lg, xl)
+* **Components**: Modular components with consistent styling
+* **Shadows**: Three levels of elevation (sm, md, lg)
 * **app.js**: Main entry point that initializes the extension.
 
 ### Module Organization

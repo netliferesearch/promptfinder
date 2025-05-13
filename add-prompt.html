@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add New Prompt - PromptFinder</title>
-    <link rel="stylesheet" href="popup.css" />
-    <link rel="stylesheet" href="add-prompt.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/pages/add-prompt.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -45,8 +45,8 @@
             <label for="prompt-private">Make Private</label>
           </div>
           <div class="form-buttons">
-            <button type="submit">Add Prompt</button>
-            <button type="button" id="cancel-add-prompt">Close</button>
+            <button type="submit" class="button button-primary">Add Prompt</button>
+            <button type="button" id="cancel-add-prompt" class="button button-cancel">Close</button>
           </div>
         </form>
       </section>
@@ -55,6 +55,8 @@
     <!-- Load modules in the correct dependency order -->
     <script src="js/utils.js"></script>
     <script src="js/promptData.js"></script>
+    
+    <script src="js/css-class-helper.js"></script>
     <script src="add-prompt.js"></script>
   </body>
 </html>
