@@ -323,7 +323,7 @@ window.PromptFinder.UI = (function () {
       const top = (screen.height - height) / 2;
       
       chrome.windows.create({
-        url: chrome.runtime.getURL('add-prompt.html'),
+        url: chrome.runtime.getURL('pages/add-prompt.html'),
         type: 'popup',
         width: width,
         height: height,
@@ -366,7 +366,7 @@ window.PromptFinder.UI = (function () {
       const top = (screen.height - height) / 2;
       
       chrome.windows.create({
-        url: chrome.runtime.getURL(`edit-prompt.html?id=${promptId}`),
+        url: chrome.runtime.getURL(`pages/edit-prompt.html?id=${promptId}`),
         type: 'popup',
         width: width,
         height: height,
@@ -660,7 +660,7 @@ window.PromptFinder.UI = (function () {
         return {
           '&': '&amp;',
           '<': '&lt;',
-          '">': '&gt;',
+          '>': '&gt;',
           '"': '&quot;',
           "'": '&#39;',
           '/': '&#x2F;'
