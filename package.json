@@ -46,5 +46,8 @@
     "setupFiles": [
       "./tests/setupTests.js"
     ]
+  },
+  "dependencies": {
+    "firebase": "^11.7.1"
   }
 }

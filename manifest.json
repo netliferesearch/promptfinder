@@ -13,6 +13,6 @@
   },
   "permissions": ["storage", "clipboardWrite", "windows"],
   "content_security_policy": {
-    "extension_pages": "script-src-elem 'self' https://www.gstatic.com; script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
