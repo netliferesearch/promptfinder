@@ -1,5 +1,7 @@
 # PromptFinder Modularization Roadmap
 
+## JavaScript Modularization
+
 ### Phase 3: Integration & Testing (In Progress)
 
 1. ✅ Continue migrating functionality from `popup.js` to modules
@@ -12,7 +14,60 @@
    - 🔄 Refactor popup.js into smaller, more manageable parts
 3. ⬜ Write tests for each module
 4. ⬜ Fix any issues discovered during testing
-5. ✅ Add documentation for module usage (updated README.md)ment outlines the step-by-step plan to improve the PromptFinder extension's code structure while maintaining compatibility with Chrome extensions.
+5. ✅ Add documentation for module usage (updated README.md)
+
+## CSS Modularization (In Progress)
+
+### Phase 1: Structure & Foundation (Complete)
+
+1. ✅ Create modular CSS directory structure
+   - ✅ /base for foundational styles
+   - ✅ /components for reusable UI components
+   - ✅ /layout for structural elements
+   - ✅ /pages for page-specific styles
+2. ✅ Create CSS variables and design system
+   - ✅ Colors, typography, spacing, etc.
+3. ✅ Implement CSS reset and utility classes
+
+### Phase 2: Component & Layout Development (In Progress)
+
+1. ✅ Create component CSS files
+   - ✅ forms.css: Form elements and controls
+   - ✅ buttons.css: Button styles and variations
+   - ✅ tabs.css: Tab navigation components
+   - ✅ cards.css: Card and prompt components
+2. ✅ Create layout CSS files
+   - ✅ containers.css: Layout containers
+   - ✅ header.css: Header components
+3. ✅ Create page-specific CSS files
+   - ✅ popup.css: Main popup styles
+   - ✅ add-prompt.css: Add prompt page styles
+   - ✅ edit-prompt.css: Edit prompt page styles
+4. ✅ Create global.css to import all base styles
+5. 🔄 Update HTML files to use new CSS structure
+
+### Phase 3: Migration & Implementation (Current)
+
+1. 🔄 Create helper scripts for CSS class migration
+   - ✅ css-migration-helper.js: Temporary fallback for old CSS
+   - ✅ css-class-helper.js: Apply new CSS classes to elements
+2. 🔄 Create scripts for CSS cleanup
+   - ✅ cleanup-css.sh: Remove old CSS files and references
+   - ✅ finalize-css.sh: Update HTML with new classes directly
+3. 🔄 HTML/CSS integration
+   - 🔄 Convert existing inline styles to use CSS variables
+   - 🔄 Apply component classes to HTML elements
+   - ⬜ Test across all pages for visual consistency
+
+### Phase 4: Finalization & Optimization
+
+1. ⬜ Remove CSS migration helpers once stable
+2. ⬜ Optimize CSS for performance
+   - ⬜ Remove unused styles
+   - ⬜ Consolidate duplicate rules
+3. ⬜ Add dark mode support
+4. ⬜ Enhance responsive design for different screen sizes
+5. ⬜ Document CSS architecture and usage guidelines
 
 ## Current State
 

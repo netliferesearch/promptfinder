@@ -49,7 +49,7 @@ border-radius:50%;
 display:flex;
 align-items:center;
 justify-content:center;
-ransition:background-color 0.2s;
+transition:background-color 0.2s;
 }
 
 .pf-header button:hover{
@@ -78,7 +78,7 @@ border:1px solid var(--color-gray-300);
 border-radius:var(--border-radius-lg);
 font-size:var(--font-size-md);
 background-color:var(--color-gray-100);
-ransition:all 0.2s;
+transition:all 0.2s;
 }
 
 .search-header input:focus{
