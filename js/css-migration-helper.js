@@ -6,17 +6,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Add the old CSS files as fallbacks during transition
   // This ensures the extension keeps working while we're migrating
-  const oldCssFiles = ['popup.css', 'add-prompt.css', 'edit-prompt.css'];
+  // const oldCssFiles = ['popup.css', 'add-prompt.css', 'edit-prompt.css']; // These are file names
   const head = document.querySelector('head');
 
   // Determine which old CSS file to include based on the current page
   const currentPage = window.location.pathname;
-  let cssToInclude = 'popup.css'; // Default
+  let cssToInclude = '../css/pages/popup.css'; // Default
 
   if (currentPage.includes('add-prompt.html')) {
-    cssToInclude = 'add-prompt.css';
+    cssToInclude = '../css/pages/add-prompt.css';
   } else if (currentPage.includes('edit-prompt.html')) {
-    cssToInclude = 'edit-prompt.css';
+    cssToInclude = '../css/pages/edit-prompt.css';
   }
 
   // Only include the specific old CSS file that's relevant for this page
