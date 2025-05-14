@@ -152,11 +152,16 @@
       </footer>
     </div>
 
-    <script type="module" src="../js/firebase-init.js"></script>
+    <!-- Load Firebase SDKs from node_modules -->
+    <script src="../node_modules/firebase/app/dist/firebase-app.js"></script>
+    <script src="../node_modules/firebase/auth/dist/firebase-auth.js"></script>
+    <!-- Add other Firebase services as needed, e.g., Firestore -->
+    <!-- <script src="../node_modules/firebase/firestore/dist/firebase-firestore.js"></script> -->
+
+    <script src="../js/firebase-init.js"></script> <!-- No longer a module, will use global firebase -->
     <script src="../js/utils.js"></script>
     <script src="../js/promptData.js"></script>
     <script src="../js/ui.js"></script>
-    <!-- <script src="popup.js"></script> Removed as app.js is the entry point -->
     <script src="../app.js"></script>
   </body>
 </html>

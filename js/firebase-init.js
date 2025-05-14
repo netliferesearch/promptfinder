@@ -1,10 +1,6 @@
 // js/firebase-init.js
 
-// Import Firebase from local files (downloaded from CDN)
-import { initializeApp } from '../lib/firebase/firebase-app.js';
-import { getAuth } from '../lib/firebase/firebase-auth.js';
-// TODO: Add other Firebase SDKs here as needed, e.g.:
-// import { getFirestore } from '../lib/firebase/firebase-firestore.js';
+// Ensure Firebase SDKs have been loaded via <script> tags in HTML files first.
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,18 +13,21 @@ const firebaseConfig = {
     measurementId: "G-NS4KTS6DW6"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase using the global firebase object
+// The firebase.app.App and firebase.auth.Auth types are for type hinting if using JSDoc or TypeScript
 
-// Initialize Firebase Authentication and get a reference to the service
-const auth = getAuth(app);
+/** @type {import("../../node_modules/firebase/app").FirebaseApp} */
+const app = firebase.initializeApp(firebaseConfig); // Use global firebase.initializeApp
+
+/** @type {import("../../node_modules/firebase/auth").Auth} */
+const auth = firebase.auth(); // Use global firebase.auth()
 
 // TODO: Initialize other Firebase services here, e.g.:
-// const db = getFirestore(app);
+// const db = firebase.firestore();
 
-// Make auth available globally for non-module scripts (use with caution)
+// Make auth (and other services) available globally for other scripts
+window.firebaseApp = app;
 window.firebaseAuth = auth;
-// if you initialize db, also do: window.firebaseDb = db;
+// window.firebaseDb = db; // if you initialize db
 
-// Export services for other ES modules if any still need it
-export { auth, app /*, db */ };
+console.log("Firebase initialized using global SDKs and exposed on window.");
