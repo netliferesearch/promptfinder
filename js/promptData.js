@@ -18,12 +18,13 @@ window.PromptFinder.PromptData = (function () {
    * Signs up a new user with email and password.
    * @param {string} email - User's email.
    * @param {string} password - User's password.
-   * @returns {Promise<firebase.auth.UserCredential | null>} Firebase user credential or null on error.
+   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
    */
   const signupUser = async (email, password) => {
     if (!window.firebaseAuth) {
-      Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
-      return null;
+      const err = new Error('Firebase Auth not initialized.');
+      Utils.handleError(err.message, { userVisible: true, originalError: err });
+      return err;
     }
     try {
       const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
@@ -31,7 +32,7 @@ window.PromptFinder.PromptData = (function () {
       return userCredential;
     } catch (error) {
       Utils.handleError(`Signup error: ${error.message}`, { userVisible: true, originalError: error });
-      return null;
+      return error; // Return the error object
     }
   };
 
@@ -39,12 +40,13 @@ window.PromptFinder.PromptData = (function () {
    * Logs in an existing user with email and password.
    * @param {string} email - User's email.
    * @param {string} password - User's password.
-   * @returns {Promise<firebase.auth.UserCredential | null>} Firebase user credential or null on error.
+   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
    */
   const loginUser = async (email, password) => {
     if (!window.firebaseAuth) {
-      Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
-      return null;
+      const err = new Error('Firebase Auth not initialized.');
+      Utils.handleError(err.message, { userVisible: true, originalError: err });
+      return err;
     }
     try {
       const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
@@ -52,7 +54,7 @@ window.PromptFinder.PromptData = (function () {
       return userCredential;
     } catch (error) {
       Utils.handleError(`Login error: ${error.message}`, { userVisible: true, originalError: error });
-      return null;
+      return error; // Return the error object
     }
   };
 
@@ -83,19 +85,13 @@ window.PromptFinder.PromptData = (function () {
   const onAuthStateChanged = (callback) => {
     if (!window.firebaseAuth) {
       Utils.handleError('Firebase Auth not initialized.', { userVisible: false });
-      // Immediately call callback with null if auth isn't ready, though this shouldn't happen if init is correct
       callback(null);
-      return () => {}; // Return a no-op unsubscribe function
+      return () => {}; 
     }
     return window.firebaseAuth.onAuthStateChanged(callback);
   };
 
   // --- Existing Prompt Functions (will be refactored for Firebase later) ---
-
-  /**
-   * Load all prompts from storage
-   * @returns {Promise<Array>} Array of prompt objects
-   */
   const loadPrompts = async () => {
     try {
       const data = await Utils.chromeStorageGet('prompts');
@@ -106,15 +102,9 @@ window.PromptFinder.PromptData = (function () {
         originalError: error,
         timeout: 7000,
       });
-      return []; // Return empty array on error
+      return []; 
     }
   };
-
-  /**
-   * Save all prompts to storage
-   * @param {Array} prompts Array of prompt objects to save
-   * @returns {Promise<void>}
-   */
   const savePrompts = async prompts => {
     try {
       await Utils.chromeStorageSet({ prompts });
@@ -127,15 +117,9 @@ window.PromptFinder.PromptData = (function () {
       return false;
     }
   };
-
-  /**
-   * Create a new prompt
-   * @param {Object} promptData Prompt data object
-   * @returns {Object} The newly created prompt object
-   */
   const createPrompt = promptData => {
     return {
-      id: Date.now().toString(), // This will change when using Firestore
+      id: Date.now().toString(), 
       title: promptData.title || '',
       text: promptData.text || '',
       category: promptData.category || '',
@@ -148,50 +132,32 @@ window.PromptFinder.PromptData = (function () {
       dateAdded: new Date().toISOString(),
     };
   };
-
-  /**
-   * Add a prompt to storage
-   * @param {Object} promptData Prompt data to add
-   * @returns {Promise<Object>} The added prompt
-   */
   const addPrompt = async promptData => {
     try {
       const allPrompts = await loadPrompts();
       const newPrompt = createPrompt(promptData);
-
       allPrompts.push(newPrompt);
       await savePrompts(allPrompts);
-
       return newPrompt;
     } catch (error) {
       Utils.handleError(`Error adding prompt`, {
         userVisible: true,
         originalError: error,
       });
-      throw error; // Re-throw to allow handling upstream
+      throw error; 
     }
   };
-
-  /**
-   * Update an existing prompt
-   * @param {string} promptId ID of the prompt to update
-   * @param {Object} updates Object containing the fields to update
-   * @returns {Promise<Object>} The updated prompt
-   */
   const updatePrompt = async (promptId, updates) => {
     try {
       const allPrompts = await loadPrompts();
       const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-
       if (promptIndex === -1) {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
-
       allPrompts[promptIndex] = {
         ...allPrompts[promptIndex],
         ...updates,
       };
-
       await savePrompts(allPrompts);
       return allPrompts[promptIndex];
     } catch (error) {
@@ -199,24 +165,16 @@ window.PromptFinder.PromptData = (function () {
         userVisible: true,
         originalError: error,
       });
-      throw error; // Re-throw to allow handling upstream
+      throw error; 
     }
   };
-
-  /**
-   * Delete a prompt
-   * @param {string} promptId ID of the prompt to delete
-   * @returns {Promise<boolean>} Success status
-   */
   const deletePrompt = async promptId => {
     try {
       const allPrompts = await loadPrompts();
       const updatedPrompts = allPrompts.filter(p => p.id !== promptId);
-
       if (updatedPrompts.length === allPrompts.length) {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
-
       await savePrompts(updatedPrompts);
       return true;
     } catch (error) {
@@ -227,34 +185,23 @@ window.PromptFinder.PromptData = (function () {
       return false;
     }
   };
-
-  /**
-   * Update a prompt's rating
-   * @param {string} promptId ID of the prompt to rate
-   * @param {number} rating New rating value to add (1-5)
-   * @returns {Promise<Object>} The updated prompt with new average rating
-   */
   const updatePromptRating = async (promptId, rating) => {
     try {
       const allPrompts = await loadPrompts();
       const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-
       if (promptIndex === -1) {
         throw new Error(`Prompt with ID ${promptId} not found in collection`);
       }
-
       const old = allPrompts[promptIndex];
       const newCount = (old.ratingCount || 0) + 1;
       const newSum = (old.ratingSum || 0) + rating;
       const newAvg = newSum / newCount;
-
       allPrompts[promptIndex] = {
         ...old,
         ratingSum: newSum,
         ratingCount: newCount,
-        rating: newAvg, // Store the calculated average rating
+        rating: newAvg, 
       };
-
       await savePrompts(allPrompts);
       return allPrompts[promptIndex];
     } catch (error) {
@@ -265,24 +212,15 @@ window.PromptFinder.PromptData = (function () {
       throw error;
     }
   };
-
-  /**
-   * Toggle favorite status for a prompt
-   * @param {string} promptId ID of the prompt to toggle favorite status
-   * @returns {Promise<Object>} The updated prompt
-   */
   const toggleFavorite = async promptId => {
     try {
       const allPrompts = await loadPrompts();
       const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-
       if (promptIndex === -1) {
         throw new Error(`Prompt with ID ${promptId} not found in collection`);
       }
-
       const wasFavorite = allPrompts[promptIndex].favorites === 1;
       allPrompts[promptIndex].favorites = wasFavorite ? 0 : 1;
-
       await savePrompts(allPrompts);
       return allPrompts[promptIndex];
     } catch (error) {
@@ -293,21 +231,13 @@ window.PromptFinder.PromptData = (function () {
       throw error;
     }
   };
-
-  /**
-   * Copy a prompt to clipboard
-   * @param {string} promptId ID of the prompt to copy
-   * @returns {Promise<boolean>} Success status
-   */
   const copyPromptToClipboard = async promptId => {
     try {
       const allPrompts = await loadPrompts();
       const prompt = allPrompts.find(p => p.id === promptId);
-
       if (!prompt) {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
-
       await navigator.clipboard.writeText(prompt.text);
       return true;
     } catch (error) {
@@ -318,36 +248,20 @@ window.PromptFinder.PromptData = (function () {
       return false;
     }
   };
-
-  /**
-   * Find a prompt by ID
-   * @param {string} promptId ID of the prompt to find
-   * @param {Array} [prompts] Optional array of prompts to search in
-   * @param {Object} [options] Additional options
-   * @param {boolean} [options.throwIfNotFound=false] Whether to throw an error if prompt not found
-   * @param {boolean} [options.handleError=false] Whether to handle errors with Utils.handleError
-   * @returns {Promise<Object|null>} Promise resolving to the found prompt or null
-   */
   const findPromptById = async (promptId, prompts = null, options = {}) => {
     const { throwIfNotFound = false, handleError = false } = options;
-
     if (!promptId) return Promise.resolve(null);
-
     try {
       let prompt = null;
-
       if (prompts) {
         prompt = prompts.find(p => p.id === promptId) || null;
       } else {
-        // If prompts not provided, load from storage
         const allPrompts = await loadPrompts();
         prompt = allPrompts.find(p => p.id === promptId) || null;
       }
-
       if (!prompt && throwIfNotFound) {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
-
       return prompt;
     } catch (error) {
       if (handleError) {
@@ -359,27 +273,13 @@ window.PromptFinder.PromptData = (function () {
       return null;
     }
   };
-
-  /**
-   * Filter prompts based on criteria
-   * @param {Array} prompts Array of prompts to filter
-   * @param {Object} filters Filter criteria
-   * @param {string} [filters.searchTerm] Text to search for in title, text, category, tags
-   * @param {string} [filters.tab] Tab filter: 'all', 'favs', or 'private'
-   * @param {number} [filters.minRating] Minimum rating filter
-   * @returns {Array} Filtered prompts
-   */
   const filterPrompts = (prompts, filters) => {
     let result = [...prompts];
-
-    // Apply tab filter
     if (filters.tab === 'favs') {
       result = result.filter(p => p.favorites === 1);
     } else if (filters.tab === 'private') {
       result = result.filter(p => p.isPrivate);
     }
-
-    // Apply search filter
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
       result = result.filter(
@@ -390,24 +290,17 @@ window.PromptFinder.PromptData = (function () {
           p.tags.some(tag => tag.toLowerCase().includes(term))
       );
     }
-
-    // Apply rating filter
     if (filters.minRating > 0) {
       result = result.filter(p => (p.rating || 0) >= filters.minRating);
     }
-
     return result;
   };
 
-  // Return public API
   return {
-    // Auth functions
     signupUser,
     loginUser,
     logoutUser,
     onAuthStateChanged,
-
-    // Existing prompt functions
     loadPrompts,
     savePrompts,
     createPrompt,
