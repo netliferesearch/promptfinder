@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Namespace aliases for convenience
   const PromptData = window.PromptFinder.PromptData;
   const UI = window.PromptFinder.UI;
-  const Utils = window.PromptFinder.Utils; // Assuming Utils is also on PromptFinder namespace
+  const Utils = window.PromptFinder.Utils;
 
   let currentUser = null;
 
@@ -49,42 +49,29 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateUIAfterAuthStateChange(user) {
     currentUser = user;
     if (user) {
-      // User is logged in
       showMainContentView();
       if (accountButtonIcon) {
-        accountButtonIcon.classList.remove('fa-user-circle'); // Logged out icon
-        accountButtonIcon.classList.add('fa-sign-out-alt');   // Logged in icon (logout action)
+        accountButtonIcon.classList.remove('fa-user-circle'); 
+        accountButtonIcon.classList.add('fa-sign-out-alt');   
       }
       if (accountButton) accountButton.setAttribute('aria-label', 'Logout');
-      // TODO: Load user-specific prompts or refresh list
       console.log("User is logged in:", user.email);
     } else {
-      // User is logged out
-      showMainContentView(); // Or optionally showAuthView() if preferred for logged-out users
+      showMainContentView(); 
       if (accountButtonIcon) {
         accountButtonIcon.classList.remove('fa-sign-out-alt');
         accountButtonIcon.classList.add('fa-user-circle');
       }
       if (accountButton) accountButton.setAttribute('aria-label', 'Login or Signup');
-      // TODO: Clear any user-specific data from UI
       console.log("User is logged out");
     }
   }
 
-  // --- Event Listeners ---
   if (accountButton) {
     accountButton.addEventListener('click', () => {
       if (currentUser) {
-        // If user is logged in, account button acts as logout
-        PromptData.logoutUser().then(success => {
-          if (success) {
-            // Auth state change will trigger UI update via onAuthStateChanged
-          } else {
-            // Error already handled by PromptData
-          }
-        });
+        PromptData.logoutUser(); // onAuthStateChanged will handle UI update
       } else {
-        // If user is logged out, account button shows login/signup view
         showAuthView();
       }
     });
@@ -102,17 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
       const email = loginEmailInput.value;
       const password = loginPasswordInput.value;
-      const userCredential = await PromptData.loginUser(email, password);
-      if (userCredential) {
-        // Success, onAuthStateChanged will handle UI update and view switch
+      const result = await PromptData.loginUser(email, password);
+      if (result && result.user) { // Successfully got UserCredential
         loginForm.reset();
+        // onAuthStateChanged will handle UI update and view switch
+      } else if (result instanceof Error) { // Got an Error object
+        Utils.displayAuthError(result.message, authErrorMessage);
       } else {
-        if (authErrorMessage && Utils && Utils.displayAuthError) {
-            Utils.displayAuthError('Failed to login. Please check your credentials.', authErrorMessage);
-        } else if (authErrorMessage) {
-            authErrorMessage.textContent = 'Failed to login. Please check your credentials.';
-            authErrorMessage.classList.remove('hidden');
-        }
+         Utils.displayAuthError('Login failed. Unknown error.', authErrorMessage);
       }
     });
   }
@@ -123,41 +107,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
       const email = signupEmailInput.value;
       const password = signupPasswordInput.value;
-      const userCredential = await PromptData.signupUser(email, password);
-      if (userCredential) {
-        // Success, onAuthStateChanged will handle UI update and view switch
+      const result = await PromptData.signupUser(email, password);
+      if (result && result.user) { // Successfully got UserCredential
         signupForm.reset();
+        // onAuthStateChanged will handle UI update and view switch
+      } else if (result instanceof Error) { // Got an Error object
+        Utils.displayAuthError(result.message, authErrorMessage);
       } else {
-        if (authErrorMessage && Utils && Utils.displayAuthError) {
-            Utils.displayAuthError('Failed to signup. The email might be in use or password too weak.', authErrorMessage);
-        } else if (authErrorMessage) {
-            authErrorMessage.textContent = 'Failed to signup. The email might be in use or password too weak.';
-            authErrorMessage.classList.remove('hidden');
-        }
+        Utils.displayAuthError('Signup failed. Unknown error.', authErrorMessage);
       }
     });
   }
 
-  // Initialize Firebase Auth State Listener
   if (PromptData && PromptData.onAuthStateChanged) {
     PromptData.onAuthStateChanged(updateUIAfterAuthStateChange);
   } else {
     console.error("PromptData.onAuthStateChanged not found. Firebase Auth might not be initialized correctly.");
-    // Fallback UI state if auth listener fails
     updateUIAfterAuthStateChange(null); 
   }
 
-  // Initialize the rest of the UI module
   if (UI && UI.initializeUI) {
     UI.initializeUI();
   } else {
     console.error("PromptFinder.UI module not found.");
   }
 
-  // Initial setup based on current auth state (in case onAuthStateChanged fires before DOMContentLoaded fully finishes)
-  // or if firebaseAuth is immediately available and has a currentUser.
   if (window.firebaseAuth) {
       updateUIAfterAuthStateChange(window.firebaseAuth.currentUser);
   }
-
 });
