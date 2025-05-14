@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const accountButton = document.getElementById('account-button');
   const accountButtonIcon = accountButton ? accountButton.querySelector('i') : null;
   const cancelAuthButton = document.getElementById('cancel-auth-button');
-  const generalErrorMessageElement = document.getElementById('error-message'); // For general errors
-  const confirmationMessageElement = document.getElementById('confirmation-message'); // For success messages
+  const generalErrorMessageElement = document.getElementById('error-message'); 
+  const confirmationMessageElement = document.getElementById('confirmation-message'); 
 
   // Auth Forms
   const loginForm = document.getElementById('login-form');
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupEmailInput = document.getElementById('signup-email');
   const signupPasswordInput = document.getElementById('signup-password');
   const authErrorMessage = document.getElementById('auth-error-message');
+  const googleSignInButton = document.getElementById('google-signin-button'); 
 
   // Namespace aliases for convenience
   const PromptData = window.PromptFinder.PromptData;
@@ -112,13 +113,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Utils.showConfirmationMessage) {
             Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
                  messageElement: confirmationMessageElement,
-                 timeout: 5000 // Extended timeout to 5 seconds
+                 timeout: 5000 
             });
         }
       } else if (result instanceof Error) { 
         Utils.displayAuthError(result.message, authErrorMessage);
       } else {
         Utils.displayAuthError('Signup failed. Unknown error.', authErrorMessage);
+      }
+    });
+  }
+
+  if (googleSignInButton) {
+    googleSignInButton.addEventListener('click', async () => {
+      if (authErrorMessage) authErrorMessage.classList.add('hidden');
+      const result = await PromptData.signInWithGoogle();
+      if (result && result.user) {
+        // Success: onAuthStateChanged will handle UI update and view switch
+      } else if (result instanceof Error) {
+        // Error already displayed by signInWithGoogle or Utils.displayAuthError
+        // No additional error display needed here unless specific handling is required
+      } else {
+        Utils.displayAuthError('Google Sign-In failed. Unknown error.', authErrorMessage);
       }
     });
   }

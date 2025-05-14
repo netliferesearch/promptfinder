@@ -145,54 +145,65 @@ All planned items for Phase 1 have been addressed, and we are ready to proceed t
 
 ### Phase 2: Development (4-8 Weeks)
 
-1.  **Authentication Implementation:**
-    *   Integrate Firebase Authentication SDK into the Chrome extension.
-    *   Implement login, signup, logout, and session management UI and logic.
-    *   Update UI to reflect logged-in/logged-out state.
-2.  **Firebase SDK Integration:**
-    *   Add Firebase SDK (Firestore) to the extension.
-    *   Initialize Firebase in the extension's background script or relevant pages.
-3.  **CRUD Operations for Prompts:**
-    *   **Modify `js/promptData.js` (or create a new service `firebaseService.js`):**
-        *   Replace `chrome.storage.local.get` and `chrome.storage.local.set` calls with Firestore `get`, `add`, `update`, `delete` operations.
-        *   Implement functions to fetch shared prompts (query where `isPrivate == false`).
-        *   Implement functions to fetch private prompts for the logged-in user (query where `userId == currentUser.uid` and `isPrivate == true`).
-        *   Handle real-time updates from Firestore if desired (e.g., for shared prompts).
-    *   **Update UI Logic (`js/ui.js`):**
+1.  **Authentication Implementation (Email/Password):**
+    *   Integrate Firebase Authentication SDK into the Chrome extension (using local -compat.js files).
+    *   Implement login, signup, logout (email/password) UI and logic in `popup.html`, `app.js`, and `js/promptData.js`.
+    *   Update UI to reflect logged-in/logged-out state for email/password auth.
+2.  **Implement Google Sign-In with Offscreen Document (Manifest V3):**
+    *   Add "offscreen" permission to `manifest.json`.
+    *   Create an offscreen HTML document (`offscreen.html`) and its corresponding JavaScript (`offscreen.js`).
+    *   `offscreen.js` will handle the `firebase.auth.signInWithPopup(googleProvider)` call.
+    *   Use `chrome.runtime.sendMessage` to communicate between `app.js` (or `js/promptData.js`) and `offscreen.js` to initiate the flow and receive the result.
+    *   Update `signInWithGoogle` in `js/promptData.js` to use this offscreen document mechanism.
+    *   Ensure appropriate UI feedback during the Google Sign-in process.
+3.  **Firebase SDK Integration (Firestore):**
+    *   Add Firebase SDK (Firestore - `firebase-firestore-compat.js`) to the extension's local library.
+    *   Initialize Firebase (Firestore) in `js/firebase-init.js` and make `db` globally available.
+4.  **CRUD Operations for Prompts (Firestore):**
+    *   **Modify `js/promptData.js`:**
+        *   Replace `chrome.storage.local.get` and `chrome.storage.local.set` calls with Firestore `get`, `add`, `update`, `delete` operations for prompts.
+        *   Associate prompts with `currentUser.uid`.
+        *   Refactor `loadPrompts` to fetch prompts based on user (private vs. shared - initially focus on user's own prompts).
+        *   Update `addPrompt`, `updatePrompt`, `deletePrompt` to use Firestore.
+    *   **Update UI Logic (`js/ui.js`, `app.js`):**
         *   Adapt UI rendering functions to work with data fetched from Firestore.
-        *   Ensure UI updates correctly reflect private vs. shared status, user-specific ratings/favorites for private prompts, and aggregate data for shared prompts.
-4.  **Implement "Private" Tab Logic:**
-    *   Ensure the "Private" tab only fetches and displays prompts where `isPrivate == true` and `userId` matches the currently logged-in user.
-5.  **Implement Shared Prompts Logic:**
-    *   The main or "All Prompts" tab should display all shared prompts (`isPrivate == false`).
-    *   If a user is logged in, it could potentially also show their private prompts or have a clear distinction.
-6.  **Rating and Favorites for Shared Prompts:**
-    *   Implement logic to update `averageRating`, `totalRatings`, and `cumulativeFavorites` for shared prompts. This might involve Cloud Functions for aggregation to avoid race conditions and ensure atomicity, or careful client-side updates if simpler.
-    *   For individual user interactions (e.g., "did *I* rate this shared prompt?"), you might need to store this relationship separately (see `prompt_ratings` collection idea) or adapt the UI.
-7.  **Implement Firestore Security Rules:**
-    *   Deploy and thoroughly test the security rules defined in the planning phase.
-8.  **Data Migration:** **Not applicable** as per the decision to not offer a migration service.
-9.  **Error Handling:**
-    *   Update error handling (`js/utils.js`) to manage potential errors from Firebase operations (e.g., network issues, permission denied).
-10. **Testing:**
-    *   Unit tests for new data service functions.
-    *   Integration tests for Firebase interactions.
+        *   Ensure UI updates correctly reflect private vs. shared status (once shared implemented).
+5.  **Implement "Private" Tab Logic (Firestore):**
+    *   Ensure the "Private" tab only fetches and displays prompts where `isPrivate == true` and `userId` matches the currently logged-in user from Firestore.
+6.  **Implement Shared Prompts Logic (Firestore - Initial Phase):**
+    *   The main or "All Prompts" tab should display all shared prompts (`isPrivate == false`) from Firestore.
+    *   Focus on read-only for shared prompts initially if contribution flow is complex.
+7.  **Rating and Favorites for Shared Prompts (Firestore - Initial Phase):**
+    *   Implement basic UI for rating/favoriting shared prompts.
+    *   Defer complex aggregation or Cloud Function logic for `averageRating` etc., if necessary, focusing on storing individual user interactions (e.g., in `user_prompt_interactions` collection or directly on the prompt if simpler for a first pass).
+8.  **Implement Firestore Security Rules:**
+    *   Deploy and thoroughly test the security rules defined in the planning phase, adapting as necessary for prompt data.
+9.  **Data Migration:** **Not applicable** as per the decision to not offer a migration service.
+10. **Error Handling:**
+    *   Continuously refine error handling for Firebase operations in `js/utils.js` and throughout the data/UI layers.
+11. **Testing:**
+    *   Unit tests for new/modified data service functions in `js/promptData.js`.
+    *   Integration tests for Firebase interactions (Auth and Firestore).
     *   End-to-end tests for login, prompt creation (public/private), viewing, and synchronization.
 
 ### Phase 3: Testing & Deployment (2-4 Weeks)
 
 1.  **Thorough Testing:**
-    *   **Functional Testing:** Verify all features work as expected (CRUD, private/shared, ratings, favorites, auth).
-    *   **Security Testing:** Test Firestore security rules rigorously. Try to access/modify data without proper authentication or permissions.
-    *   **Cross-Device/Browser Testing:** Test synchronization across different browsers and profiles.
-    *   **Performance Testing:** Assess load times and responsiveness with a reasonable amount of data.
-    *   **Usability Testing:** Get feedback on the new authentication flow and any UI changes.
+    *   **Functional Testing:** Verify all features work as expected (CRUD, private/shared, ratings, favorites, auth, Google Sign-In).
+    *   **Security Testing:** Test Firestore security rules rigorously.
+    *   **Cross-Device/Browser Testing:** Test synchronization.
+    *   **Performance Testing:** Assess load times.
+    *   **Usability Testing:** Get feedback.
 2.  **Beta Testing (Recommended):**
-    *   Release to a small group of beta testers to gather real-world feedback and identify bugs.
-3.  **Documentation:**
-    *   Update any user-facing documentation. **Crucially, clearly communicate that existing prompts will not be automatically migrated and users will need to re-add them.**
-    *   Document the new architecture and Firebase setup for maintainers.
-4.  **Review and Address Dependency Warnings:**
+    *   Release to a small group of beta testers.
+3.  **Integrate Firebase Analytics:**
+    *   Include Firebase Analytics SDK locally (`firebase-analytics-compat.js`).
+    *   Initialize in `js/firebase-init.js` and make it globally available (e.g., `window.firebaseAnalytics`).
+    *   Log relevant user interaction events (e.g., login, signup, prompt_added, prompt_copied, feature_used).
+4.  **Documentation:**
+    *   Update user-facing documentation.
+    *   Document new architecture for maintainers.
+5.  **Review and Address Dependency Warnings:**
     *   Investigate warnings from `npm install`. Specific warnings observed around late 2024 include:
         *   **EBADENGINE (Unsupported engine) for multiple ESLint-related packages:** 
             *   `@eslint/config-array@0.20.0`
@@ -212,38 +223,37 @@ All planned items for Phase 1 have been addressed, and we are ready to proceed t
             *   `abab@2.0.6`: Suggests using native `atob()` and `btoa()`.
             *   `glob@7.2.3`: Versions prior to v9 are no longer supported.
             *   `domexception@4.0.0`: Suggests using native `DOMException`.
-    *   Update Node.js/npm version if necessary to match engine requirements for key dependencies like ESLint.
-    *   Update or replace deprecated packages with recommended alternatives.
-    *   This ensures better long-term stability, security, and compatibility of the development environment and build process.
-5.  **Deployment to Chrome Web Store:**
-    *   Prepare the extension package.
-    *   Update manifest file if necessary (e.g., permissions for Firebase domains if not already covered).
-    *   Submit the updated extension to the Chrome Web Store.
-6.  **Monitoring & Iteration:**
-    *   Monitor Firebase console for usage, performance, and errors.
-    *   Collect user feedback and plan for future iterations or bug fixes.
+    *   Update Node.js/npm version if necessary.
+    *   Update or replace deprecated packages.
+6.  **Deployment to Chrome Web Store:**
+    *   Prepare extension package.
+    *   Submit to Chrome Web Store.
+7.  **Monitoring & Iteration:**
+    *   Monitor Firebase console.
+    *   Collect user feedback.
 
 ## 7. Potential Challenges & Limitations
 
-*   **Offline Support:** Firestore provides offline data persistence out-of-the-box for web clients, which is beneficial. However, complex offline scenarios or conflicts might need careful handling. The current `chrome.storage.local` inherently works offline.
-*   **Firestore Costs:** While Firebase has a generous free tier, costs can increase with high usage (reads, writes, storage). Monitor usage and optimize queries.
-*   **Security Rule Complexity:** Writing and testing robust Firestore security rules can be challenging but is critical for data protection.
-*   **Learning Curve:** If the team is new to Firebase or NoSQL databases, there will be a learning curve.
-*   **User Transition:** Users will need to create accounts and manually re-enter their existing prompts. Clear communication is key to managing expectations and minimizing frustration.
-*   **Real-time Sync Complexity (if heavily used):** While powerful, managing many real-time listeners can add complexity to client-side code.
+*   **Offline Support:** Firestore provides offline data persistence.
+*   **Firestore Costs:** Monitor usage.
+*   **Security Rule Complexity:** Critical.
+*   **Learning Curve:** Firebase/NoSQL.
+*   **User Transition:** Manual re-entry of prompts.
+*   **Real-time Sync Complexity:** Manage listeners carefully.
+*   **Offscreen Document for OAuth:** Adds complexity for social sign-ins in MV3.
 
 ## 8. Best Practices
 
-*   **Granular Security Rules:** Implement the principle of least privilege.
-*   **Efficient Queries:** Optimize Firestore queries to reduce reads/writes and improve performance. Use indexing effectively.
-*   **Data Validation:** Use Firestore security rules for server-side data validation and client-side validation for a better UX.
-*   **Error Handling:** Implement comprehensive error handling for all Firebase operations.
-*   **Environment Configuration:** Use different Firebase projects or configurations for development, staging, and production.
-*   **Regular Backups (if deemed necessary beyond Firestore's inherent reliability):** Firestore offers managed backups or you can implement custom export solutions.
-*   **Monitor Usage and Costs:** Keep an eye on the Firebase console.
-*   **Iterative Development:** Roll out features incrementally if possible.
-*   **Clear User Communication:** Inform users about the changes, why accounts are needed, how their data is handled, and **specifically that existing local prompts will not be migrated automatically.**
+*   **Granular Security Rules.**
+*   **Efficient Queries.**
+*   **Data Validation.**
+*   **Error Handling.**
+*   **Environment Configuration.**
+*   **Regular Backups.**
+*   **Monitor Usage and Costs.**
+*   **Iterative Development.**
+*   **Clear User Communication.**
 
 ## 9. Conclusion
 
-Migrating to a database solution like Firebase Firestore with Firebase Authentication will significantly enhance the PromptFinder extension by enabling cross-device synchronization and shared prompt functionalities. While it introduces new complexities, the benefits in terms of user experience and feature potential are substantial. Careful planning, phased development, and thorough testing will be key to a successful migration. Clear communication with users regarding the lack of automatic data migration will be essential for a smooth transition.
+Migrating to Firebase Firestore and Authentication will greatly enhance PromptFinder. Careful planning, phased development, thorough testing, and clear communication are key to success.
