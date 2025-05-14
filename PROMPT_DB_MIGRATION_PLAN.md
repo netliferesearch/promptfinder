@@ -192,11 +192,34 @@ All planned items for Phase 1 have been addressed, and we are ready to proceed t
 3.  **Documentation:**
     *   Update any user-facing documentation. **Crucially, clearly communicate that existing prompts will not be automatically migrated and users will need to re-add them.**
     *   Document the new architecture and Firebase setup for maintainers.
-4.  **Deployment to Chrome Web Store:**
+4.  **Review and Address Dependency Warnings:**
+    *   Investigate warnings from `npm install`. Specific warnings observed around late 2024 include:
+        *   **EBADENGINE (Unsupported engine) for multiple ESLint-related packages:** 
+            *   `@eslint/config-array@0.20.0`
+            *   `@eslint/config-helpers@0.2.2`
+            *   `@eslint/core@0.13.0`
+            *   `@eslint/eslintrc@3.3.1`
+            *   `@eslint/js@9.26.0`
+            *   `@eslint/object-schema@2.1.6`
+            *   `@eslint/plugin-kit@0.2.8`
+            *   `eslint@9.26.0`
+            *   `eslint-scope@8.3.0`
+            *   `eslint-visitor-keys@4.2.0`
+            *   `espree@10.3.0`
+            *   (All noted as requiring Node.js `^18.18.0 || ^20.9.0 || >=21.1.0`, while project was using `v20.1.0`)
+        *   **Deprecated Packages:**
+            *   `inflight@1.0.6`: Leaks memory. Suggests `lru-cache`.
+            *   `abab@2.0.6`: Suggests using native `atob()` and `btoa()`.
+            *   `glob@7.2.3`: Versions prior to v9 are no longer supported.
+            *   `domexception@4.0.0`: Suggests using native `DOMException`.
+    *   Update Node.js/npm version if necessary to match engine requirements for key dependencies like ESLint.
+    *   Update or replace deprecated packages with recommended alternatives.
+    *   This ensures better long-term stability, security, and compatibility of the development environment and build process.
+5.  **Deployment to Chrome Web Store:**
     *   Prepare the extension package.
     *   Update manifest file if necessary (e.g., permissions for Firebase domains if not already covered).
     *   Submit the updated extension to the Chrome Web Store.
-5.  **Monitoring & Iteration:**
+6.  **Monitoring & Iteration:**
     *   Monitor Firebase console for usage, performance, and errors.
     *   Collect user feedback and plan for future iterations or bug fixes.
 
