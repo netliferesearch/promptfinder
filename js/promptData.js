@@ -12,6 +12,86 @@ window.PromptFinder.PromptData = (function () {
   // Private reference to Utils namespace
   const Utils = window.PromptFinder.Utils;
 
+  // --- Firebase Authentication Functions ---
+
+  /**
+   * Signs up a new user with email and password.
+   * @param {string} email - User's email.
+   * @param {string} password - User's password.
+   * @returns {Promise<firebase.auth.UserCredential | null>} Firebase user credential or null on error.
+   */
+  const signupUser = async (email, password) => {
+    if (!window.firebaseAuth) {
+      Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
+      return null;
+    }
+    try {
+      const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
+      console.log("User signed up:", userCredential.user);
+      return userCredential;
+    } catch (error) {
+      Utils.handleError(`Signup error: ${error.message}`, { userVisible: true, originalError: error });
+      return null;
+    }
+  };
+
+  /**
+   * Logs in an existing user with email and password.
+   * @param {string} email - User's email.
+   * @param {string} password - User's password.
+   * @returns {Promise<firebase.auth.UserCredential | null>} Firebase user credential or null on error.
+   */
+  const loginUser = async (email, password) => {
+    if (!window.firebaseAuth) {
+      Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
+      return null;
+    }
+    try {
+      const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
+      console.log("User logged in:", userCredential.user);
+      return userCredential;
+    } catch (error) {
+      Utils.handleError(`Login error: ${error.message}`, { userVisible: true, originalError: error });
+      return null;
+    }
+  };
+
+  /**
+   * Logs out the current user.
+   * @returns {Promise<boolean>} True if logout was successful, false otherwise.
+   */
+  const logoutUser = async () => {
+    if (!window.firebaseAuth) {
+      Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
+      return false;
+    }
+    try {
+      await window.firebaseAuth.signOut();
+      console.log("User logged out");
+      return true;
+    } catch (error) {
+      Utils.handleError(`Logout error: ${error.message}`, { userVisible: true, originalError: error });
+      return false;
+    }
+  };
+
+  /**
+   * Sets up an observer for Firebase authentication state changes.
+   * @param {function} callback - Function to call with the user object (or null) when auth state changes.
+   * @returns {function} Unsubscribe function from Firebase.
+   */
+  const onAuthStateChanged = (callback) => {
+    if (!window.firebaseAuth) {
+      Utils.handleError('Firebase Auth not initialized.', { userVisible: false });
+      // Immediately call callback with null if auth isn't ready, though this shouldn't happen if init is correct
+      callback(null);
+      return () => {}; // Return a no-op unsubscribe function
+    }
+    return window.firebaseAuth.onAuthStateChanged(callback);
+  };
+
+  // --- Existing Prompt Functions (will be refactored for Firebase later) ---
+
   /**
    * Load all prompts from storage
    * @returns {Promise<Array>} Array of prompt objects
@@ -55,7 +135,7 @@ window.PromptFinder.PromptData = (function () {
    */
   const createPrompt = promptData => {
     return {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // This will change when using Firestore
       title: promptData.title || '',
       text: promptData.text || '',
       category: promptData.category || '',
@@ -321,6 +401,13 @@ window.PromptFinder.PromptData = (function () {
 
   // Return public API
   return {
+    // Auth functions
+    signupUser,
+    loginUser,
+    logoutUser,
+    onAuthStateChanged,
+
+    // Existing prompt functions
     loadPrompts,
     savePrompts,
     createPrompt,
