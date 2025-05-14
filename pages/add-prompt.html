@@ -41,7 +41,7 @@
             <input type="text" id="prompt-tags" />
           </div>
           <div>
-            <input type="checkbox" id="prompt-.private" />
+            <input type="checkbox" id="prompt-private" />
             <label for="prompt-private">Make Private</label>
           </div>
           <div class="form-buttons">
@@ -52,7 +52,12 @@
       </section>
     </div>
 
-    <script type="module" src="../js/firebase-init.js"></script>
+    <!-- Load Firebase SDKs from node_modules -->
+    <script src="../node_modules/firebase/app/dist/firebase-app.js"></script>
+    <script src="../node_modules/firebase/auth/dist/firebase-auth.js"></script>
+    <!-- Add other Firebase services as needed -->
+
+    <script src="../js/firebase-init.js"></script> <!-- No longer a module -->
     <script src="../js/utils.js"></script>
     <script src="../js/promptData.js"></script>
     <script src="../js/css-class-helper.js"></script>
