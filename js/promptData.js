@@ -59,6 +59,40 @@ window.PromptFinder.PromptData = (function () {
   };
 
   /**
+   * Signs in a user with Google.
+   * IMPORTANT: For Manifest V3, this will require an Offscreen Document to work reliably.
+   * This function provides the basic Firebase logic; the Offscreen Document part needs to be implemented separately.
+   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
+   */
+  const signInWithGoogle = async () => {
+    if (!window.firebaseAuth || !window.firebase || !window.firebase.auth || !window.firebase.auth.GoogleAuthProvider) {
+      const err = new Error('Firebase Auth or GoogleAuthProvider not initialized.');
+      Utils.handleError(err.message, { userVisible: true, originalError: err });
+      return err;
+    }
+    try {
+      const provider = new window.firebase.auth.GoogleAuthProvider();
+      // TODO: For Manifest V3, signInWithPopup needs to be handled via an Offscreen Document.
+      // This direct call will likely be blocked or behave unexpectedly in an extension popup.
+      // For now, we include it to show an alert and log an error until Offscreen Document is implemented.
+      const message = 'Google Sign-In with popup requires an Offscreen Document in Manifest V3. This feature is not fully implemented yet.';
+      alert(message); // User-facing alert
+      console.warn(message); // Console warning for developer
+      const err = new Error(message); // Create an error to return for consistent handling
+      Utils.displayAuthError(message, document.getElementById('auth-error-message')); // Display in auth error UI
+      return err;
+      // const userCredential = await window.firebaseAuth.signInWithPopup(provider);
+      // console.log("User signed in with Google:", userCredential.user);
+      // return userCredential;
+    } catch (error) {
+      // This catch block might not be reached if signInWithPopup is blocked before it can throw a typical error
+      Utils.handleError(`Google Sign-In error: ${error.message}`, { userVisible: true, originalError: error });
+      return error;
+    }
+  };
+
+
+  /**
    * Logs out the current user.
    * @returns {Promise<boolean>} True if logout was successful, false otherwise.
    */
@@ -299,6 +333,7 @@ window.PromptFinder.PromptData = (function () {
   return {
     signupUser,
     loginUser,
+    signInWithGoogle, // Added new function
     logoutUser,
     onAuthStateChanged,
     loadPrompts,
