@@ -8,7 +8,7 @@
   },
   "permissions": ["storage", "clipboardWrite", "windows"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
   },
   "icons": {
     "16": "icons/icon16.png",
