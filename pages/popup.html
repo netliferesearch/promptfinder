@@ -6,6 +6,7 @@
     <title>PromptFinder</title>
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/pages/popup.css" />
+    <link rel="stylesheet" href="../css/pages/auth.css" /> <!-- Added auth.css -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -18,145 +19,105 @@
       <!-- Header -->
       <header class="pf-header">
         <h1>PromptFinder</h1>
-        <button id="settings-button" aria-label="Settings">
-          <i class="fas fa-cog"></i> <!-- This icon acts as the button's visual, aria-label provides name -->
-        </button>
+        <div class="header-actions">
+          <button id="account-button" aria-label="Account">
+            <i class="fas fa-user-circle"></i> <!-- Placeholder icon -->
+          </button>
+          <button id="settings-button" aria-label="Settings">
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
       </header>
 
-      <!-- Search and filter/sort controls -->
-      <section class="controls">
-        <!-- Added visually hidden label for search input -->
-        <label for="search-input" class="visually-hidden">Search Prompts</label>
-        <input type="text" id="search-input" placeholder="Search prompts..." class="form-input" />
-        <div class="actions">
-          <button id="filter-button" class="button button-secondary button-sm">
-            <i class="fas fa-filter" aria-hidden="true"></i> Filters
+      <!-- Main content area (will be hidden when auth view is shown) -->
+      <main id="main-content">
+        <!-- Search and filter/sort controls -->
+        <section class="controls">
+          <label for="search-input" class="visually-hidden">Search Prompts</label>
+          <input type="text" id="search-input" placeholder="Search prompts..." class="form-input" />
+          <div class="actions">
+            <button id="filter-button" class="button button-secondary button-sm">
+              <i class="fas fa-filter" aria-hidden="true"></i> Filters
+            </button>
+            <button id="sort-button" class="button button-secondary button-sm">
+              <i class="fas fa-clock" aria-hidden="true"></i> Sort
+            </button>
+          </div>
+          <div id="rating-filter" class="filter-panel hidden">
+            <label for="min-rating" class="form-label">Minimum Rating:</label>
+            <select id="min-rating" class="form-input">
+              <option value="0">Any</option>
+              <option value="1">★</option>
+              <option value="2">★★</option>
+              <option value="3">★★★</option>
+              <option value="4">★★★★</option>
+            </select>
+          </div>
+        </section>
+        <p id="confirmation-message" class="hidden" aria-live="polite"></p>
+        <p id="error-message" class="hidden" aria-live="assertive"></p>
+        <div class="add-prompt-bar">
+          <button id="add-prompt-button" class="button button-primary">
+            <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
           </button>
-          <button id="sort-button" class="button button-secondary button-sm">
-            <i class="fas fa-clock" aria-hidden="true"></i> Sort
-          </button>
         </div>
-        <!-- Rating filter (initially hidden) -->
-        <div id="rating-filter" class="filter-panel hidden">
-          <label for="min-rating" class="form-label">Minimum Rating:</label>
-          <!-- Removed redundant aria-label as <label for> is sufficient -->
-          <select id="min-rating" class="form-input">
-            <option value="0">Any</option>
-            <option value="1">★</option>
-            <option value="2">★★</option>
-            <option value="3">★★★</option>
-            <option value="4">★★★★</option>
-          </select>
-        </div>
-      </section>
-      <!-- Confirmation & error messages with ARIA live regions -->
-      <p id="confirmation-message" class="hidden" aria-live="polite"></p>
-      <p id="error-message" class="hidden" aria-live="assertive"></p>
+        <nav class="tabs" role="tablist" aria-label="Prompt categories">
+          <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
+          <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
+          <button id="tab-private" role="tab" aria-selected="false">Private</button>
+        </nav>
+        <section id="prompts-list" class="cards-container"></section>
+        <section id="prompt-details-section" class="hidden"> </section>
+        <section id="add-prompt-section" class="hidden"> </section>
+        <footer class="bottom-bar hidden"></footer>
+      </main>
 
-      <!-- Add prompt button section (moved from bottom) -->
-      <div class="add-prompt-bar">
-        <button id="add-prompt-button" class="button button-primary">
-          <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
-        </button>
-      </div>
-
-      <!-- Tab navigation with ARIA roles -->
-      <nav class="tabs" role="tablist" aria-label="Prompt categories">
-        <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
-        <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
-        <button id="tab-private" role="tab" aria-selected="false">Private</button>
-      </nav>
-
-      <!-- Card grid for prompt list -->
-      <section id="prompts-list" class="cards-container"></section>
-
-      <!-- Details and Add sections remain, hidden/toggled by JS -->
-      <section id="prompt-details-section" class="hidden">
-        <div class="detail-card">
-          <div class="detail-header-icons">
-            <button id="back-to-list-button" aria-label="Back to List">
-              <i class="fas fa-arrow-left"></i> <!-- Icon only button, aria-label is critical -->
-            </button>
-            <button id="copy-prompt-button" aria-label="Copy prompt">
-              <i class="fa-regular fa-copy"></i> <!-- Icon only button -->
-            </button>
-            <button id="edit-prompt-button" aria-label="Edit prompt">
-              <i class="fas fa-edit"></i> <!-- Icon only button -->
-            </button>
-          </div>
-          <!-- Separated favorite button from the h2 for better semantics -->
-          <div class="detail-title-container">
-             <h2 id="prompt-detail-title-heading"><span id="prompt-detail-title"></span></h2>
-             <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
-               <i class="far fa-heart"></i> <!-- Icon only button, needs aria-label -->
-             </button>
-          </div>
-          <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
-          <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
-          <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
+      <!-- Authentication View (initially hidden) -->
+      <section id="auth-view" class="hidden auth-container">
+        <h2>Login or Signup</h2>
+        <!-- Login Form -->
+        <form id="login-form">
+          <h3>Login</h3>
           <div>
-            <strong id="rating-label">Average rating: </strong
-            ><span id="average-rating-value">(0.0)</span>
-            <div class="star-rating-wrapper">
-              <div
-                id="star-rating"
-                data-id=""
-                role="radiogroup"
-                aria-labelledby="rating-label"
-              ></div>
-              <span id="rating-count">(0 ratings)</span>
-            </div>
-          </div>
-          <!-- Delete confirmation dialog enhancements -->
-          <div id="delete-confirmation" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-desc">
-            <h3 id="delete-dialog-title" class="visually-hidden">Confirm Deletion</h3>
-            <p id="delete-dialog-desc">Are you sure you want to delete this prompt?</p>
-            <button id="confirm-delete-button">Delete Prompt</button>
-            <button id="cancel-delete-button">Cancel</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="add-prompt-section" class="hidden">
-        <h2>Add New Prompt</h2>
-        <form id="add-prompt-form">
-          <div>
-            <label for="prompt-title">Title:</label>
-            <input type="text" id="prompt-title" required />
+            <label for="login-email">Email:</label>
+            <input type="email" id="login-email" required />
           </div>
           <div>
-            <label for="prompt-text">Prompt Text:</label>
-            <textarea id="prompt-text" required></textarea>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" required />
           </div>
-          <div>
-            <label for="prompt-category">Category:</label>
-            <input type="text" id="prompt-category" />
-          </div>
-          <div>
-            <label for="prompt-tags">Tags (comma-separated):</label>
-            <input type="text" id="prompt-tags" />
-          </div>
-          <div>
-            <input type="checkbox" id="prompt-private" />
-            <label for="prompt-private">Make Private</label>
-          </div>
-          <div class="form-buttons">
-            <button type="submit" class="button button-primary">Add Prompt</button>
-            <button type="button" id="cancel-add-prompt" class="button button-cancel">
-              Cancel
-            </button>
-          </div>
+          <button type="submit" class="button button-primary">Login</button>
         </form>
+        <hr />
+        <!-- Signup Form -->
+        <form id="signup-form">
+          <h3>Signup</h3>
+          <div>
+            <label for="signup-email">Email:</label>
+            <input type="email" id="signup-email" required />
+          </div>
+          <div>
+            <label for="signup-password">Password:</label>
+            <input type="password" id="signup-password" required />
+          </div>
+          <button type="submit" class="button button-primary">Signup</button>
+        </form>
+        <hr />
+        <!-- Social Login Placeholder -->
+        <div>
+          <button id="google-signin-button" class="button button-secondary">
+            <i class="fab fa-google"></i> Sign in with Google
+          </button>
+        </div>
+        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
+        <button id="cancel-auth-button" class="button button-link">Cancel</button>
       </section>
-      <footer class="bottom-bar hidden">
-      </footer>
+
     </div>
 
     <!-- Load Firebase SDK Compatibility (UMD) bundles from node_modules -->
     <script src="../node_modules/firebase/firebase-app-compat.js"></script>
     <script src="../node_modules/firebase/firebase-auth-compat.js"></script>
-    <!-- Add other Firebase services as needed, e.g., Firestore -->
-    <!-- <script src="../node_modules/firebase/firebase-firestore-compat.js"></script> -->
 
     <script src="../js/firebase-init.js"></script> <!-- Uses global firebase -->
     <script src="../js/utils.js"></script>

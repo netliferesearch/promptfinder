@@ -18,6 +18,13 @@
   color: var(--color-black);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm); /* Adds a small gap between buttons */
+}
+
+
 /* Header with accent color for detached windows */
 .pf-header--accent {
   background-color: var(--color-primary);
@@ -36,13 +43,13 @@
   color: var(--color-white);
 }
 
-/* Header buttons */
-.pf-header button {
+/* Header buttons (applies to both #settings-button and #account-button now) */
+.pf-header .header-actions button {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 1.2rem;
-  color: #666;
+  color: #666; /* Consider using a CSS variable like var(--color-icon) or var(--color-text-secondary) */
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -52,15 +59,15 @@
   transition: background-color 0.2s;
 }
 
-.pf-header button:hover {
+.pf-header .header-actions button:hover {
   background-color: var(--color-gray-200);
 }
 
-.pf-header--accent button {
+.pf-header--accent .header-actions button {
   color: var(--color-white);
 }
 
-.pf-header--accent button:hover {
+.pf-header--accent .header-actions button:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
