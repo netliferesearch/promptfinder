@@ -109,9 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await PromptData.signupUser(email, password);
       if (result && result.user) { 
         signupForm.reset();
-        // onAuthStateChanged will hide the auth view. Show confirmation in main view.
         if (Utils.showConfirmationMessage) {
-            Utils.showConfirmationMessage('Signup successful! You are now logged in.', { messageElement: confirmationMessageElement });
+            Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
+                 messageElement: confirmationMessageElement,
+                 timeout: 5000 // Extended timeout to 5 seconds
+            });
         }
       } else if (result instanceof Error) { 
         Utils.displayAuthError(result.message, authErrorMessage);
