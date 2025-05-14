@@ -1,0 +1,62 @@
+/* css/pages/auth.css */
+.auth-container {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.auth-container h2, .auth-container h3 {
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+}
+
+.auth-container form div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.auth-container label {
+  font-weight: bold;
+  font-size: var(--font-size-sm);
+}
+
+.auth-container input[type="email"],
+.auth-container input[type="password"] {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-md);
+}
+
+.auth-container .error-message {
+  color: var(--color-danger);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.auth-container hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--spacing-lg) 0;
+}
+
+#google-signin-button i {
+    margin-right: var(--spacing-sm);
+}
+
+#cancel-auth-button {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
