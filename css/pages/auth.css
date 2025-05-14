@@ -41,9 +41,14 @@
 
 .auth-container .error-message {
   color: var(--color-danger);
+  background-color: var(--color-danger-light, #fdecea); /* Light background for visibility */
+  border: 1px solid var(--color-danger-border, #f5c6cb);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
   text-align: center;
   font-size: var(--font-size-sm);
-  margin-top: var(--spacing-sm);
+  /* margin-top: var(--spacing-sm); Removed as it's now at the top */
+  margin-bottom: var(--spacing-md); /* Add margin below it before the forms */
 }
 
 .auth-container hr {

@@ -55,7 +55,7 @@
           </div>
         </section>
         <p id="confirmation-message" class="hidden" aria-live="polite"></p>
-        <p id="error-message" class="hidden" aria-live="assertive"></p>
+        <p id="error-message" class="hidden" aria-live="assertive"></p> <!-- General error message for main content -->
         <div class="add-prompt-bar">
           <button id="add-prompt-button" class="button button-primary">
             <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
@@ -75,6 +75,7 @@
       <!-- Authentication View (initially hidden) -->
       <section id="auth-view" class="hidden auth-container">
         <h2>Login or Signup</h2>
+        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p> <!-- Moved error message here -->
         <!-- Login Form -->
         <form id="login-form">
           <h3>Login</h3>
@@ -109,7 +110,6 @@
             <i class="fab fa-google"></i> Sign in with Google
           </button>
         </div>
-        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
         <button id="cancel-auth-button" class="button button-link">Cancel</button>
       </section>
 
