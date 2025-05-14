@@ -59,7 +59,7 @@ window.PromptFinder.Utils = (function () {
       timeout = 5000,
       type = 'error',
       originalError = null,
-      errorElement = document.getElementById('error-message'),
+      errorElement = document.getElementById('error-message'), // General error message element
     } = options;
 
     const consoleMethod = type === 'warning' ? 'warn' : type;
@@ -71,6 +71,9 @@ window.PromptFinder.Utils = (function () {
     }
 
     if (userVisible && errorElement) {
+      // This function might be better for general errors, not specific auth errors in #auth-error-message
+      // Consider if auth errors should always go to #auth-error-message element if provided in options
+      const targetElement = options.specificErrorElement || errorElement;
       const typeStyles = {
         error: {
           bgColor: '#f8d7da',
@@ -89,14 +92,30 @@ window.PromptFinder.Utils = (function () {
         },
       };
       const style = typeStyles[type] || typeStyles.error;
-      errorElement.style.backgroundColor = style.bgColor;
-      errorElement.style.color = style.textColor;
-      errorElement.style.borderColor = style.borderColor;
-      errorElement.textContent = message;
-      errorElement.classList.remove('hidden');
+      targetElement.style.backgroundColor = style.bgColor;
+      targetElement.style.color = style.textColor;
+      targetElement.style.borderColor = style.borderColor;
+      targetElement.textContent = message;
+      targetElement.classList.remove('hidden');
       setTimeout(() => {
-        errorElement.classList.add('hidden');
+        targetElement.classList.add('hidden');
       }, timeout);
+    }
+  };
+
+  /**
+   * Displays an authentication-specific error message.
+   * @param {string} message - The error message to display.
+   * @param {HTMLElement} element - The HTML element where the error should be displayed.
+   */
+  const displayAuthError = (message, element) => {
+    if (element) {
+      element.textContent = message;
+      element.classList.remove('hidden');
+    } else {
+      console.error("Auth error display element not found for message:", message);
+      // Fallback to general handleError if no specific element provided for auth error
+      handleError(message, { userVisible: true, type: 'error' }); 
     }
   };
 
@@ -160,6 +179,7 @@ window.PromptFinder.Utils = (function () {
     chromeStorageGet,
     chromeStorageSet,
     handleError,
+    displayAuthError, // Added displayAuthError to public API
     showConfirmationMessage,
     highlightStars,
   };
