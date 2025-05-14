@@ -1,11 +1,10 @@
 // js/firebase-init.js
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js";
+// Import Firebase from local files (downloaded from CDN)
+import { initializeApp } from '../lib/firebase/firebase-app.js';
+import { getAuth } from '../lib/firebase/firebase-auth.js';
 // TODO: Add other Firebase SDKs here as needed, e.g.:
-// import { getFirestore } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
-
+// import { getFirestore } from '../lib/firebase/firebase-firestore.js';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -27,5 +26,9 @@ const auth = getAuth(app);
 // TODO: Initialize other Firebase services here, e.g.:
 // const db = getFirestore(app);
 
-// Export services to be used in other parts of your extension
+// Make auth available globally for non-module scripts (use with caution)
+window.firebaseAuth = auth;
+// if you initialize db, also do: window.firebaseDb = db;
+
+// Export services for other ES modules if any still need it
 export { auth, app /*, db */ };
