@@ -26,23 +26,23 @@ console.log('EXEC_ORDER: ui.test.js - After require(../js/ui)');
 const UI = window.PromptFinder.UI;
 
 const createDOMMockElement = (tagName = 'div', id = '') => {
-  // Use JSDOM's createElement to get a more realistic Node
-  const elem = document.createElement(tagName);
+  const elem = document.createElement(tagName); // Use JSDOM's createElement
   if (id) elem.id = id;
 
+  // Ensure dataset is a plain object for easier mocking if JSDOM's is problematic for assignment
+  // However, for property access (elem.dataset.foo = 'bar'), JSDOM's DOMStringMap is fine.
+  // The main thing is that createDOMMockElement should ensure a dataset property exists.
+  if (typeof elem.dataset === 'undefined') { 
+    elem.dataset = {}; 
+  }
+
   // Augment with Jest spies for methods we want to track or control
-  // We need to be careful not to overwrite native getters/setters like dataset if JSDOM provides them well.
   elem.classList.add = jest.fn(elem.classList.add.bind(elem.classList));
   elem.classList.remove = jest.fn(elem.classList.remove.bind(elem.classList));
   elem.classList.toggle = jest.fn(elem.classList.toggle.bind(elem.classList));
-  // elem.classList.contains = jest.fn(elem.classList.contains.bind(elem.classList)); // JSDOM provides this
   
-  elem.style = elem.style || {}; // JSDOM provides this
-  
-  // Spy on appendChild by wrapping the original
   const originalAppendChild = elem.appendChild.bind(elem);
   elem.appendChild = jest.fn(originalAppendChild);
-
   elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
   elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
   elem.getAttribute = jest.fn(elem.getAttribute.bind(elem));
@@ -53,31 +53,24 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
       if (originalQuerySelector) {
           const child = originalQuerySelector(selector);
           if (child) {
-              // Enhance child only if necessary (e.g., if it's a plain JSDOM node without Jest spies)
-              if (!child.dataset) child.dataset = {}; // Ensure dataset for all children found
+              if(!child.dataset) child.dataset = {}; 
               child.classList.add = child.classList.add || jest.fn();
               child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i'));
               return child;
           }
       }
-      return createDOMMockElement('div', selector.replace(/[#.]/g, '')); // Fallback
+      return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
   });
   elem.querySelectorAll = elem.querySelectorAll || jest.fn(() => []);
-
-  // JSDOM elements have `dataset` as a DOMStringMap. It's writable for properties.
-  // If `elem` is a JSDOM element, `elem.dataset` is already a DOMStringMap.
-  // If we are creating a pure mock, initialize it.
-  if (typeof elem.dataset === 'undefined') elem.dataset = {}; 
   
-  // elem.innerHTML = ''; // JSDOM elements have this
-  // elem.textContent = ''; // JSDOM elements have this
-  elem.value = elem.value || ''; // JSDOM input elements have this
+  elem.innerHTML = elem.innerHTML || '';
+  elem.textContent = elem.textContent || '';
+  elem.value = elem.value || '';
   elem.checked = elem.checked || false;
   elem.reset = elem.reset || jest.fn();
   elem.focus = elem.focus || jest.fn();
   elem.click = elem.click || jest.fn();
-  // nodeType is a read-only property of actual DOM nodes. Do not set it here.
-  // JSDOM elements will have their correct nodeType.
+  // nodeType is inherent to JSDOM elements, no need to set it manually here.
   return elem;
 };
 
@@ -116,9 +109,7 @@ const setupMockDOM = () => {
   `;
 
   const domElementsCache = {}; 
-  
-  // Store original createElement before mocking it
-  const originalDocumentCreateElement = document.createElement;
+  const originalDocumentCreateElement = document.createElement; // Store original
 
   document.getElementById = jest.fn(id => {
     if (domElementsCache[id]) return domElementsCache[id];
@@ -127,26 +118,25 @@ const setupMockDOM = () => {
 
     if (elementToCache) {
         // Augment the JSDOM element with Jest spies for methods IF they exist
-        // This ensures we are spying on actual JSDOM methods where possible
-        elementToCache.classList.add = jest.fn(elementToCache.classList.add.bind(elementToCache.classList));
-        elementToCache.classList.remove = jest.fn(elementToCache.classList.remove.bind(elementToCache.classList));
-        elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle.bind(elementToCache.classList));
-        // Do not overwrite dataset or nodeType on actual JSDOM elements.
-        // Ensure dataset exists (it should on HTMLElement)
-        if(typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
+        // and ensure essential properties like classList are mockable if not fully standard.
+        elementToCache.classList.add = jest.fn(elementToCache.classList.add?.bind(elementToCache.classList));
+        elementToCache.classList.remove = jest.fn(elementToCache.classList.remove?.bind(elementToCache.classList));
+        elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle?.bind(elementToCache.classList));
+        if (typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
         
-        elementToCache.appendChild = jest.fn(elementToCache.appendChild.bind(elementToCache));
-        elementToCache.addEventListener = jest.fn(elementToCache.addEventListener.bind(elementToCache));
+        elementToCache.appendChild = jest.fn(elementToCache.appendChild?.bind(elementToCache));
+        elementToCache.addEventListener = jest.fn(elementToCache.addEventListener?.bind(elementToCache));
         
-        const originalQuerySelector = elementToCache.querySelector?.bind(elementToCache);
+        const originalQuerySelectorFn = elementToCache.querySelector?.bind(elementToCache);
         elementToCache.querySelector = jest.fn(selector => {
-            const child = originalQuerySelector ? originalQuerySelector(selector) : null;
+            const child = originalQuerySelectorFn ? originalQuerySelectorFn(selector) : null;
             if (child) {
                  child.classList = child.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
-                 if(!child.dataset) child.dataset = {};
+                 if(typeof child.dataset === 'undefined') child.dataset = {};
                  child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i')); 
                  return child;
             }
+            // If querySelector doesn't find it, create a more complete mock for it.
             return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
         });
     } else {
@@ -156,18 +146,7 @@ const setupMockDOM = () => {
     return elementToCache;
   });
 
-  // Mock document.createElement to return JSDOM elements enhanced with spies
-  document.createElement = jest.fn((tagName) => {
-    const elem = originalDocumentCreateElement.call(document, tagName); // Use actual JSDOM createElement
-    // Enhance with Jest spied methods AFTER creation
-    elem.classList.add = jest.fn(elem.classList.add.bind(elem.classList));
-    elem.classList.remove = jest.fn(elem.classList.remove.bind(elem.classList));
-    elem.appendChild = jest.fn(elem.appendChild.bind(elem));
-    elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
-    elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
-    if(typeof elem.dataset === 'undefined') elem.dataset = {}; 
-    return elem;
-  });
+  document.createElement = jest.fn((tagName) => createDOMMockElement(tagName));
 };
  
 
@@ -251,23 +230,30 @@ describe('UI Module', () => {
   describe('displayPrompts', () => {
     let promptsList;
     beforeEach(async () => { 
+        // We call initializeUI to ensure elements are cached if displayPrompts relies on cached elements.
+        // However, initializeUI also calls loadAndDisplayData, which calls displayPrompts.
+        // This can lead to displayPrompts being called before our test-specific call.
+        // For more isolated testing of displayPrompts, we might avoid initializeUI here
+        // and ensure promptsListEl is correctly mocked/obtained if displayPrompts uses a module-scoped variable.
         await UI.initializeUI(); 
         promptsList = document.getElementById('prompts-list'); 
     });
 
     test('should display a list of prompts', () => {
         const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [], userId: 'testUser', userIsFavorite: false }];
+        const promptsListLocal = document.getElementById('prompts-list'); // Get fresh mock for assertion
         UI.displayPrompts(prompts); 
-        if (promptsList) {
-            expect(promptsList.innerHTML).toContain('Test Prompt Display');
-            expect(promptsList.appendChild).toHaveBeenCalled(); 
+        if (promptsListLocal) {
+            expect(promptsListLocal.innerHTML).toContain('Test Prompt Display');
+            expect(promptsListLocal.appendChild).toHaveBeenCalled(); 
         }
       });
   
       test('should show empty state if no prompts', () => {
+        const promptsListLocal = document.getElementById('prompts-list');
         UI.displayPrompts([]);
-        if (promptsList) {
-            expect(promptsList.innerHTML).toContain('No prompts found');
+        if (promptsListLocal) {
+            expect(promptsListLocal.innerHTML).toContain('No prompts found');
         }
       });
   });
