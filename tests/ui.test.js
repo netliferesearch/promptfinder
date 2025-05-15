@@ -27,50 +27,10 @@ require('../js/ui');
 console.log('EXEC_ORDER: ui.test.js - After require(../js/ui)');
 const UI = window.PromptFinder.UI;
 
-const _trulyOriginalDocumentCreateElement = document.createElement;
-const _trulyOriginalDocumentGetElementById = document.getElementById;
-const _trulyOriginalDocumentQuerySelector = document.querySelector;
-
-const createDOMMockElement = (tagName = 'div', id = '') => {
-  const elem = _trulyOriginalDocumentCreateElement.call(document, tagName); 
-  if (id) elem.id = id;
-  if (typeof elem.dataset === 'undefined') elem.dataset = {}; 
-  elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
-  elem.classList.remove = jest.fn(elem.classList.remove?.bind(elem.classList));
-  elem.classList.toggle = jest.fn(elem.classList.toggle?.bind(elem.classList));
-  if(!elem.classList.contains && typeof elem.classList.contains !== 'function') elem.classList.contains = jest.fn(()=>false);
-  elem.style = elem.style || {}; 
-  const originalElemAppendChild = elem.appendChild?.bind(elem);
-  elem.appendChild = jest.fn(originalElemAppendChild || (() => {}));
-  elem.addEventListener = jest.fn(elem.addEventListener?.bind(elem));
-  elem.setAttribute = jest.fn(elem.setAttribute?.bind(elem));
-  elem.getAttribute = jest.fn(elem.getAttribute?.bind(elem));
-  elem.removeAttribute = jest.fn(elem.removeAttribute?.bind(elem));
-  const originalElemQuerySelector = elem.querySelector?.bind(elem);
-  elem.querySelector = jest.fn(selector => {
-      if (originalElemQuerySelector) {
-          const child = originalElemQuerySelector(selector);
-          if (child) {
-              if(typeof child.dataset === 'undefined') child.dataset = {}; 
-              child.classList.add = child.classList.add || jest.fn();
-              child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i'));
-              return child;
-          }
-      }
-      const mockChild = createDOMMockElement('div', selector.replace(/[#.]/g, ''));
-      if (selector === 'i' && (elem.id === 'toggle-fav-detail' || elem.classList.contains('toggle-favorite'))) {
-        mockChild.className = ''; 
-      }
-      return mockChild;
-  });
-  elem.querySelectorAll = elem.querySelectorAll || jest.fn(() => []);
-  elem.value = elem.value || '';
-  elem.checked = elem.checked || false;
-  elem.reset = elem.reset || jest.fn();
-  elem.focus = elem.focus || jest.fn();
-  elem.click = elem.click || jest.fn();
-  return elem;
-};
+// Store original document methods AT THE VERY TOP of the test file
+const _originalCreateElement = document.createElement;
+const _originalGetElementById = document.getElementById;
+const _originalQuerySelector = document.querySelector;
 
 const setupMockDOM = () => {
   document.body.innerHTML = `
@@ -106,45 +66,49 @@ const setupMockDOM = () => {
     <p id="confirmation-message"></p>
   `;
 
-  const domElementsCache = {}; 
+  // Mock getElementById to return JSDOM elements and spy on their methods
   document.getElementById = jest.fn(id => {
-    if (domElementsCache[id]) return domElementsCache[id];
-    let elementToCache = _trulyOriginalDocumentGetElementById.call(document, id); 
-    if (elementToCache) {
-        elementToCache.classList.add = jest.fn(elementToCache.classList.add?.bind(elementToCache.classList));
-        elementToCache.classList.remove = jest.fn(elementToCache.classList.remove?.bind(elementToCache.classList));
-        elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle?.bind(elementToCache.classList));
-        if (typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
-        const originalElemAppendChild = elementToCache.appendChild?.bind(elementToCache);
-        elementToCache.appendChild = jest.fn(originalElemAppendChild || (()=> {}));
-        elementToCache.addEventListener = jest.fn(elementToCache.addEventListener?.bind(elementToCache));
-        const originalElemQuerySelectorFn = elementToCache.querySelector?.bind(elementToCache);
-        elementToCache.querySelector = jest.fn(selector => {
-            const child = originalElemQuerySelectorFn ? originalElemQuerySelectorFn(selector) : null;
-            if (child) {
-                 if(typeof child.dataset === 'undefined') child.dataset = {};
-                 child.classList.add = child.classList.add || jest.fn(); 
-                 child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i')); 
-                 return child;
-            }
-            return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
-        });
-    } else {
-        elementToCache = createDOMMockElement('div', id);
-    }
-    domElementsCache[id] = elementToCache;
-    return elementToCache;
-  });
-  document.createElement = jest.fn((tagName) => createDOMMockElement(tagName));
-  document.querySelector = jest.fn((selector) => {
-      const el = _trulyOriginalDocumentQuerySelector.call(document, selector);
-      if (el) {
-          if(typeof el.dataset === 'undefined') el.dataset = {};
-          el.classList.add = jest.fn(el.classList.add?.bind(el.classList));
-          el.classList.remove = jest.fn(el.classList.remove?.bind(el.classList));
-          return el;
+    const elem = _originalGetElementById.call(document, id);
+    if (elem) {
+      // Spy on methods we care about, if they exist
+      if (elem.classList) {
+        elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
+        elem.classList.remove = jest.fn(elem.classList.remove?.bind(elem.classList));
+        elem.classList.toggle = jest.fn(elem.classList.toggle?.bind(elem.classList));
       }
-      return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
+      if (elem.appendChild && typeof elem.appendChild === 'function') {
+        elem.appendChild = jest.fn(elem.appendChild.bind(elem));
+      }
+      if (elem.addEventListener && typeof elem.addEventListener === 'function') {
+        elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
+      }
+      if (typeof elem.dataset === 'undefined') elem.dataset = {};
+    }
+    return elem; // Returns actual JSDOM element (possibly augmented) or null if not found
+  });
+
+  // Mock createElement to return JSDOM elements and spy on their methods
+  document.createElement = jest.fn(tagName => {
+    const elem = _originalCreateElement.call(document, tagName);
+      if (elem.classList) {
+        elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
+      }
+    if (elem.appendChild && typeof elem.appendChild === 'function') {
+        elem.appendChild = jest.fn(elem.appendChild.bind(elem));
+    }
+    if (elem.addEventListener && typeof elem.addEventListener === 'function') {
+        elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
+    }
+    if (elem.setAttribute && typeof elem.setAttribute === 'function') {
+        elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
+    }
+    if (typeof elem.dataset === 'undefined') elem.dataset = {};
+    return elem;
+  });
+  
+  // Mock querySelector similarly if needed by ui.js directly on document
+  document.querySelector = jest.fn(selector => {
+      return _originalDocumentQuerySelector.call(document, selector);
   });
 };
  
@@ -191,20 +155,18 @@ describe('UI Module', () => {
   });
 
   describe('loadAndDisplayData', () => {
-    test('should load prompts and update promptsList.innerHTML', async () => {
-      const mockPrompts = [{id: '1', title: 'Test Prompt Alpha', tags: [], userId: 'user1', userIsFavorite: false}];
+    test('should load prompts and call displayPrompts (via showTab)', async () => {
+      const mockPrompts = [{id: '1', title: 'Test Prompt Alpha'}]; // Use a unique title
       window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValueOnce(mockPrompts);
-      window.PromptFinder.PromptData.filterPrompts.mockImplementation(inputPrompts => inputPrompts);
+      window.PromptFinder.PromptData.filterPrompts.mockImplementation(inputPrompts => inputPrompts); 
       
       const promptsList = document.getElementById('prompts-list');
-      // Clear it initially for a clean check
       if (promptsList) promptsList.innerHTML = ''; 
 
       await UI.loadAndDisplayData(); 
       
       expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalledTimes(1);
       expect(window.PromptFinder.PromptData.filterPrompts).toHaveBeenCalledWith(mockPrompts, expect.objectContaining({ tab: 'all' })); 
-      
       if (promptsList) {
         expect(promptsList.innerHTML).toContain('Test Prompt Alpha'); 
       }
@@ -214,9 +176,10 @@ describe('UI Module', () => {
       const loadError = new Error('Failed to load');
       window.PromptFinder.PromptData.loadPrompts.mockReset().mockRejectedValueOnce(loadError);
       
-      UI.cacheDOMElements(); // Ensure promptsListEl is cached in UI module
+      // Directly call cacheDOMElements here if ui.js relies on it for promptsListEl to be set for the innerHTML update
+      UI.cacheDOMElements(); 
       const promptsList = document.getElementById('prompts-list');
-      if (promptsList) promptsList.innerHTML = ''; // Clear for test
+      if (promptsList) promptsList.innerHTML = '';
 
       await UI.loadAndDisplayData();
 
@@ -231,26 +194,26 @@ describe('UI Module', () => {
   });
 
   describe('displayPrompts', () => {
-    let promptsListElFromCache; 
+    let promptsListElForTest; 
     beforeEach(() => { 
         UI.cacheDOMElements(); 
-        promptsListElFromCache = document.getElementById('prompts-list'); 
-        if (promptsListElFromCache) promptsListElFromCache.innerHTML = ''; 
+        promptsListElForTest = document.getElementById('prompts-list'); 
+        if (promptsListElForTest) promptsListElForTest.innerHTML = ''; 
     });
 
     test('should display a list of prompts', () => {
         const prompts = [{ id: '1', title: 'Test Prompt Beta', tags: [], userId: 'testUser', userIsFavorite: false }];
         UI.displayPrompts(prompts); 
-        if (promptsListElFromCache) {
-            expect(promptsListElFromCache.innerHTML).toContain('Test Prompt Beta');
-            expect(promptsListElFromCache.appendChild).toHaveBeenCalled(); 
+        if (promptsListElForTest) {
+            expect(promptsListElForTest.innerHTML).toContain('Test Prompt Beta');
+            expect(promptsListElForTest.appendChild).toHaveBeenCalled(); 
         }
       });
   
       test('should show empty state if no prompts', () => {
         UI.displayPrompts([]);
-        if (promptsListElFromCache) {
-            expect(promptsListElFromCache.innerHTML).toContain('No prompts found');
+        if (promptsListElForTest) {
+            expect(promptsListElForTest.innerHTML).toContain('No prompts found');
         }
       });
   });
