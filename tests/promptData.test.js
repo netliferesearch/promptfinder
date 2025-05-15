@@ -36,6 +36,8 @@ describe('PromptData Module - Firestore Version', () => {
 
   const samplePromptFS1 = { ...baseSamplePrompt, id: 'fs1', userId: mockUser.uid, title: 'My Firestore Prompt 1' };
   const samplePromptFS2 = { ...baseSamplePrompt, id: 'fs2', userId: anotherUser.uid, title: 'Other User FS Prompt' };
+  
+  // These will be assigned in the top-level beforeEach
   let promptsCollectionMock; 
   let usersCollectionMock; 
 
@@ -69,7 +71,7 @@ describe('PromptData Module - Firestore Version', () => {
   describe('signupUser', () => {
     test('should call createUserWithEmailAndPassword and create user doc', async () => {
       window.firebaseAuth.createUserWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
-      const userDocMock = usersCollectionMock.doc(mockUser.uid);
+      const userDocMock = usersCollectionMock.doc(mockUser.uid); // usersCollectionMock is from outer scope
       const result = await PromptData.signupUser('new@example.com', 'password123');
       expect(window.firebaseAuth.createUserWithEmailAndPassword).toHaveBeenCalledWith('new@example.com', 'password123');
       expect(usersCollectionMock.doc).toHaveBeenCalledWith(mockUser.uid);
@@ -189,10 +191,10 @@ describe('PromptData Module - Firestore Version', () => {
     test('should correctly transform timestamps', async () => {
       if(window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(null);
       const promptForTimestampTest = {
-        ...baseSamplePrompt, // Spread base to get all default fields
+        ...baseSamplePrompt, 
         id: 'tsTest', 
         userId: 'someUserId',
-        isPrivate: false,      // Moved comment, ensured comma
+        isPrivate: false,
         createdAt: mockTimestamp, 
         updatedAt: mockTimestamp 
       };
@@ -241,6 +243,7 @@ describe('PromptData Module - Firestore Version', () => {
   });
 
   describe('updatePrompt', () => {
+    // promptsCollectionMock is available from the outer scope beforeEach
     const existingPromptData = { ...samplePromptFS1, id: 'editId1', userId: mockUser.uid, title: 'Original Title' };
     beforeEach(() => {
       if (window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(mockUser); 

@@ -38,17 +38,16 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
     getAttribute: jest.fn(),
     removeAttribute: jest.fn(),
     querySelector: jest.fn(selector => {
-        // Attempt to return a more specific mock for known children
-        const childId = selector.startsWith('#') ? selector.substring(1) : selector;
+        const childId = selector.startsWith('#') ? selector.substring(1) : selector.replace(/[.#]/g, '');
         if (id === 'prompt-details-section' && childId === 'toggle-fav-detail') {
             const favButton = createDOMMockElement('button', 'toggle-fav-detail');
-            favButton.querySelector = jest.fn().mockReturnValue(createDOMMockElement('i')); // Mock the <i> inside
+            favButton.querySelector = jest.fn().mockReturnValue(createDOMMockElement('i')); 
             return favButton;
         }
         return createDOMMockElement('div', childId); 
     }),
     querySelectorAll: jest.fn(() => [createDOMMockElement('mockedChild')]),
-    dataset: {}, // Crucial: ensure dataset is a plain, writable object
+    dataset: {}, 
     innerHTML: '',
     textContent: '',
     value: '',
@@ -56,6 +55,8 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
     reset: jest.fn(),
     focus: jest.fn(),
     click: jest.fn(),
+    // Simulate Node type for appendChild checks
+    nodeType: 1, // Node.ELEMENT_NODE
   };
   return elem;
 };
@@ -97,68 +98,57 @@ const setupMockDOM = () => {
   const domElementsCache = {}; 
   
   document.getElementById = jest.fn(id => {
-    if (domElementsCache[id]) {
-        // console.log(`[Test DOM] Returning cached element for ID: ${id}`);
-        return domElementsCache[id];
-    }
+    if (domElementsCache[id]) return domElementsCache[id];
     
     const actualElement = document.body.querySelector(`#${id}`);
-    if (actualElement) {
-        // console.log(`[Test DOM] Found real JSDOM element for ID: ${id}`);
-        actualElement.classList = actualElement.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
-        if (!actualElement.dataset || typeof actualElement.dataset !== 'object') { // JSDOM dataset is a DOMStringMap
-            // We mainly need to ensure it exists for property assignment like el.dataset.foo = 'bar'
-            // The issue was el.dataset = {} which is not allowed on DOMStringMap
-            // For tests, we just need to be able to set properties on it if ui.js does.
-            // It's usually fine, but if problems persist, we can wrap/proxy it.
-        }
-        if (!actualElement.dataset) actualElement.dataset = {}; // Ensure it exists
+    let mockElementToCache;
 
-        actualElement.style = actualElement.style || {};
-        actualElement.appendChild = actualElement.appendChild || jest.fn();
-        actualElement.addEventListener = actualElement.addEventListener || jest.fn();
-        actualElement.removeEventListener = actualElement.removeEventListener || jest.fn();
-        actualElement.setAttribute = actualElement.setAttribute || jest.fn();
-        actualElement.removeAttribute = actualElement.removeAttribute || jest.fn();
-        actualElement.focus = actualElement.focus || jest.fn();
-        actualElement.click = actualElement.click || jest.fn();
-        actualElement.reset = actualElement.reset || jest.fn(); // For forms
+    if (actualElement) {
+        mockElementToCache = actualElement;
+        mockElementToCache.classList = actualElement.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
+        mockElementToCache.dataset = actualElement.dataset || {}; 
+        mockElementToCache.style = actualElement.style || {};
+        mockElementToCache.appendChild = actualElement.appendChild || jest.fn();
+        mockElementToCache.addEventListener = actualElement.addEventListener || jest.fn();
+        mockElementToCache.removeEventListener = actualElement.removeEventListener || jest.fn();
+        mockElementToCache.setAttribute = actualElement.setAttribute || jest.fn();
+        mockElementToCache.removeAttribute = actualElement.removeAttribute || jest.fn();
+        mockElementToCache.focus = actualElement.focus || jest.fn();
+        mockElementToCache.click = actualElement.click || jest.fn();
+        mockElementToCache.reset = actualElement.reset || jest.fn(); 
+        mockElementToCache.nodeType = 1; // Make it look like an HTMLElement for appendChild
         
         const originalQuerySelector = actualElement.querySelector?.bind(actualElement);
-        actualElement.querySelector = jest.fn(selector => {
+        mockElementToCache.querySelector = jest.fn(selector => {
             const child = originalQuerySelector ? originalQuerySelector(selector) : null;
             if (child) {
                  child.classList = child.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
                  if(!child.dataset) child.dataset = {};
-                 child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i')); // Ensure deeper children also get mocks
+                 child.nodeType = 1;
+                 child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i')); 
                  return child;
             }
             return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
         });
-        actualElement.querySelectorAll = actualElement.querySelectorAll || jest.fn(() => []);
-        domElementsCache[id] = actualElement;
-        return actualElement;
+        mockElementToCache.querySelectorAll = actualElement.querySelectorAll || jest.fn(() => []);
+    } else {
+        mockElementToCache = createDOMMockElement('div', id);
     }
-    // console.log(`[Test DOM] Creating full mock for ID: ${id}`);
-    domElementsCache[id] = createDOMMockElement('div', id);
-    return domElementsCache[id];
+    domElementsCache[id] = mockElementToCache;
+    return mockElementToCache;
   });
 
   document.createElement = jest.fn((tagName) => createDOMMockElement(tagName));
-  // console.log('EXEC_ORDER: ui.test.js - setupMockDOM END');
 };
  
 
 describe('UI Module', () => {
-  // console.log('EXEC_ORDER: ui.test.js - Inside main describe block');
   beforeEach(() => {
-    // console.log('EXEC_ORDER: ui.test.js - beforeEach START');
     setupMockDOM();
     jest.clearAllMocks(); 
     window.PromptFinder.PromptData.loadPrompts.mockResolvedValue([]); 
     window.PromptFinder.PromptData.filterPrompts.mockImplementation((prompts, _filters) => prompts);
     window.PromptFinder.PromptData.findPromptById.mockResolvedValue(null);
-    // console.log('EXEC_ORDER: ui.test.js - beforeEach END');
   });
 
   describe('initializeUI', () => {
@@ -232,8 +222,8 @@ describe('UI Module', () => {
   describe('displayPrompts', () => {
     test('should display a list of prompts', () => {
         const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [], userId: 'testUser', userIsFavorite: false }];
-        const promptsList = document.getElementById('prompts-list');
-        UI.initializeUI(); // To ensure promptsListEl is cached in UI module scope
+        const promptsList = document.getElementById('prompts-list'); // Get the mock from our cache
+        // UI.initializeUI(); // Not needed if we get promptsListEl from cache correctly
         UI.displayPrompts(prompts); 
         if (promptsList) {
             expect(promptsList.innerHTML).toContain('Test Prompt Display');
@@ -242,7 +232,7 @@ describe('UI Module', () => {
   
       test('should show empty state if no prompts', () => {
         const promptsList = document.getElementById('prompts-list');
-        UI.initializeUI(); // To ensure promptsListEl is cached
+        // UI.initializeUI();
         UI.displayPrompts([]);
         if (promptsList) {
             expect(promptsList.innerHTML).toContain('No prompts found');
@@ -253,7 +243,7 @@ describe('UI Module', () => {
   describe('displayPromptDetails', () => {
     test('should display prompt details in the UI', async () => { 
         const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userIsFavorite: false, isPrivate: false, userId: 'testUser' };
-        await UI.initializeUI(); 
+        await UI.initializeUI(); // Call initializeUI to ensure elements are cached via the updated mockDOM
         UI.displayPromptDetails(prompt);
         const titleEl = document.getElementById('prompt-detail-title');
         const textEl = document.getElementById('prompt-detail-text');
