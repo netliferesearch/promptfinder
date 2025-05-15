@@ -29,7 +29,6 @@ window.PromptFinder.PromptData = (function () {
         } catch (dbError) { 
           console.error('Error creating user document in Firestore:', dbError);
           Utils.handleError('Could not save user details after signup.', { userVisible: true, originalError: dbError });
-          // Non-fatal for signup, but good to log
         } 
       }
       return userCredential;
@@ -207,7 +206,7 @@ window.PromptFinder.PromptData = (function () {
   };
   
   const findPromptById = async (promptId, prompts = null, options = {}) => {
-    const { throwIfNotFound = false, handleError = true } = options; // Default handleError to true for this function
+    const { throwIfNotFound = false, handleError = true } = options; 
     console.log(`[findPromptById] Attempting to find prompt with ID: ${promptId}`);
 
     if (!promptId) {
@@ -224,8 +223,6 @@ window.PromptFinder.PromptData = (function () {
     }
 
     try {
-      // If a prompts array is passed and is not empty, try to find it there first.
-      // This can be an optimization if allPrompts is already loaded and up-to-date in UI.js
       if (prompts && Array.isArray(prompts) && prompts.length > 0) {
         console.log(`[findPromptById] Searching within provided list of ${prompts.length} prompts.`);
         const promptFromList = prompts.find(p => p.id === promptId) || null;
@@ -240,7 +237,7 @@ window.PromptFinder.PromptData = (function () {
       const docRef = db.collection('prompts').doc(promptId);
       const docSnap = await docRef.get();
 
-      if (docSnap.exists()) {
+      if (docSnap.exists) { // Corrected: .exists is a property, not a function
         console.log(`[findPromptById] Document snapshot exists. Data:`, docSnap.data());
         const data = docSnap.data();
         const prompt = {
@@ -290,7 +287,7 @@ window.PromptFinder.PromptData = (function () {
   };
   const copyPromptToClipboard = async promptId => {
     try {
-      const prompt = await findPromptById(promptId); // Now uses Firestore-aware findById
+      const prompt = await findPromptById(promptId); 
       if (!prompt) throw new Error(`Prompt with ID ${promptId} not found for copying`);
       await navigator.clipboard.writeText(prompt.text);
       return true;
