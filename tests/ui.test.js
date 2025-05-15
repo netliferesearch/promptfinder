@@ -35,6 +35,7 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
   const elem = trulyOriginalDocumentCreateElement.call(document, tagName); 
   if (id) elem.id = id;
   if (typeof elem.dataset === 'undefined') elem.dataset = {}; 
+
   elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
   elem.classList.remove = jest.fn(elem.classList.remove?.bind(elem.classList));
   elem.classList.toggle = jest.fn(elem.classList.toggle?.bind(elem.classList));
@@ -153,6 +154,7 @@ describe('UI Module', () => {
   beforeEach(() => {
     setupMockDOM();
     jest.clearAllMocks(); 
+    // Default mock for loadPrompts for tests that don't override it
     window.PromptFinder.PromptData.loadPrompts.mockResolvedValue([]); 
     window.PromptFinder.PromptData.filterPrompts.mockImplementation((prompts, _filters) => prompts);
     window.PromptFinder.PromptData.findPromptById.mockResolvedValue(null);
@@ -161,22 +163,16 @@ describe('UI Module', () => {
   describe('initializeUI', () => {
     test('should cache DOM elements, setup event listeners, and load data', async () => {
       const initialPrompts = [{id: 'initLoad', title: 'Initial'}];
-      // Reset and specifically mock for THIS test call within initializeUI
       window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValueOnce(initialPrompts);
-      
       await UI.initializeUI();
-      
       expect(document.getElementById).toHaveBeenCalledWith('tab-all'); 
-      expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalledTimes(1);
+      expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalledTimes(1); // Check it was called once during this initializeUI
     });
 
     test('should handle errors during initialization when loadPrompts fails', async () => {
       const loadError = new Error('Load error');
-      // Reset and specifically mock for THIS test call within initializeUI
       window.PromptFinder.PromptData.loadPrompts.mockReset().mockRejectedValueOnce(loadError);
-      
       await UI.initializeUI();
-      
       expect(window.PromptFinder.Utils.handleError).toHaveBeenCalledWith(
         'Error loading and displaying prompt data', 
         expect.objectContaining({ originalError: loadError, userVisible: true })
@@ -202,7 +198,6 @@ describe('UI Module', () => {
   describe('loadAndDisplayData', () => {
     test('should load prompts and call displayPrompts (via showTab)', async () => {
       const mockPrompts = [{id: '1', title: 'Test'}];
-      // Ensure loadPrompts is freshly mocked for this specific test of loadAndDisplayData
       window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValueOnce(mockPrompts);
       window.PromptFinder.PromptData.filterPrompts.mockImplementation(inputPrompts => inputPrompts); 
       
@@ -234,31 +229,30 @@ describe('UI Module', () => {
   });
 
   describe('displayPrompts', () => {
-    let promptsList;
-    beforeEach(async () => { 
-        window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValueOnce([]); // Prevent unwanted loads
-        await UI.initializeUI(); 
-        promptsList = document.getElementById('prompts-list'); 
+    let promptsListElFromCache; // To store the reference ui.js uses
+    beforeEach(() => { 
+        // Reset loadPrompts for this describe block if initializeUI is called by tests here
+        window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValue([]);
+        // Manually run cacheDOMElements to populate the internal variables in UI module for testing displayPrompts directly
+        // This avoids initializeUI calling loadAndDisplayData and displayPrompts before our test does.
+        UI.cacheDOMElements(); 
+        promptsListElFromCache = document.getElementById('prompts-list'); // Get the element UI module will use
     });
 
     test('should display a list of prompts', () => {
         const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [], userId: 'testUser', userIsFavorite: false }];
-        const promptsListLocal = document.getElementById('prompts-list'); 
         UI.displayPrompts(prompts); 
-        if (promptsListLocal && typeof promptsListLocal.innerHTML === 'string') {
-            expect(promptsListLocal.innerHTML).toContain('Test Prompt Display');
-            // appendChild is on the elements *inside* the prompt item, not promptsListLocal itself directly for each item.
-            // This assertion might need to be more specific if we want to check what was appended.
-            // For now, checking innerHTML change is a good indicator.
-            // expect(promptsListLocal.appendChild).toHaveBeenCalled(); 
+        if (promptsListElFromCache) {
+            expect(promptsListElFromCache.innerHTML).toContain('Test Prompt Display');
+            // Check that appendChild was called on the actual element ui.js uses
+            expect(promptsListElFromCache.appendChild).toHaveBeenCalled(); 
         }
       });
   
       test('should show empty state if no prompts', () => {
-        const promptsListLocal = document.getElementById('prompts-list');
         UI.displayPrompts([]);
-        if (promptsListLocal && typeof promptsListLocal.innerHTML === 'string') {
-            expect(promptsListLocal.innerHTML).toContain('No prompts found');
+        if (promptsListElFromCache) {
+            expect(promptsListElFromCache.innerHTML).toContain('No prompts found');
         }
       });
   });
@@ -266,9 +260,11 @@ describe('UI Module', () => {
   describe('displayPromptDetails', () => {
     test('should display prompt details in the UI', async () => { 
         const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userIsFavorite: false, isPrivate: false, userId: 'testUser' };
-        window.PromptFinder.PromptData.loadPrompts.mockReset().mockResolvedValueOnce([]); // Prevent unwanted loads from initializeUI
-        await UI.initializeUI(); 
+        // Only cache elements, don't trigger full data load for this specific test
+        UI.cacheDOMElements(); 
+        
         UI.displayPromptDetails(prompt);
+        
         const titleEl = document.getElementById('prompt-detail-title');
         const textEl = document.getElementById('prompt-detail-text');
         const starRatingContainerEl = document.getElementById('star-rating');
