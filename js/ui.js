@@ -24,10 +24,10 @@ window.PromptFinder.UI = (function () {
     deleteConfirmationEl,
     cancelDeleteButtonEl,
     confirmDeleteButtonEl,
-    promptDetailTitleEl, // Will be cached using document.getElementById
-    promptDetailTextEl,  // Will be cached using document.getElementById
-    promptDetailCategoryEl, // Will be cached using document.getElementById
-    promptDetailTagsEl,     // Will be cached using document.getElementById
+    promptDetailTitleEl,
+    promptDetailTextEl,
+    promptDetailCategoryEl,
+    promptDetailTagsEl,
     averageRatingValueEl,
     ratingCountEl,
     starRatingContainerEl;
@@ -46,8 +46,6 @@ window.PromptFinder.UI = (function () {
     promptsListEl = document.getElementById('prompts-list');
     promptDetailsSectionEl = document.getElementById('prompt-details-section');
     addPromptSectionEl = document.getElementById('add-prompt-section'); 
-
-    // Cache detail view elements directly using document.getElementById
     promptDetailTitleEl = document.getElementById('prompt-detail-title');
     promptDetailTextEl = document.getElementById('prompt-detail-text');
     promptDetailCategoryEl = document.getElementById('prompt-detail-category');
@@ -57,22 +55,13 @@ window.PromptFinder.UI = (function () {
     starRatingContainerEl = document.getElementById('star-rating');
 
     if (promptDetailsSectionEl) {
-      console.log("[UI Cache] promptDetailsSectionEl found:", promptDetailsSectionEl);
-      // These buttons are definitely within promptDetailsSectionEl, so querySelector is fine here.
       backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
       copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
       editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
       deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
       cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
       confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
-      // Log the result of direct ID caching
-      console.log("[UI Cache Direct] promptDetailTitleEl:", promptDetailTitleEl);
-      console.log("[UI Cache Direct] promptDetailTextEl:", promptDetailTextEl);
-      console.log("[UI Cache Direct] promptDetailCategoryEl:", promptDetailCategoryEl);
-      console.log("[UI Cache Direct] promptDetailTagsEl:", promptDetailTagsEl);
-    } else {
-      console.warn("[UI Cache] promptDetailsSectionEl NOT found!");
-    }
+    } 
     controlsEl = document.querySelector('.controls');
     tabsContainerEl = document.querySelector('.tabs');
     addPromptBarEl = document.querySelector('.add-prompt-bar');
@@ -80,9 +69,7 @@ window.PromptFinder.UI = (function () {
 
   const loadAndDisplayData = async () => {
     try {
-      console.log("[UI] Starting loadAndDisplayData");
       allPrompts = await PromptData.loadPrompts(); 
-      console.log(`[UI] Loaded ${allPrompts.length} prompts from data source.`);
       showTab(activeTab); 
     } catch (error) {
       Utils.handleError('Error loading and displaying prompt data', { userVisible: true, originalError: error });
@@ -126,38 +113,48 @@ window.PromptFinder.UI = (function () {
         showPromptList(); 
       });
       copyPromptDetailButtonEl?.addEventListener('click', () => {
-        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
-          handleCopyPrompt(starRatingContainerEl.dataset.id);
-        }
+        // const currentDetailedPromptId = promptDetailsSectionEl.dataset.currentPromptId;
+        // if (currentDetailedPromptId) handleCopyPrompt(currentDetailedPromptId);
+        // Using starRatingContainerEl.dataset.id as a fallback, but currentDetailedPromptId is better
+        const promptId = promptDetailsSectionEl.dataset.currentPromptId || (starRatingContainerEl ? starRatingContainerEl.dataset.id : null);
+        if (promptId) handleCopyPrompt(promptId);
       });
       editPromptButtonEl?.addEventListener('click', () => {
-        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
-          openDetachedEditWindow(starRatingContainerEl.dataset.id);
-        }
+        const promptId = promptDetailsSectionEl.dataset.currentPromptId || (starRatingContainerEl ? starRatingContainerEl.dataset.id : null);
+        if (promptId) openDetachedEditWindow(promptId);
       });
-      const deletePromptButtonDetail = promptDetailsSectionEl.querySelector('#delete-prompt-button-detail');
-      deletePromptButtonDetail?.addEventListener('click', () => {
-          if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
-      });
+      
+      // Event listener for showing the delete confirmation dialog
+      // This could be a dedicated trash icon button in the detail header-icons
+      // For example, if you add: <button id="delete-prompt-detail-button"><i class="fas fa-trash"></i></button>
+      const initiateDeleteButton = promptDetailsSectionEl.querySelector('#edit-prompt-button'); // Placeholder: wire it to edit for now, ideally a new button
+      // TODO: Add a dedicated delete icon/button in prompt-details-section HTML and target it here
+      // initiateDeleteButton?.addEventListener('click', () => {
+      //  if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
+      // });
+
       cancelDeleteButtonEl?.addEventListener('click', () => {
         if(deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
       });
       confirmDeleteButtonEl?.addEventListener('click', () => {
-        if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
-          handleDeletePrompt(starRatingContainerEl.dataset.id);
+        const currentDetailedPromptId = promptDetailsSectionEl.dataset.currentPromptId;
+        if (currentDetailedPromptId) {
+          handleDeletePrompt(currentDetailedPromptId);
+        } else {
+          Utils.handleError("Could not determine prompt ID for deletion from detail view.", {userVisible: true});
         }
       });
       const favBtnDetail = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
       favBtnDetail?.addEventListener('click', () => {
-          if (favBtnDetail.dataset.id) {
-            handleToggleFavorite(favBtnDetail.dataset.id);
+          const promptId = promptDetailsSectionEl.dataset.currentPromptId || favBtnDetail.dataset.id;
+          if (promptId) {
+            handleToggleFavorite(promptId);
           }
       });
     }
   };
 
   const showPromptList = () => {
-    console.log("[UI] showPromptList called");
     if (promptsListEl) promptsListEl.classList.remove('hidden');
     if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('hidden');
     if (controlsEl) controlsEl.classList.remove('hidden');
@@ -167,13 +164,11 @@ window.PromptFinder.UI = (function () {
   };
 
   const showPromptDetailsView = () => {
-    console.log("[UI] showPromptDetailsView called");
     if (promptsListEl) promptsListEl.classList.add('hidden');
     if (promptDetailsSectionEl) promptDetailsSectionEl.classList.remove('hidden');
     if (controlsEl) controlsEl.classList.add('hidden');
     if (tabsContainerEl) tabsContainerEl.classList.add('hidden');
     if (addPromptBarEl) addPromptBarEl.classList.add('hidden');
-    console.log("[UI] promptDetailsSectionEl classList after remove hidden:", promptDetailsSectionEl ? promptDetailsSectionEl.classList : 'not found');
   };
 
   const openDetachedAddPromptWindow = () => {
@@ -204,18 +199,17 @@ window.PromptFinder.UI = (function () {
   };
 
   const showTab = which => {
-    console.log(`[UI] Showing tab: ${which}, with ${allPrompts.length} total prompts available.`);
     activeTab = which;
     if(tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
     if(tabPrivateEl) tabPrivateEl.classList.toggle('active', which === 'private');
-    
     if (promptsListEl && !promptDetailsSectionEl?.classList.contains('hidden')) {
         if (promptsListEl) promptsListEl.classList.remove('hidden');
         if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('hidden');
         if (addPromptBarEl) addPromptBarEl.classList.remove('hidden');
+        if (controlsEl) controlsEl.classList.remove('hidden'); 
+        if (tabsContainerEl) tabsContainerEl.classList.remove('hidden'); 
     }
-    
     const filters = {
       tab: which,
       searchTerm: searchInputEl ? searchInputEl.value : '',
@@ -226,11 +220,7 @@ window.PromptFinder.UI = (function () {
   };
 
   const displayPrompts = prompts => {
-    if (!promptsListEl) {
-        console.warn("[UI] promptsListEl not found in displayPrompts");
-        return;
-    }
-    console.log(`[UI] Displaying ${prompts.length} prompts.`);
+    if (!promptsListEl) return;
     const sorted = [...prompts].sort((a, b) =>
       (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
     );
@@ -261,24 +251,18 @@ window.PromptFinder.UI = (function () {
   };
 
   const displayPromptDetails = prompt => {
-    console.log("[UI] displayPromptDetails called with prompt:", prompt);
-    if (!prompt || !promptDetailsSectionEl) {
-        console.warn("[UI] No prompt or promptDetailsSectionEl in displayPromptDetails. Prompt:", prompt, "Section:", promptDetailsSectionEl);
-        return;
-    }
-    // Log the elements again after direct ID caching attempt
-    console.log("[UI Direct Cache Check in displayPromptDetails] titleEl:", promptDetailTitleEl, "textEl:", promptDetailTextEl);
-
+    if (!prompt || !promptDetailsSectionEl) return;
     showPromptDetailsView(); 
+    promptDetailsSectionEl.dataset.currentPromptId = prompt.id; 
 
-    if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title || 'N/A'; else console.warn("promptDetailTitleEl is null");
-    if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text || 'N/A'; else console.warn("promptDetailTextEl is null");
-    if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A'; else console.warn("promptDetailCategoryEl is null");
-    if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None'; else console.warn("promptDetailTagsEl is null");
+    if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title || 'N/A'; 
+    if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text || 'N/A'; 
+    if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A'; 
+    if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None'; 
     
     const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
-      favBtn.dataset.id = prompt.id;
+      favBtn.dataset.id = prompt.id; // Ensure fav button in details also gets the ID
       const icon = favBtn.querySelector('i');
       if (icon) icon.className = (prompt.userIsFavorite || prompt.favorites === 1) ? 'fas fa-heart' : 'far fa-heart';
     }
@@ -286,8 +270,8 @@ window.PromptFinder.UI = (function () {
     const ratingToDisplay = prompt.isPrivate ? (prompt.userRating || 0) : (prompt.averageRating || 0);
     const ratingCountToDisplay = prompt.isPrivate ? 1 : (prompt.totalRatingsCount || 0); 
 
-    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`; else console.warn("averageRatingValueEl is null");
-    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`; else console.warn("ratingCountEl is null");
+    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`; 
+    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`; 
     
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
@@ -308,16 +292,13 @@ window.PromptFinder.UI = (function () {
         });
         starRatingContainerEl.appendChild(star);
       }
-    } else { console.warn("starRatingContainerEl is null");}
+    } 
     if (deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
-    console.log("[UI] displayPromptDetails finished populating fields.");
   };
 
   const viewPromptDetails = async promptId => {
-    console.log(`[UI] viewPromptDetails called for ID: ${promptId}`);
     try {
       const prompt = await PromptData.findPromptById(promptId);
-      console.log("[UI] Prompt fetched by findPromptById:", prompt);
       if (prompt) {
         displayPromptDetails(prompt);
       } else {
@@ -344,31 +325,31 @@ window.PromptFinder.UI = (function () {
   
   const handleToggleFavorite = async promptId => {
     console.warn('handleToggleFavorite needs Firestore update');
-    try {
-      const updatedPrompt = await PromptData.toggleFavorite(promptId);
-      allPrompts = allPrompts.map(p => p.id === promptId ? updatedPrompt : p);
-      if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && starRatingContainerEl?.dataset.id === promptId) {
-        displayPromptDetails(updatedPrompt);
-      } else {
-        showTab(activeTab);
-      }
-      Utils.showConfirmationMessage(`Favorite status updated!`);
-    } catch (error) {
-      Utils.handleError('Failed to update favorite status', { userVisible: true, originalError: error });
+    const promptIndex = allPrompts.findIndex(p => p.id === promptId);
+    if (promptIndex !== -1) {
+        allPrompts[promptIndex].userIsFavorite = !allPrompts[promptIndex].userIsFavorite;
+        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
+            displayPromptDetails(allPrompts[promptIndex]);
+        } else {
+            showTab(activeTab);
+        }
+        Utils.showConfirmationMessage(`Favorite status updated!`);
+    } else {
+        Utils.handleError('Prompt not found to toggle favorite.', {userVisible: true});
     }
   };
 
   const handleRatePrompt = async (promptId, rating, isPrivatePrompt) => {
     console.warn('handleRatePrompt needs Firestore update');
-    try {
-      const updatedPrompt = await PromptData.updatePromptRating(promptId, rating, isPrivatePrompt); 
-      allPrompts = allPrompts.map(p => p.id === promptId ? updatedPrompt : p);
-      if (starRatingContainerEl?.dataset.id === promptId) {
-         displayPromptDetails(updatedPrompt); 
-      }
-      Utils.showConfirmationMessage(`Rated ${rating} stars!`);
-    } catch (error) {
-      Utils.handleError('Failed to update rating', { userVisible: true, originalError: error });
+    const promptIndex = allPrompts.findIndex(p => p.id === promptId);
+    if (promptIndex !== -1) {
+        if(isPrivatePrompt) allPrompts[promptIndex].userRating = rating;
+        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
+            displayPromptDetails(allPrompts[promptIndex]);
+        }
+        Utils.showConfirmationMessage(`Rated ${rating} stars!`);
+    } else {
+        Utils.handleError('Prompt not found to rate.', {userVisible: true});
     }
   };
 
@@ -381,19 +362,16 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  const handleDeletePrompt = async promptId => {
-    console.warn('handleDeletePrompt needs Firestore update');
+  const handleDeletePrompt = async (promptId) => {
     try {
       const success = await PromptData.deletePrompt(promptId);
       if (success) {
-        allPrompts = allPrompts.filter(p => p.id !== promptId);
         Utils.showConfirmationMessage('Prompt deleted successfully!');
+        allPrompts = allPrompts.filter(p => p.id !== promptId);
         showPromptList(); 
-      } else {
-        Utils.handleError('Failed to delete prompt.', { userVisible: true });
-      }
+      } 
     } catch (error) {
-      Utils.handleError('Error during prompt deletion', { userVisible: true, originalError: error });
+      Utils.handleError('Error during prompt deletion process', { userVisible: true, originalError: error });
     }
   };
 
@@ -410,8 +388,6 @@ window.PromptFinder.UI = (function () {
     initializeUI,
     loadAndDisplayData, 
     showTab,
-    displayPrompts, 
-    displayPromptDetails, 
     viewPromptDetails 
   };
 })();
