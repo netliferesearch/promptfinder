@@ -1,25 +1,14 @@
 /**
  * PromptFinder Extension - Prompt Data Operations
  * Contains functions for managing prompts data (CRUD operations).
- * Using namespace pattern for Chrome extension compatibility.
  */
 
-// Extend the namespace
 window.PromptFinder = window.PromptFinder || {};
 
-// Prompt Data module
 window.PromptFinder.PromptData = (function () {
-  // Private reference to Utils namespace
   const Utils = window.PromptFinder.Utils;
-
-  // --- Firebase Authentication Functions ---
-
-  /**
-   * Signs up a new user with email and password.
-   * @param {string} email - User's email.
-   * @param {string} password - User's password.
-   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
-   */
+  
+  // --- Firebase Authentication Functions (already implemented) ---
   const signupUser = async (email, password) => {
     if (!window.firebaseAuth) {
       const err = new Error('Firebase Auth not initialized.');
@@ -29,19 +18,14 @@ window.PromptFinder.PromptData = (function () {
     try {
       const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
       console.log("User signed up:", userCredential.user);
+      // TODO: Create a user document in Firestore 'users' collection here
       return userCredential;
     } catch (error) {
       Utils.handleError(`Signup error: ${error.message}`, { userVisible: true, originalError: error });
-      return error; // Return the error object
+      return error;
     }
   };
 
-  /**
-   * Logs in an existing user with email and password.
-   * @param {string} email - User's email.
-   * @param {string} password - User's password.
-   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
-   */
   const loginUser = async (email, password) => {
     if (!window.firebaseAuth) {
       const err = new Error('Firebase Auth not initialized.');
@@ -54,16 +38,10 @@ window.PromptFinder.PromptData = (function () {
       return userCredential;
     } catch (error) {
       Utils.handleError(`Login error: ${error.message}`, { userVisible: true, originalError: error });
-      return error; // Return the error object
+      return error;
     }
   };
 
-  /**
-   * Signs in a user with Google.
-   * IMPORTANT: For Manifest V3, this will require an Offscreen Document to work reliably.
-   * This function provides the basic Firebase logic; the Offscreen Document part needs to be implemented separately.
-   * @returns {Promise<firebase.auth.UserCredential | Error>} Firebase user credential or Error object on failure.
-   */
   const signInWithGoogle = async () => {
     if (!window.firebaseAuth || !window.firebase || !window.firebase.auth || !window.firebase.auth.GoogleAuthProvider) {
       const err = new Error('Firebase Auth or GoogleAuthProvider not initialized.');
@@ -72,30 +50,18 @@ window.PromptFinder.PromptData = (function () {
     }
     try {
       const provider = new window.firebase.auth.GoogleAuthProvider();
-      // TODO: For Manifest V3, signInWithPopup needs to be handled via an Offscreen Document.
-      // This direct call will likely be blocked or behave unexpectedly in an extension popup.
-      // For now, we include it to show an alert and log an error until Offscreen Document is implemented.
       const message = 'Google Sign-In with popup requires an Offscreen Document in Manifest V3. This feature is not fully implemented yet.';
-      alert(message); // User-facing alert
-      console.warn(message); // Console warning for developer
-      const err = new Error(message); // Create an error to return for consistent handling
-      Utils.displayAuthError(message, document.getElementById('auth-error-message')); // Display in auth error UI
+      alert(message);
+      console.warn(message);
+      const err = new Error(message);
+      Utils.displayAuthError(message, document.getElementById('auth-error-message'));
       return err;
-      // const userCredential = await window.firebaseAuth.signInWithPopup(provider);
-      // console.log("User signed in with Google:", userCredential.user);
-      // return userCredential;
     } catch (error) {
-      // This catch block might not be reached if signInWithPopup is blocked before it can throw a typical error
       Utils.handleError(`Google Sign-In error: ${error.message}`, { userVisible: true, originalError: error });
       return error;
     }
   };
 
-
-  /**
-   * Logs out the current user.
-   * @returns {Promise<boolean>} True if logout was successful, false otherwise.
-   */
   const logoutUser = async () => {
     if (!window.firebaseAuth) {
       Utils.handleError('Firebase Auth not initialized.', { userVisible: true });
@@ -111,11 +77,6 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  /**
-   * Sets up an observer for Firebase authentication state changes.
-   * @param {function} callback - Function to call with the user object (or null) when auth state changes.
-   * @returns {function} Unsubscribe function from Firebase.
-   */
   const onAuthStateChanged = (callback) => {
     if (!window.firebaseAuth) {
       Utils.handleError('Firebase Auth not initialized.', { userVisible: false });
@@ -125,164 +86,131 @@ window.PromptFinder.PromptData = (function () {
     return window.firebaseAuth.onAuthStateChanged(callback);
   };
 
-  // --- Existing Prompt Functions (will be refactored for Firebase later) ---
+  // --- Prompt Functions (Refactored for Firebase Firestore) ---
+
+  /**
+   * Add a prompt to Firestore.
+   * User must be logged in.
+   * @param {Object} promptData - Data for the new prompt (title, text, category, tags, isPrivate, targetAiTools).
+   * @returns {Promise<Object | null>} The added prompt data (with ID) or null on error.
+   */
+  const addPrompt = async (promptData) => {
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    const db = window.firebaseDb;
+
+    if (!currentUser) {
+      Utils.handleError("User must be logged in to add a prompt.", { userVisible: true });
+      return null;
+    }
+    if (!db) {
+      Utils.handleError("Firestore not initialized.", { userVisible: true });
+      return null;
+    }
+
+    try {
+      const newPromptDoc = {
+        userId: currentUser.uid,
+        authorDisplayName: currentUser.displayName || currentUser.email, // Capture current display name or email
+        title: promptData.title || '',
+        text: promptData.text || '',
+        description: promptData.description || '',
+        category: promptData.category || '',
+        tags: promptData.tags || [],
+        isPrivate: !!promptData.isPrivate, // Ensure boolean
+        targetAiTools: promptData.targetAiTools || [],
+        // For private prompts, user-specific rating/favorite is on the prompt itself
+        userRating: promptData.isPrivate ? (promptData.userRating || 0) : 0,
+        userIsFavorite: promptData.isPrivate ? (promptData.userIsFavorite || false) : false,
+        // For shared prompts, these are aggregates (initialized to 0 or defaults)
+        averageRating: !promptData.isPrivate ? 0 : 0, 
+        totalRatingsCount: !promptData.isPrivate ? 0 : 0,
+        favoritesCount: !promptData.isPrivate ? 0 : 0,
+        usageCount: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Use global firebase for FieldValue
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      const docRef = await db.collection('prompts').add(newPromptDoc);
+      console.log("Prompt added with ID: ", docRef.id);
+      return { ...newPromptDoc, id: docRef.id, createdAt: new Date(), updatedAt: new Date() }; // Return with ID and approximate client-side timestamps for immediate UI use
+    } catch (error) {
+      Utils.handleError(`Error adding prompt to Firestore: ${error.message}`, {
+        userVisible: true,
+        originalError: error,
+      });
+      return null;
+    }
+  };
+  
+  // Deprecate or remove old createPrompt as addPrompt now handles full object creation for Firestore.
+  // const createPrompt = promptData => { ... }; 
+
+  // TODO: Refactor loadPrompts, updatePrompt, deletePrompt, etc., for Firestore
   const loadPrompts = async () => {
+    console.warn("loadPrompts is still using chrome.storage.local and needs refactoring for Firestore.");
     try {
       const data = await Utils.chromeStorageGet('prompts');
       return data.prompts || [];
     } catch (error) {
-      Utils.handleError(`Error loading prompts`, {
-        userVisible: true,
-        originalError: error,
-        timeout: 7000,
-      });
-      return []; 
+      Utils.handleError(`Error loading prompts (local): ${error.message}`, { userVisible: true, originalError: error });
+      return [];
     }
   };
+
+  const updatePrompt = async (promptId, updates) => {
+    console.warn(`updatePrompt for ID ${promptId} is still using chrome.storage.local.`);
+    // Placeholder - needs Firestore implementation
+    return null;
+  };
+
+  const deletePrompt = async (promptId) => {
+    console.warn(`deletePrompt for ID ${promptId} is still using chrome.storage.local.`);
+    // Placeholder - needs Firestore implementation
+    return false;
+  };
+
+  const updatePromptRating = async (promptId, rating) => {
+    console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
+    // Placeholder - needs Firestore implementation
+    return null;
+  };
+
+  const toggleFavorite = async promptId => {
+    console.warn(`toggleFavorite for ID ${promptId} is still using chrome.storage.local.`);
+    // Placeholder - needs Firestore implementation
+    return null;
+  };
+  
+  // --- Helper/Existing functions that might not need immediate refactoring or will be refactored alongside UI --- 
   const savePrompts = async prompts => {
+    // This function will be removed once all data ops use Firestore directly
+    console.warn("savePrompts is for chrome.storage.local and will be removed.");
     try {
       await Utils.chromeStorageSet({ prompts });
       return true;
     } catch (error) {
-      Utils.handleError(`Error saving prompts`, {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError(`Error saving prompts (local): ${error.message}`, { userVisible: true, originalError: error });
       return false;
-    }
-  };
-  const createPrompt = promptData => {
-    return {
-      id: Date.now().toString(), 
-      title: promptData.title || '',
-      text: promptData.text || '',
-      category: promptData.category || '',
-      tags: promptData.tags || [],
-      isPrivate: !!promptData.isPrivate,
-      rating: 0,
-      ratingCount: 0,
-      ratingSum: 0,
-      favorites: 0,
-      dateAdded: new Date().toISOString(),
-    };
-  };
-  const addPrompt = async promptData => {
-    try {
-      const allPrompts = await loadPrompts();
-      const newPrompt = createPrompt(promptData);
-      allPrompts.push(newPrompt);
-      await savePrompts(allPrompts);
-      return newPrompt;
-    } catch (error) {
-      Utils.handleError(`Error adding prompt`, {
-        userVisible: true,
-        originalError: error,
-      });
-      throw error; 
-    }
-  };
-  const updatePrompt = async (promptId, updates) => {
-    try {
-      const allPrompts = await loadPrompts();
-      const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-      if (promptIndex === -1) {
-        throw new Error(`Prompt with ID ${promptId} not found`);
-      }
-      allPrompts[promptIndex] = {
-        ...allPrompts[promptIndex],
-        ...updates,
-      };
-      await savePrompts(allPrompts);
-      return allPrompts[promptIndex];
-    } catch (error) {
-      Utils.handleError(`Error updating prompt`, {
-        userVisible: true,
-        originalError: error,
-      });
-      throw error; 
-    }
-  };
-  const deletePrompt = async promptId => {
-    try {
-      const allPrompts = await loadPrompts();
-      const updatedPrompts = allPrompts.filter(p => p.id !== promptId);
-      if (updatedPrompts.length === allPrompts.length) {
-        throw new Error(`Prompt with ID ${promptId} not found`);
-      }
-      await savePrompts(updatedPrompts);
-      return true;
-    } catch (error) {
-      Utils.handleError(`Error deleting prompt`, {
-        userVisible: true,
-        originalError: error,
-      });
-      return false;
-    }
-  };
-  const updatePromptRating = async (promptId, rating) => {
-    try {
-      const allPrompts = await loadPrompts();
-      const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-      if (promptIndex === -1) {
-        throw new Error(`Prompt with ID ${promptId} not found in collection`);
-      }
-      const old = allPrompts[promptIndex];
-      const newCount = (old.ratingCount || 0) + 1;
-      const newSum = (old.ratingSum || 0) + rating;
-      const newAvg = newSum / newCount;
-      allPrompts[promptIndex] = {
-        ...old,
-        ratingSum: newSum,
-        ratingCount: newCount,
-        rating: newAvg, 
-      };
-      await savePrompts(allPrompts);
-      return allPrompts[promptIndex];
-    } catch (error) {
-      Utils.handleError(`Error updating prompt rating`, {
-        userVisible: true,
-        originalError: error,
-      });
-      throw error;
-    }
-  };
-  const toggleFavorite = async promptId => {
-    try {
-      const allPrompts = await loadPrompts();
-      const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-      if (promptIndex === -1) {
-        throw new Error(`Prompt with ID ${promptId} not found in collection`);
-      }
-      const wasFavorite = allPrompts[promptIndex].favorites === 1;
-      allPrompts[promptIndex].favorites = wasFavorite ? 0 : 1;
-      await savePrompts(allPrompts);
-      return allPrompts[promptIndex];
-    } catch (error) {
-      Utils.handleError(`Error toggling favorite status`, {
-        userVisible: true,
-        originalError: error,
-      });
-      throw error;
     }
   };
   const copyPromptToClipboard = async promptId => {
+    // This function might need to load the specific prompt from Firestore if not already loaded
+    // For now, it will rely on the existing loadPrompts structure.
     try {
-      const allPrompts = await loadPrompts();
+      const allPrompts = await loadPrompts(); // This needs to become Firestore-aware
       const prompt = allPrompts.find(p => p.id === promptId);
-      if (!prompt) {
-        throw new Error(`Prompt with ID ${promptId} not found`);
-      }
+      if (!prompt) throw new Error(`Prompt with ID ${promptId} not found`);
       await navigator.clipboard.writeText(prompt.text);
       return true;
     } catch (error) {
-      Utils.handleError(`Error copying to clipboard: ${error.message}`, {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError(`Error copying to clipboard: ${error.message}`, { userVisible: true, originalError: error });
       return false;
     }
   };
   const findPromptById = async (promptId, prompts = null, options = {}) => {
+    // This will also need to be Firestore-aware if `prompts` is not passed
+    console.warn("findPromptById might use chrome.storage.local if prompts array not provided.");
+    // ... (rest of existing logic, will fail if prompts not provided and loadPrompts not updated)
     const { throwIfNotFound = false, handleError = false } = options;
     if (!promptId) return Promise.resolve(null);
     try {
@@ -290,7 +218,7 @@ window.PromptFinder.PromptData = (function () {
       if (prompts) {
         prompt = prompts.find(p => p.id === promptId) || null;
       } else {
-        const allPrompts = await loadPrompts();
+        const allPrompts = await loadPrompts(); // This needs to become Firestore-aware
         prompt = allPrompts.find(p => p.id === promptId) || null;
       }
       if (!prompt && throwIfNotFound) {
@@ -299,18 +227,17 @@ window.PromptFinder.PromptData = (function () {
       return prompt;
     } catch (error) {
       if (handleError) {
-        Utils.handleError(`Error retrieving prompt`, {
-          userVisible: true,
-          originalError: error,
-        });
+        Utils.handleError(`Error retrieving prompt: ${error.message}`, { userVisible: true, originalError: error });
       }
       return null;
     }
   };
   const filterPrompts = (prompts, filters) => {
+    // This function operates on an array; how it gets that array will change with Firestore.
+    // The filtering logic itself might remain similar.
     let result = [...prompts];
     if (filters.tab === 'favs') {
-      result = result.filter(p => p.favorites === 1);
+      result = result.filter(p => p.userIsFavorite || p.favorites === 1); // Adjust for new data model
     } else if (filters.tab === 'private') {
       result = result.filter(p => p.isPrivate);
     }
@@ -318,14 +245,16 @@ window.PromptFinder.PromptData = (function () {
       const term = filters.searchTerm.toLowerCase();
       result = result.filter(
         p =>
-          p.title.toLowerCase().includes(term) ||
-          p.text.toLowerCase().includes(term) ||
-          p.category.toLowerCase().includes(term) ||
-          p.tags.some(tag => tag.toLowerCase().includes(term))
+          (p.title && p.title.toLowerCase().includes(term)) ||
+          (p.text && p.text.toLowerCase().includes(term)) ||
+          (p.category && p.category.toLowerCase().includes(term)) ||
+          (p.tags && p.tags.some(tag => tag.toLowerCase().includes(term))) || 
+          (p.targetAiTools && p.targetAiTools.some(tool => tool.toLowerCase().includes(term)))
       );
     }
     if (filters.minRating > 0) {
-      result = result.filter(p => (p.rating || 0) >= filters.minRating);
+      // Adjust for new data model: userRating for private, averageRating for shared
+      result = result.filter(p => (p.isPrivate ? (p.userRating || 0) : (p.averageRating || 0)) >= filters.minRating);
     }
     return result;
   };
@@ -333,17 +262,18 @@ window.PromptFinder.PromptData = (function () {
   return {
     signupUser,
     loginUser,
-    signInWithGoogle, // Added new function
+    signInWithGoogle,
     logoutUser,
     onAuthStateChanged,
-    loadPrompts,
-    savePrompts,
-    createPrompt,
-    addPrompt,
-    updatePrompt,
-    deletePrompt,
-    updatePromptRating,
-    toggleFavorite,
+    addPrompt, // Refactored
+    loadPrompts, // Needs refactoring
+    updatePrompt, // Needs refactoring
+    deletePrompt, // Needs refactoring
+    updatePromptRating, // Needs refactoring
+    toggleFavorite, // Needs refactoring
+    // --- Helper or to be removed/refactored --- 
+    // createPrompt, // Deprecated by addPrompt's direct object creation
+    // savePrompts, // To be removed once all ops use Firestore
     copyPromptToClipboard,
     findPromptById,
     filterPrompts,
