@@ -77,31 +77,32 @@ const mockDoc = (data, id) => ({
   exists: data !== undefined && data !== null, 
 });
 
-global.window.firebaseDb = {
-  collection: jest.fn().mockImplementation((collectionName) => {
+// Create persistent mock instances for collections
+const createMockCollection = () => {
     const mockDocs = {}; 
-    let queryFilters = [];
-    const chainableMock = {
+    let queryFilters = []; // Store filters for the current query chain
+    const self = {
       add: jest.fn(async (data) => {
         const newId = `newMockId_${Object.keys(mockDocs).length}`;
-        mockDocs[newId] = data;
-        return Promise.resolve({ id: newId });
+        mockDocs[newId] = data; // Store by ID
+        return Promise.resolve({ id: newId, ...mockDoc(data, newId) }); // Return a doc-like structure with id
       }),
       doc: jest.fn((docId) => ({
+        id: docId, // Store the id on the doc mock itself for easier access in tests
         get: jest.fn(async () => Promise.resolve(mockDoc(mockDocs[docId], docId))),
         update: jest.fn(async (updateData) => {
             if (mockDocs[docId]) {
                 mockDocs[docId] = { ...mockDocs[docId], ...updateData };
                 return Promise.resolve();
             }
-            return Promise.reject(new Error("Mock doc not found for update"));
+            return Promise.reject(new Error(`Mock doc '${docId}' not found for update`));
         }),
         delete: jest.fn(async () => {
             if (mockDocs[docId]) {
                 delete mockDocs[docId];
                 return Promise.resolve();
             }
-            return Promise.reject(new Error("Mock doc not found for delete"));
+            return Promise.reject(new Error(`Mock doc '${docId}' not found for delete`));
         }),
         set: jest.fn(async (setData) => {
             mockDocs[docId] = setData;
@@ -110,10 +111,11 @@ global.window.firebaseDb = {
       })),
       where: jest.fn((field, op, value) => {
         queryFilters.push({ field, op, value });
-        return chainableMock; 
+        return self; // Return self for chaining
       }),
       get: jest.fn(async () => {
         let results = Object.entries(mockDocs).map(([id, data]) => mockDoc(data, id));
+        // Apply filters accumulated in queryFilters
         queryFilters.forEach(filter => {
           results = results.filter(docInstance => {
             const docData = docInstance.data();
@@ -125,40 +127,58 @@ global.window.firebaseDb = {
             }
           });
         });
-        queryFilters = []; 
+        queryFilters = []; // Reset filters for the next independent get() call
         return Promise.resolve({
           docs: results,
           forEach: (callback) => results.forEach(callback),
           empty: results.length === 0,
         });
       }),
-      _clearStore: () => { for(const id in mockDocs) delete mockDocs[id]; }, 
+      _clearStore: () => { 
+          for(const id in mockDocs) delete mockDocs[id]; 
+          queryFilters = []; // Also clear filters
+          // Deep clear jest.fn() calls for methods of this specific instance
+          self.add.mockClear();
+          self.doc.mockClear();
+          // For doc().get, .update, .delete, .set, they are new jest.fn() per doc call, so doc() mockClear is enough.
+          self.where.mockClear();
+          self.get.mockClear();
+      }, 
       _setDocs: (docsArray) => { 
-        for(const id in mockDocs) delete mockDocs[id]; 
+        self._clearStore(); // Clear before setting new docs
         docsArray.forEach(doc => { if(doc && doc.id) mockDocs[doc.id] = doc; });
-      }
+      },
+      _getDocStore: () => mockDocs // Helper for tests to inspect internal store
     };
-    return chainableMock;
+    return self;
+};
+
+const mockPromptsCollection = createMockCollection();
+const mockUsersCollection = createMockCollection();
+
+global.window.firebaseDb = {
+  collection: jest.fn(collectionName => {
+    if (collectionName === 'prompts') return mockPromptsCollection;
+    if (collectionName === 'users') return mockUsersCollection;
+    // Fallback for any other collection name, though we might not need it
+    return createMockCollection(); 
   })
 };
-console.log('EXEC_ORDER: setupTests.js - firebaseDb mocked');
+console.log('EXEC_ORDER: setupTests.js - firebaseDb mocked with persistent collection mocks');
 
 global.window.firebase = {
   initializeApp: jest.fn(config => ({})),
   auth: jest.fn(() => global.window.firebaseAuth),
   firestore: jest.fn(() => global.window.firebaseDb),
-  // Duplicating structure for firebase.auth().X and firebase.auth.X to be safe
   auth: Object.assign(jest.fn(() => global.window.firebaseAuth), {
     GoogleAuthProvider: jest.fn(),
-    // Add other auth static properties or methods if needed by your code
-    ...global.window.firebaseAuth // Spreading direct methods like createUserWithEmailAndPassword if accessed as firebase.auth.createUser...
+    ...global.window.firebaseAuth 
   }),
   firestore: Object.assign(jest.fn(() => global.window.firebaseDb), {
     FieldValue: {
       serverTimestamp: jest.fn(() => 'MOCK_SERVER_TIMESTAMP'),
     },
-    // Add other firestore static properties or methods if needed
-    ...global.window.firebaseDb // Spreading direct methods like collection if accessed as firebase.firestore.collection
+    ...global.window.firebaseDb 
   }),
 };
 console.log('EXEC_ORDER: setupTests.js - global firebase object mocked');
