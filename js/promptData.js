@@ -222,14 +222,68 @@ window.PromptFinder.PromptData = (function () {
   };
 
   /**
-   * Deletes a prompt from Firestore.
-   * @param {string} promptId ID of the prompt to delete.
-   * @returns {Promise<boolean>} True if deletion was successful, false otherwise.
+   * Updates an existing prompt in Firestore.
+   * @param {string} promptId ID of the prompt to update.
+   * @param {Object} updates Object containing the fields to update.
+   * @returns {Promise<Object | null>} The updated prompt data or null on error.
    */
-  const deletePrompt = async (promptId) => {
+  const updatePrompt = async (promptId, updates) => {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const db = window.firebaseDb;
 
+    if (!currentUser) {
+      Utils.handleError("User must be logged in to update a prompt.", { userVisible: true });
+      return null;
+    }
+    if (!db) {
+      Utils.handleError("Firestore not initialized.", { userVisible: true });
+      return null;
+    }
+    if (!promptId) {
+      Utils.handleError("No prompt ID provided for update.", { userVisible: true });
+      return null;
+    }
+    if (!updates || Object.keys(updates).length === 0) {
+        Utils.handleError("No updates provided for the prompt.", { userVisible: true });
+        return null;
+    }
+
+    try {
+      const docRef = db.collection('prompts').doc(promptId);
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        Utils.handleError(`Prompt with ID ${promptId} not found for update.`, { userVisible: true });
+        return null;
+      }
+
+      if (docSnap.data().userId !== currentUser.uid) {
+        Utils.handleError("You do not have permission to update this prompt.", { userVisible: true });
+        return null;
+      }
+
+      const updateData = {
+        ...updates,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      await docRef.update(updateData);
+      console.log(`Prompt with ID ${promptId} updated successfully in Firestore.`);
+      // Return the merged data for UI update
+      const updatedDoc = { ...docSnap.data(), ...updateData, id: promptId, updatedAt: new Date() }; // Simulate timestamp for immediate UI use
+      return updatedDoc;
+    } catch (error) {
+      Utils.handleError(`Error updating prompt ${promptId} in Firestore: ${error.message}`, {
+        userVisible: true,
+        originalError: error,
+      });
+      return null;
+    }
+  };
+
+  const deletePrompt = async (promptId) => {
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    const db = window.firebaseDb;
     if (!currentUser) {
       Utils.handleError("User must be logged in to delete a prompt.", { userVisible: true });
       return false;
@@ -242,23 +296,17 @@ window.PromptFinder.PromptData = (function () {
       Utils.handleError("No prompt ID provided for deletion.", { userVisible: true });
       return false;
     }
-
     try {
       const docRef = db.collection('prompts').doc(promptId);
       const docSnap = await docRef.get();
-
       if (!docSnap.exists) {
         Utils.handleError(`Prompt with ID ${promptId} not found for deletion.`, { userVisible: true });
         return false;
       }
-
-      // Security Check: Ensure the current user owns this prompt before deleting
-      // This is also enforced by security rules, but good for client-side feedback too.
       if (docSnap.data().userId !== currentUser.uid) {
         Utils.handleError("You do not have permission to delete this prompt.", { userVisible: true });
         return false;
       }
-
       await docRef.delete();
       console.log(`Prompt with ID ${promptId} deleted successfully from Firestore.`);
       return true;
@@ -271,11 +319,7 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  // TODO: Refactor updatePrompt, updatePromptRating, toggleFavorite for Firestore
-  const updatePrompt = async (promptId, updates) => {
-    console.warn(`updatePrompt for ID ${promptId} is still using chrome.storage.local.`);
-    return null;
-  };
+  // TODO: Refactor updatePromptRating, toggleFavorite for Firestore
   const updatePromptRating = async (promptId, rating) => {
     console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
     return null;
@@ -333,8 +377,8 @@ window.PromptFinder.PromptData = (function () {
     onAuthStateChanged,
     addPrompt, 
     loadPrompts, 
-    updatePrompt, 
-    deletePrompt, // Refactored
+    updatePrompt, // Refactored
+    deletePrompt, 
     updatePromptRating, 
     toggleFavorite, 
     copyPromptToClipboard,
