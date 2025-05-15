@@ -35,9 +35,6 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
   const elem = trulyOriginalDocumentCreateElement.call(document, tagName);
   if (id) elem.id = id;
 
-  // Ensure dataset exists (JSDOM elements have it, but this makes it a plain object for easier testing if needed for assignment)
-  // However, for property access like elem.dataset.foo = 'bar', JSDOM's DOMStringMap is fine.
-  // The primary goal is that elem.dataset is not undefined.
   if (typeof elem.dataset === 'undefined') { 
     elem.dataset = {}; 
   }
@@ -65,11 +62,11 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
           if (child) {
               if(typeof child.dataset === 'undefined') child.dataset = {}; 
               child.classList.add = child.classList.add || jest.fn();
+              // Ensure even deeper queried children are mockable if needed
               child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i'));
               return child;
           }
       }
-      // Fallback if original querySelector or child not found
       const mockChild = createDOMMockElement('div', selector.replace(/[#.]/g, ''));
       if (selector === 'i' && (elem.id === 'toggle-fav-detail' || elem.classList.contains('toggle-favorite'))) {
         mockChild.className = ''; 
@@ -78,14 +75,11 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
   });
   elem.querySelectorAll = elem.querySelectorAll || jest.fn(() => []);
   
-  // elem.innerHTML = ''; // JSDOM elements have this, allow natural behavior
-  // elem.textContent = ''; // JSDOM elements have this
   elem.value = elem.value || '';
   elem.checked = elem.checked || false;
   elem.reset = elem.reset || jest.fn();
   elem.focus = elem.focus || jest.fn();
   elem.click = elem.click || jest.fn();
-  // nodeType is inherent and read-only for JSDOM elements.
   return elem;
 };
 
@@ -127,17 +121,15 @@ const setupMockDOM = () => {
   
   document.getElementById = jest.fn(id => {
     if (domElementsCache[id]) return domElementsCache[id];
-    
-    let elementToCache = trulyOriginalDocumentGetElementById.call(document, id);
-
+    let elementToCache = trulyOriginalDocumentGetElementById.call(document, id); 
     if (elementToCache) {
         elementToCache.classList.add = jest.fn(elementToCache.classList.add?.bind(elementToCache.classList));
         elementToCache.classList.remove = jest.fn(elementToCache.classList.remove?.bind(elementToCache.classList));
         elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle?.bind(elementToCache.classList));
         if (typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
-        elementToCache.appendChild = jest.fn(elementToCache.appendChild?.bind(elementToCache));
+        const originalElemAppendChild = elementToCache.appendChild?.bind(elementToCache);
+        elementToCache.appendChild = jest.fn(originalElemAppendChild || (()=> {}));
         elementToCache.addEventListener = jest.fn(elementToCache.addEventListener?.bind(elementToCache));
-        
         const originalElemQuerySelectorFn = elementToCache.querySelector?.bind(elementToCache);
         elementToCache.querySelector = jest.fn(selector => {
             const child = originalElemQuerySelectorFn ? originalElemQuerySelectorFn(selector) : null;
@@ -156,9 +148,7 @@ const setupMockDOM = () => {
     return elementToCache;
   });
 
-  // Mock document.createElement AFTER createDOMMockElement is defined and uses the original.
   document.createElement = jest.fn((tagName) => createDOMMockElement(tagName));
-  // Mock document.querySelector AFTER createDOMMockElement is defined and uses the original.
   document.querySelector = jest.fn((selector) => {
       const el = trulyOriginalDocumentQuerySelector.call(document, selector);
       if (el) {
@@ -202,9 +192,7 @@ describe('UI Module', () => {
 
     test('should handle errors from cacheDOMElements if it throws', async () => {
         const cacheError = new Error('Caching DOM failed');
-        const realGetElementById = trulyOriginalDocumentGetElementById; 
         document.getElementById = jest.fn().mockImplementationOnce(() => { 
-            document.getElementById = realGetElementById; 
             throw cacheError; 
         });
         await UI.initializeUI();
@@ -212,7 +200,9 @@ describe('UI Module', () => {
             'Error initializing UI', 
             expect.objectContaining({ originalError: cacheError, userVisible: true })
         );
-        document.getElementById = realGetElementById; 
+        // Restore after test if it was replaced for all tests in file scope
+        document.getElementById = trulyOriginalDocumentGetElementById; 
+        // Or better, ensure it's reset in beforeEach/setupMockDOM for next test
     });
   });
 
@@ -252,6 +242,10 @@ describe('UI Module', () => {
   describe('displayPrompts', () => {
     let promptsList;
     beforeEach(async () => { 
+        // UI.initializeUI calls loadAndDisplayData which calls showTab which calls displayPrompts.
+        // This beforeEach makes it hard to test displayPrompts in isolation without side effects.
+        // Consider not calling initializeUI here if you only want to test displayPrompts's direct output.
+        // For now, we accept it will be called during initializeUI.
         await UI.initializeUI(); 
         promptsList = document.getElementById('prompts-list'); 
     });
