@@ -17,7 +17,9 @@ window.PromptFinder.Utils = {
   handleError: jest.fn(),
   showConfirmationMessage: jest.fn(),
   highlightStars: jest.fn(),
-  escapeHTML: jest.fn(str => str), 
+  escapeHTML: jest.fn(str => typeof str === 'string' ? str.replace(/[&<>"'/]/g, s => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;'
+  }[s])) : str), 
 };
 
 console.log('EXEC_ORDER: ui.test.js - Before require(../js/ui)');
@@ -31,15 +33,13 @@ const trulyOriginalDocumentGetElementById = document.getElementById;
 const trulyOriginalDocumentQuerySelector = document.querySelector;
 
 const createDOMMockElement = (tagName = 'div', id = '') => {
-  // Use the TRULY original document.createElement from JSDOM to avoid recursion
-  const elem = trulyOriginalDocumentCreateElement.call(document, tagName);
+  const elem = trulyOriginalDocumentCreateElement.call(document, tagName); 
   if (id) elem.id = id;
 
   if (typeof elem.dataset === 'undefined') { 
     elem.dataset = {}; 
   }
 
-  // Augment with Jest spies for methods we want to track or control, binding to the real JSDOM element
   elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
   elem.classList.remove = jest.fn(elem.classList.remove?.bind(elem.classList));
   elem.classList.toggle = jest.fn(elem.classList.toggle?.bind(elem.classList));
@@ -48,7 +48,7 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
   elem.style = elem.style || {}; 
   
   const originalElemAppendChild = elem.appendChild?.bind(elem);
-  elem.appendChild = jest.fn(originalElemAppendChild || (() => {})); // Spy on appendChild
+  elem.appendChild = jest.fn(originalElemAppendChild || (() => {}));
 
   elem.addEventListener = jest.fn(elem.addEventListener?.bind(elem));
   elem.setAttribute = jest.fn(elem.setAttribute?.bind(elem));
@@ -62,7 +62,6 @@ const createDOMMockElement = (tagName = 'div', id = '') => {
           if (child) {
               if(typeof child.dataset === 'undefined') child.dataset = {}; 
               child.classList.add = child.classList.add || jest.fn();
-              // Ensure even deeper queried children are mockable if needed
               child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i'));
               return child;
           }
@@ -200,9 +199,8 @@ describe('UI Module', () => {
             'Error initializing UI', 
             expect.objectContaining({ originalError: cacheError, userVisible: true })
         );
-        // Restore after test if it was replaced for all tests in file scope
-        document.getElementById = trulyOriginalDocumentGetElementById; 
-        // Or better, ensure it's reset in beforeEach/setupMockDOM for next test
+        // Restore original mock for other tests if necessary, or rely on beforeEach
+        // document.getElementById = trulyOriginalDocumentGetElementById; 
     });
   });
 
@@ -242,29 +240,30 @@ describe('UI Module', () => {
   describe('displayPrompts', () => {
     let promptsList;
     beforeEach(async () => { 
-        // UI.initializeUI calls loadAndDisplayData which calls showTab which calls displayPrompts.
-        // This beforeEach makes it hard to test displayPrompts in isolation without side effects.
-        // Consider not calling initializeUI here if you only want to test displayPrompts's direct output.
-        // For now, we accept it will be called during initializeUI.
+        // Call initializeUI to ensure DOM elements are cached as they would be in the app
+        // This means loadAndDisplayData and showTab will run, potentially calling displayPrompts already.
+        // For a pure unit test of displayPrompts, you might avoid initializeUI and directly mock/set `promptsListEl`.
+        window.PromptFinder.PromptData.loadPrompts.mockResolvedValueOnce([]); // Prevent double loading in this specific beforeEach
         await UI.initializeUI(); 
         promptsList = document.getElementById('prompts-list'); 
     });
 
     test('should display a list of prompts', () => {
         const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [], userId: 'testUser', userIsFavorite: false }];
-        const promptsListLocal = document.getElementById('prompts-list'); 
+        // const promptsListLocal = document.getElementById('prompts-list'); 
         UI.displayPrompts(prompts); 
-        if (promptsListLocal) {
-            expect(promptsListLocal.innerHTML).toContain('Test Prompt Display');
-            expect(promptsListLocal.appendChild).toHaveBeenCalled(); 
+        if (promptsList) { // Use the promptsList cached in beforeEach after initializeUI
+            expect(promptsList.innerHTML).toContain('Test Prompt Display');
+            // Check if appendChild was called on the correct, cached promptsList element
+            expect(promptsList.appendChild).toHaveBeenCalled(); 
         }
       });
   
       test('should show empty state if no prompts', () => {
-        const promptsListLocal = document.getElementById('prompts-list');
+        // const promptsListLocal = document.getElementById('prompts-list');
         UI.displayPrompts([]);
-        if (promptsListLocal) {
-            expect(promptsListLocal.innerHTML).toContain('No prompts found');
+        if (promptsList) {
+            expect(promptsList.innerHTML).toContain('No prompts found');
         }
       });
   });
@@ -272,7 +271,7 @@ describe('UI Module', () => {
   describe('displayPromptDetails', () => {
     test('should display prompt details in the UI', async () => { 
         const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userIsFavorite: false, isPrivate: false, userId: 'testUser' };
-        await UI.initializeUI(); 
+        await UI.initializeUI(); // Ensures elements are cached, including starRatingContainerEl
         UI.displayPromptDetails(prompt);
         const titleEl = document.getElementById('prompt-detail-title');
         const textEl = document.getElementById('prompt-detail-text');
@@ -280,6 +279,7 @@ describe('UI Module', () => {
 
         if (titleEl) expect(titleEl.textContent).toBe('Detail Title');
         if (textEl) expect(textEl.textContent).toBe('Detail Text');
+        // Check that appendChild was called on the starRatingContainerEl, implying stars were created and added
         if (starRatingContainerEl) {
             expect(starRatingContainerEl.appendChild).toHaveBeenCalled(); 
         }
