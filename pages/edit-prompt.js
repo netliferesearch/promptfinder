@@ -8,23 +8,27 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const urlParams = new URLSearchParams(window.location.search);
   const promptId = urlParams.get('id');
-  
+  const promptIdField = document.getElementById('prompt-id');
+  const errorMessageElement = document.getElementById('error-message');
+
   if (!promptId) {
-    showError('No prompt ID provided');
+    if (window.PromptFinder && window.PromptFinder.Utils) {
+        window.PromptFinder.Utils.handleError('No prompt ID provided in URL.', {specificErrorElement: errorMessageElement, userVisible: true});
+    } else {
+        console.error('No prompt ID provided in URL.');
+    }
+    // Disable form or show error and close button
+    const form = document.getElementById('edit-prompt-form');
+    if(form) form.style.display = 'none';
     return;
   }
   
-  const promptIdField = document.getElementById('prompt-id');
   if (promptIdField) {
     promptIdField.value = promptId;
   }
   
-  // Initialize form and event listeners
   initializeForm();
-  
-  setTimeout(() => {
-    loadPromptData(promptId);
-  }, 500);
+  loadPromptData(promptId);
 });
 
 /**
@@ -49,54 +53,55 @@ function initializeForm() {
  * @param {string} promptId - ID of the prompt to load
  */
 async function loadPromptData(promptId) {
+  const Utils = window.PromptFinder.Utils;
+  const PromptData = window.PromptFinder.PromptData;
+  const errorMessageElement = document.getElementById('error-message');
+
   try {
-    if (!window.PromptFinder || !window.PromptFinder.PromptData) {
-      console.warn('PromptFinder namespace not available yet, retrying in 500ms');
-      setTimeout(() => loadPromptData(promptId), 500);
+    if (!PromptData || !PromptData.findPromptById) {
+      const initErrorMsg = 'PromptData module or findPromptById not available.';
+      console.error(initErrorMsg);
+      if (Utils && Utils.handleError) Utils.handleError(initErrorMsg, {specificErrorElement: errorMessageElement, userVisible: true});
       return;
     }
     
-    const PromptData = window.PromptFinder.PromptData;
+    console.log(`[edit-prompt.js] Loading data for prompt ID: ${promptId}`);
+    // Directly use the Firestore-aware findPromptById
+    const prompt = await PromptData.findPromptById(promptId);
     
+    if (!prompt) {
+      if (Utils && Utils.handleError) Utils.handleError(`Prompt with ID ${promptId} not found.`, {specificErrorElement: errorMessageElement, userVisible: true});
+      // Optionally disable form or close window
+      const form = document.getElementById('edit-prompt-form');
+      if(form) form.style.display = 'none';
+      return;
+    }
+    
+    // Populate the form fields
     const titleInput = document.getElementById('prompt-title');
     const textInput = document.getElementById('prompt-text');
     const categoryInput = document.getElementById('prompt-category');
     const tagsInput = document.getElementById('prompt-tags');
     const privateCheckbox = document.getElementById('prompt-private');
-    
-    if (!titleInput || !textInput) {
-      showError('Form elements missing');
-      return;
-    }
-    
-    titleInput.dataset.loaded = 'true';
-    
-    const allPrompts = await PromptData.loadPrompts();
-    const prompt = await PromptData.findPromptById(promptId, allPrompts);
-    
-    if (!prompt) {
-      showError(`Prompt with ID ${promptId} not found`);
-      return;
-    }
-    
-    titleInput.value = prompt.title || '';
-    textInput.value = prompt.text || '';
+
+    if (titleInput) titleInput.value = prompt.title || '';
+    if (textInput) textInput.value = prompt.text || '';
     if (categoryInput) categoryInput.value = prompt.category || '';
     if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
     if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
     
-    console.info('Prompt data loaded successfully');
+    console.info('[edit-prompt.js] Prompt data loaded successfully into form.');
+
   } catch (error) {
-    console.error('Failed to load prompt data:', error);
-    showError('Failed to load prompt data. Please try again.');
+    console.error('[edit-prompt.js] Failed to load prompt data:', error);
+    if (Utils && Utils.handleError) Utils.handleError('Failed to load prompt data. Please try again.', {specificErrorElement: errorMessageElement, userVisible: true, originalError: error});
   }
 }
 
-/**
- * Show error message in the UI
- * @param {string} message - Error message to display
- */
-function showError(message) {
+// showError, showConfirmation, updateFormWithVerifiedData, addCloseButton 
+// are primarily for the submit handler, so they can remain as is for now.
+// We might refactor showError to be more generic if needed.
+function showError(message) { // This is a local showError for edit-prompt.js
   console.error(message);
   const errorElement = document.getElementById('error-message');
   if (errorElement) {
@@ -105,88 +110,18 @@ function showError(message) {
   }
 }
 
-/**
- * Show confirmation message in the UI
- * @param {string} message - Confirmation message to display
- */
-function showConfirmation(message) {
+function showConfirmation(message) { // Local showConfirmation
   const confirmationElement = document.getElementById('confirmation-message');
   if (confirmationElement) {
     confirmationElement.textContent = message;
     confirmationElement.classList.remove('hidden');
+    // Optionally hide after a delay if not closing window immediately
+    setTimeout(() => { confirmationElement.classList.add('hidden'); }, 3000);
   }
 }
 
-/**
- * Update form fields with verified data from storage
- * @param {Object} prompt - The verified prompt data
- */
-function updateFormWithVerifiedData(prompt) {
-  try {
-    const titleInput = document.getElementById('prompt-title');
-    const textInput = document.getElementById('prompt-text');
-    const categoryInput = document.getElementById('prompt-category');
-    const tagsInput = document.getElementById('prompt-tags');
-    const privateCheckbox = document.getElementById('prompt-private');
-    
-    if (!titleInput || !textInput) {
-      console.error('Form elements missing when trying to update with verified data');
-      return;
-    }
-    
-    titleInput.value = prompt.title || '';
-    textInput.value = prompt.text || '';
-    if (categoryInput) categoryInput.value = prompt.category || '';
-    if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
-    if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
-    
-    console.info('Form updated with verified data from storage');
-  } catch (error) {
-    console.error('Error updating form with verified data:', error);
-  }
-}
-
-/**
- * Add a close button to the confirmation message
- */
-function addCloseButton() {
-  try {
-    if (document.getElementById('close-button')) {
-      return;
-    }
-    
-    const formButtons = document.querySelector('.form-buttons');
-    if (!formButtons) {
-      console.error('Form buttons container not found');
-      return;
-    }
-    
-    formButtons.innerHTML = '';
-    
-    const closeButton = document.createElement('button');
-    closeButton.type = 'button';
-    closeButton.id = 'close-button';
-    closeButton.textContent = 'Close Window';
-    closeButton.className = 'close-button';
-    closeButton.style.backgroundColor = '#7C4DFF';
-    closeButton.style.color = 'white';
-    closeButton.style.padding = '0.75rem 1.5rem';
-    closeButton.style.borderRadius = '24px';
-    closeButton.style.border = 'none';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.width = '100%';
-    
-    closeButton.addEventListener('click', () => {
-      window.close();
-    });
-    
-    formButtons.appendChild(closeButton);
-    
-    console.info('Close button added successfully');
-  } catch (error) {
-    console.error('Error adding close button:', error);
-  }
-}
+// updateFormWithVerifiedData might not be needed if we close window on success
+// or if we re-fetch and re-populate after update.
 
 /**
  * Handle form submission for editing a prompt
@@ -194,103 +129,74 @@ function addCloseButton() {
  */
 async function handleEditPromptSubmit(event) {
   event.preventDefault();
+  const PromptData = window.PromptFinder.PromptData;
+  const Utils = window.PromptFinder.Utils;
+  const errorMessageElement = document.getElementById('error-message');
+  const confirmationMessageElement = document.getElementById('confirmation-message');
   
-  try {
-    if (!window.PromptFinder || !window.PromptFinder.PromptData) {
-      showError('Extension not fully initialized. Please try again in a moment.');
-      return;
-    }
-    
-    const PromptData = window.PromptFinder.PromptData;
-    const Utils = window.PromptFinder.Utils;
-    
-    const promptIdField = document.getElementById('prompt-id');
-    const titleInput = document.getElementById('prompt-title');
-    const textInput = document.getElementById('prompt-text');
-    const categoryInput = document.getElementById('prompt-category');
-    const tagsInput = document.getElementById('prompt-tags');
-    const privateCheckbox = document.getElementById('prompt-private');
-    
-    if (!promptIdField || !titleInput || !textInput) {
-      showError('Form elements missing');
-      return;
-    }
-    
-    const promptId = promptIdField.value;
-    const title = titleInput.value;
-    const text = textInput.value;
-    
-    if (!promptId) {
-      showError('Prompt ID is missing');
-      return;
-    }
-    
-    if (!title || !text) {
-      showError('Please enter both a title and prompt text');
-      return;
-    }
-    
-    const category = categoryInput ? categoryInput.value : '';
-    const tags = tagsInput
-      ? tagsInput.value
-          .split(',')
-          .map(tag => tag.trim())
-          .filter(tag => tag !== '')
-      : [];
-    const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
-    
-    console.log('Updating prompt with ID:', promptId);
-    console.log('Update data:', { title, text, category, tags, isPrivate });
-    
-    const allPrompts = await PromptData.loadPrompts();
-    const existingPrompt = await PromptData.findPromptById(promptId, allPrompts);
-    
-    if (!existingPrompt) {
-      showError(`Prompt with ID ${promptId} not found. Cannot update.`);
-      return;
-    }
-    
-    console.log('Existing prompt before update:', existingPrompt);
-    
-    try {
-      const updatedPrompt = await PromptData.updatePrompt(promptId, {
-        title,
-        text,
-        category,
-        tags,
-        isPrivate
-      });
-      
-      console.log('Updated prompt:', updatedPrompt);
-      
-      const verifyPrompts = await PromptData.loadPrompts();
-      const verifiedPrompt = verifyPrompts.find(p => p.id === promptId);
-      
-      console.log('Verified prompt after update:', verifiedPrompt);
-      
-      if (!verifiedPrompt) {
-        throw new Error('Failed to verify prompt update');
-      }
-      
-      if (verifiedPrompt.title !== title || verifiedPrompt.text !== text) {
-        throw new Error('Prompt update verification failed: data mismatch');
-      }
-      
-      updateFormWithVerifiedData(verifiedPrompt);
-      
-      chrome.storage.local.set({ 'promptUpdated': Date.now() }, () => {
-        console.log('Sent prompt update signal to main extension');
-      });
-      
-      showConfirmation('Prompt updated successfully!');
-      
-      addCloseButton();
-    } catch (updateError) {
-      console.error('Error updating prompt:', updateError);
-      showError(`Failed to update prompt: ${updateError.message}`);
-    }
-  } catch (error) {
-    console.error('Error in edit prompt form:', error);
-    showError('Failed to update prompt. Please try again.');
+  // Hide previous messages
+  if(errorMessageElement) errorMessageElement.classList.add('hidden');
+  if(confirmationMessageElement) confirmationMessageElement.classList.add('hidden');
+
+  // Check for currentUser (essential for update operation to check ownership)
+  const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+  if (!currentUser) {
+    Utils.handleError("You must be logged in to update prompts.", {specificErrorElement: errorMessageElement, userVisible: true});
+    return;
   }
+
+  const promptIdField = document.getElementById('prompt-id');
+  const titleInput = document.getElementById('prompt-title');
+  const textInput = document.getElementById('prompt-text');
+  const categoryInput = document.getElementById('prompt-category');
+  const tagsInput = document.getElementById('prompt-tags');
+  const privateCheckbox = document.getElementById('prompt-private');
+  
+  const promptId = promptIdField ? promptIdField.value : null;
+  const title = titleInput ? titleInput.value.trim() : '';
+  const text = textInput ? textInput.value.trim() : '';
+  
+  if (!promptId) {
+    return Utils.handleError('Prompt ID is missing. Cannot update.', {specificErrorElement: errorMessageElement, userVisible: true});
+  }
+  if (!title || !text) {
+    return Utils.handleError('Please enter both a title and prompt text.', {specificErrorElement: errorMessageElement, userVisible: true});
+  }
+  
+  const updates = {
+    title,
+    text,
+    category: categoryInput ? categoryInput.value.trim() : '',
+    tags: tagsInput ? tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+    isPrivate: privateCheckbox ? privateCheckbox.checked : false,
+    // targetAiTools might also be editable here in the future
+  };
+  
+  console.log('[edit-prompt.js] Updating prompt with ID:', promptId, 'Data:', updates);
+  
+  // We will refactor PromptData.updatePrompt next. For now, this call expects the old structure.
+  // const success = await PromptData.updatePrompt(promptId, updates); 
+  // For now, let's assume updatePrompt will be refactored and work similarly to addPrompt
+
+  // Placeholder for refactored PromptData.updatePrompt call
+  // This will be the subject of the next step.
+  // For now, we'll just log and show a temporary message.
+  
+  Utils.showConfirmationMessage('Update logic pending refactor of PromptData.updatePrompt.', {messageElement: confirmationMessageElement});
+  console.warn("PromptData.updatePrompt needs to be refactored for Firestore before this form fully works.");
+  
+  // Example of how it would look after PromptData.updatePrompt is refactored:
+  /*
+  const updatedPrompt = await PromptData.updatePrompt(promptId, updates);
+  if (updatedPrompt) {
+    showConfirmation('Prompt updated successfully!');
+    if (chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' });
+    }
+    setTimeout(() => { window.close(); }, 2000);
+  } else {
+    // Error handled by PromptData.updatePrompt
+    showError('Failed to update prompt. Check console for details.'); // Or use Utils.displayAuthError style
+  }
+  */
 }
