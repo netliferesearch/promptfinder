@@ -24,10 +24,10 @@ window.PromptFinder.UI = (function () {
     deleteConfirmationEl,
     cancelDeleteButtonEl,
     confirmDeleteButtonEl,
-    promptDetailTitleEl,
-    promptDetailTextEl,
-    promptDetailCategoryEl,
-    promptDetailTagsEl,
+    promptDetailTitleEl, // Will be cached using document.getElementById
+    promptDetailTextEl,  // Will be cached using document.getElementById
+    promptDetailCategoryEl, // Will be cached using document.getElementById
+    promptDetailTagsEl,     // Will be cached using document.getElementById
     averageRatingValueEl,
     ratingCountEl,
     starRatingContainerEl;
@@ -47,23 +47,29 @@ window.PromptFinder.UI = (function () {
     promptDetailsSectionEl = document.getElementById('prompt-details-section');
     addPromptSectionEl = document.getElementById('add-prompt-section'); 
 
+    // Cache detail view elements directly using document.getElementById
+    promptDetailTitleEl = document.getElementById('prompt-detail-title');
+    promptDetailTextEl = document.getElementById('prompt-detail-text');
+    promptDetailCategoryEl = document.getElementById('prompt-detail-category');
+    promptDetailTagsEl = document.getElementById('prompt-detail-tags');
+    averageRatingValueEl = document.getElementById('average-rating-value');
+    ratingCountEl = document.getElementById('rating-count');
+    starRatingContainerEl = document.getElementById('star-rating');
+
     if (promptDetailsSectionEl) {
       console.log("[UI Cache] promptDetailsSectionEl found:", promptDetailsSectionEl);
+      // These buttons are definitely within promptDetailsSectionEl, so querySelector is fine here.
       backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
       copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
       editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
       deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
       cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
       confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
-      promptDetailTitleEl = promptDetailsSectionEl.querySelector('#prompt-detail-title');
-      promptDetailTextEl = promptDetailsSectionEl.querySelector('#prompt-detail-text');
-      promptDetailCategoryEl = promptDetailsSectionEl.querySelector('#prompt-detail-category');
-      promptDetailTagsEl = promptDetailsSectionEl.querySelector('#prompt-detail-tags');
-      averageRatingValueEl = promptDetailsSectionEl.querySelector('#average-rating-value');
-      ratingCountEl = promptDetailsSectionEl.querySelector('#rating-count');
-      starRatingContainerEl = promptDetailsSectionEl.querySelector('#star-rating');
-      console.log("[UI Cache] promptDetailTitleEl:", promptDetailTitleEl);
-      console.log("[UI Cache] promptDetailTextEl:", promptDetailTextEl);
+      // Log the result of direct ID caching
+      console.log("[UI Cache Direct] promptDetailTitleEl:", promptDetailTitleEl);
+      console.log("[UI Cache Direct] promptDetailTextEl:", promptDetailTextEl);
+      console.log("[UI Cache Direct] promptDetailCategoryEl:", promptDetailCategoryEl);
+      console.log("[UI Cache Direct] promptDetailTagsEl:", promptDetailTagsEl);
     } else {
       console.warn("[UI Cache] promptDetailsSectionEl NOT found!");
     }
@@ -164,8 +170,8 @@ window.PromptFinder.UI = (function () {
     console.log("[UI] showPromptDetailsView called");
     if (promptsListEl) promptsListEl.classList.add('hidden');
     if (promptDetailsSectionEl) promptDetailsSectionEl.classList.remove('hidden');
-    if (controlsEl) controlsEl.classList.add('hidden'); // Hide controls when showing details
-    if (tabsContainerEl) tabsContainerEl.classList.add('hidden'); // Hide tabs
+    if (controlsEl) controlsEl.classList.add('hidden');
+    if (tabsContainerEl) tabsContainerEl.classList.add('hidden');
     if (addPromptBarEl) addPromptBarEl.classList.add('hidden');
     console.log("[UI] promptDetailsSectionEl classList after remove hidden:", promptDetailsSectionEl ? promptDetailsSectionEl.classList : 'not found');
   };
@@ -204,13 +210,12 @@ window.PromptFinder.UI = (function () {
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
     if(tabPrivateEl) tabPrivateEl.classList.toggle('active', which === 'private');
     
-    // Ensure main prompt list section is visible and details section is hidden when switching tabs
-    if (promptsListEl) promptsListEl.classList.remove('hidden');
-    if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('hidden');
-    if (controlsEl) controlsEl.classList.remove('hidden');
-    if (tabsContainerEl) tabsContainerEl.classList.remove('hidden');
-    if (addPromptBarEl) addPromptBarEl.classList.remove('hidden');
-
+    if (promptsListEl && !promptDetailsSectionEl?.classList.contains('hidden')) {
+        if (promptsListEl) promptsListEl.classList.remove('hidden');
+        if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('hidden');
+        if (addPromptBarEl) addPromptBarEl.classList.remove('hidden');
+    }
+    
     const filters = {
       tab: which,
       searchTerm: searchInputEl ? searchInputEl.value : '',
@@ -261,14 +266,15 @@ window.PromptFinder.UI = (function () {
         console.warn("[UI] No prompt or promptDetailsSectionEl in displayPromptDetails. Prompt:", prompt, "Section:", promptDetailsSectionEl);
         return;
     }
-    console.log("[UI Cache Check in displayPromptDetails] titleEl:", promptDetailTitleEl, "textEl:", promptDetailTextEl);
+    // Log the elements again after direct ID caching attempt
+    console.log("[UI Direct Cache Check in displayPromptDetails] titleEl:", promptDetailTitleEl, "textEl:", promptDetailTextEl);
 
     showPromptDetailsView(); 
 
-    if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title || 'N/A';
-    if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text || 'N/A';
-    if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A';
-    if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None';
+    if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title || 'N/A'; else console.warn("promptDetailTitleEl is null");
+    if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text || 'N/A'; else console.warn("promptDetailTextEl is null");
+    if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A'; else console.warn("promptDetailCategoryEl is null");
+    if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None'; else console.warn("promptDetailTagsEl is null");
     
     const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
@@ -280,8 +286,8 @@ window.PromptFinder.UI = (function () {
     const ratingToDisplay = prompt.isPrivate ? (prompt.userRating || 0) : (prompt.averageRating || 0);
     const ratingCountToDisplay = prompt.isPrivate ? 1 : (prompt.totalRatingsCount || 0); 
 
-    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
-    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`;
+    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`; else console.warn("averageRatingValueEl is null");
+    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`; else console.warn("ratingCountEl is null");
     
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
@@ -302,7 +308,7 @@ window.PromptFinder.UI = (function () {
         });
         starRatingContainerEl.appendChild(star);
       }
-    }
+    } else { console.warn("starRatingContainerEl is null");}
     if (deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
     console.log("[UI] displayPromptDetails finished populating fields.");
   };
