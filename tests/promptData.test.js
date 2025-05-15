@@ -1,11 +1,14 @@
 /**
  * Tests for the promptData.js module
  */
+console.log('EXEC_ORDER: promptData.test.js - START (Top level)'); // Log start
 
 window.PromptFinder = window.PromptFinder || {}; 
 window.PromptFinder.PromptData = {}; 
 
+console.log('EXEC_ORDER: promptData.test.js - Before require(../js/promptData)');
 require('../js/promptData'); 
+console.log('EXEC_ORDER: promptData.test.js - After require(../js/promptData)');
 
 const PromptData = window.PromptFinder.PromptData;
 const Utils = window.PromptFinder.Utils; 
@@ -14,6 +17,7 @@ const mockUser = { uid: 'testUserId', email: 'test@example.com', displayName: 'T
 const anotherUser = { uid: 'anotherUserId', email: 'another@example.com', displayName: 'Another User' };
 
 describe('PromptData Module - Firestore Version', () => {
+  console.log('EXEC_ORDER: promptData.test.js - Inside main describe block');
   const baseSamplePrompt = {
     title: 'Sample Prompt',
     text: 'Sample text',
@@ -30,28 +34,29 @@ describe('PromptData Module - Firestore Version', () => {
 
   const samplePromptFS1 = { ...baseSamplePrompt, id: 'fs1', userId: mockUser.uid, title: 'My Firestore Prompt 1' };
   const samplePromptFS2 = { ...baseSamplePrompt, id: 'fs2', userId: anotherUser.uid, title: 'Other User FS Prompt' };
-  let promptsCollectionMock; // Define here, assign in beforeEach
-  let usersCollectionMock; // Define here, assign in beforeEach
+  let promptsCollectionMock; 
+  let usersCollectionMock; 
 
   beforeEach(() => {
+    console.log('EXEC_ORDER: promptData.test.js - beforeEach START');
     jest.clearAllMocks();
     chrome.runtime.lastError = null;
     window.firebaseAuth.currentUser = null;
     if (window.firebaseAuth._authStateCallback) {
       window.firebaseAuth._simulateAuthStateChange(null); 
     }
-    promptsCollectionMock = window.firebaseDb.collection('prompts'); // Assign here
-    if (promptsCollectionMock._clearStore) promptsCollectionMock._clearStore();
+    promptsCollectionMock = window.firebaseDb.collection('prompts'); 
+    if (promptsCollectionMock && promptsCollectionMock._clearStore) promptsCollectionMock._clearStore();
     
-    usersCollectionMock = window.firebaseDb.collection('users'); // Assign here
-    if (usersCollectionMock._clearStore) usersCollectionMock._clearStore();
+    usersCollectionMock = window.firebaseDb.collection('users'); 
+    if (usersCollectionMock && usersCollectionMock._clearStore) usersCollectionMock._clearStore();
+    console.log('EXEC_ORDER: promptData.test.js - beforeEach END');
   });
 
   // --- Authentication Function Tests ---
   describe('signupUser', () => {
     test('should call createUserWithEmailAndPassword and create user doc', async () => {
       window.firebaseAuth.createUserWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
-      // usersCollectionMock is already defined and refers to the 'users' collection mock
       const userDocMock = usersCollectionMock.doc(mockUser.uid);
       const result = await PromptData.signupUser('new@example.com', 'password123');
       expect(window.firebaseAuth.createUserWithEmailAndPassword).toHaveBeenCalledWith('new@example.com', 'password123');
@@ -101,13 +106,13 @@ describe('PromptData Module - Firestore Version', () => {
       expect(promptsCollectionMock.add).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.uid, title: 'Firestore Prompt' }));
       expect(result.id).toBe('firestoreDocId');
     });
-    // ... other addPrompt tests from previous correct version ...
      test('should return null if user is not logged in', async () => {
-      window.firebaseAuth._simulateAuthStateChange(null); // Log out user
+      window.firebaseAuth._simulateAuthStateChange(null); 
       const result = await PromptData.addPrompt({ title: 'test' });
       expect(result).toBeNull();
       expect(Utils.handleError).toHaveBeenCalledWith("User must be logged in to add a prompt.", { userVisible: true });
-      expect(promptsCollectionMock.add).not.toHaveBeenCalled();
+      // Check add was not called on the specific instance if possible, or generally
+      expect(promptsCollectionMock.add).not.toHaveBeenCalled(); 
     });
     test('should return null if Firestore add fails', async () => {
       promptsCollectionMock.add.mockRejectedValueOnce(new Error('Firestore add error'));
@@ -118,7 +123,6 @@ describe('PromptData Module - Firestore Version', () => {
   });
 
   describe('loadPrompts', () => {
-    // ... existing refactored loadPrompts tests ...
     test('should load only public prompts if user is not logged in', async () => {
       window.firebaseAuth._simulateAuthStateChange(null); 
       promptsCollectionMock._setDocs([samplePromptFS1, samplePromptFS2, { ...samplePromptFS1, id:'private1', isPrivate: true, userId: mockUser.uid }]);
@@ -131,7 +135,6 @@ describe('PromptData Module - Firestore Version', () => {
   });
 
   describe('findPromptById', () => {
-    // ... existing refactored findPromptById tests ...
     test('should fetch from Firestore if prompt not in provided array or no array given', async () => {
       promptsCollectionMock._setDocs([samplePromptFS1]);
       const result = await PromptData.findPromptById('fs1');
@@ -142,12 +145,12 @@ describe('PromptData Module - Firestore Version', () => {
 
   describe('updatePrompt', () => {
     const existingPromptData = { ...samplePromptFS1, id: 'editId1', userId: mockUser.uid, title: 'Original Title' };
-
     beforeEach(() => {
       window.firebaseAuth._simulateAuthStateChange(mockUser); 
-      promptsCollectionMock._setDocs([existingPromptData]); 
+      if (promptsCollectionMock && promptsCollectionMock._setDocs) { // Ensure mock is ready
+        promptsCollectionMock._setDocs([existingPromptData]); 
+      }
     });
-
     test('should update an existing prompt successfully', async () => {
       const updates = { title: 'Updated Title', text: 'Updated text' };
       const specificDocMock = promptsCollectionMock.doc('editId1'); 
@@ -161,7 +164,6 @@ describe('PromptData Module - Firestore Version', () => {
       }));
       expect(result.title).toBe('Updated Title');
     });
-    // ... other updatePrompt tests from previous correct version ...
     test('should return null if user is not logged in', async () => {
       window.firebaseAuth._simulateAuthStateChange(null);
       const result = await PromptData.updatePrompt('editId1', { title: 'New' });
