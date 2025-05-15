@@ -3,137 +3,190 @@
  */
 
 window.PromptFinder = window.PromptFinder || {};
+window.PromptFinder.Utils = {}; // Initialize before require
 
-window.PromptFinder.Utils = {};
-
-require('../js/utils');
-
+require('../js/utils'); 
 const Utils = window.PromptFinder.Utils;
 
-describe('Chrome Storage Helpers', () => {
-  beforeEach(() => {
-    chrome.storage.local.get.mockClear();
-    chrome.storage.local.set.mockClear();
-    chrome.runtime.lastError = null;
-  });
-
-  test('chromeStorageGet should return data on success', async () => {
-    const mockData = { prompts: [{ id: '1', title: 'Test' }] };
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
-      callback(mockData);
-    });
-
-    const result = await Utils.chromeStorageGet('prompts');
-    expect(chrome.storage.local.get).toHaveBeenCalledWith('prompts', expect.any(Function));
-    expect(result).toEqual(mockData);
-  });
-
-  test('chromeStorageGet should reject on error', async () => {
-    chrome.runtime.lastError = { message: 'Test error' };
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
-      callback({});
-    });
-
-    await expect(Utils.chromeStorageGet('prompts')).rejects.toEqual({ message: 'Test error' });
-  });
-
-  test('chromeStorageSet should resolve on success', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
-      callback();
-    });
-
-    await expect(Utils.chromeStorageSet({ prompts: [] })).resolves.toBeUndefined();
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({ prompts: [] }, expect.any(Function));
-  });
-
-  test('chromeStorageSet should reject on error', async () => {
-    chrome.runtime.lastError = { message: 'Test error' };
-    chrome.storage.local.set.mockImplementation((data, callback) => {
-      callback();
-    });
-
-    await expect(Utils.chromeStorageSet({ prompts: [] })).rejects.toEqual({
-      message: 'Test error',
-    });
-  });
-});
-
-describe('Error Handling', () => {
-  beforeEach(() => {
-    console.error = jest.fn();
-    console.warn = jest.fn();
-    console.info = jest.fn();
-
-    document.getElementById.mockImplementation(id => {
-      if (id === 'error-message') {
-        return {
-          textContent: '',
-          classList: { add: jest.fn(), remove: jest.fn() },
-          style: {},
-        };
+describe('Utility Functions', () => {
+  describe('chromeStorageGet', () => {
+    beforeEach(() => {
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        global.chrome.storage.local.get.mockReset();
       }
-      return null;
+      if (global.chrome && global.chrome.runtime) {
+        global.chrome.runtime.lastError = null;
+      }
     });
 
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  test('handleError should log to console', () => {
-    Utils.handleError('Test error');
-    expect(console.error).toHaveBeenCalledWith('Test error');
-  });
-
-  test('handleError should log with correct level', () => {
-    Utils.handleError('Test warning', { type: 'warning' });
-    expect(console.warn).toHaveBeenCalledWith('Test warning');
-
-    Utils.handleError('Test info', { type: 'info' });
-    expect(console.info).toHaveBeenCalledWith('Test info');
-  });
-
-  test('handleError should log original error if provided', () => {
-    const originalError = new Error('Original');
-    Utils.handleError('Test with original', { originalError });
-    expect(console.error).toHaveBeenCalledWith('Test with original', originalError);
-  });
-
-  test('handleError should update DOM if userVisible is true', () => {
-    const mockErrorElement = {
-      textContent: '',
-      classList: { add: jest.fn(), remove: jest.fn() },
-      style: {},
-    };
-
-    Utils.handleError('Visible error', {
-      userVisible: true,
-      errorElement: mockErrorElement,
+    test('should resolve with stored data', async () => {
+      const mockData = { testKey: 'testValue' };
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        global.chrome.storage.local.get.mockImplementation((keys, callback) => callback(mockData));
+      }
+      const result = await Utils.chromeStorageGet('testKey');
+      expect(result).toEqual(mockData);
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        expect(global.chrome.storage.local.get).toHaveBeenCalledWith('testKey', expect.any(Function));
+      }
     });
 
-    expect(mockErrorElement.textContent).toBe('Visible error');
-    expect(mockErrorElement.classList.remove).toHaveBeenCalledWith('hidden');
-
-    jest.advanceTimersByTime(5000);
-    expect(mockErrorElement.classList.add).toHaveBeenCalledWith('hidden');
+    test('should reject if chrome.runtime.lastError is set', async () => {
+      const error = new Error('Storage get error');
+      if (global.chrome && global.chrome.runtime) global.chrome.runtime.lastError = error;
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        global.chrome.storage.local.get.mockImplementation((keys, callback) => callback({})); 
+      }
+      await expect(Utils.chromeStorageGet('testKey')).rejects.toThrow('Storage get error');
+    });
   });
 
-  test('handleError should apply correct styling based on error type', () => {
-    const mockErrorElement = {
-      textContent: '',
-      classList: { add: jest.fn(), remove: jest.fn() },
-      style: {},
-    };
-
-    Utils.handleError('Warning message', {
-      userVisible: true,
-      type: 'warning',
-      errorElement: mockErrorElement,
+  describe('chromeStorageSet', () => {
+    beforeEach(() => {
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+         global.chrome.storage.local.set.mockReset();
+      }
+      if (global.chrome && global.chrome.runtime) {
+        global.chrome.runtime.lastError = null;
+      }
     });
 
-    expect(mockErrorElement.style.backgroundColor).toBe('#fff3cd');
-    expect(mockErrorElement.style.color).toBe('#856404');
+    test('should resolve when data is set successfully', async () => {
+      const items = { testKey: 'testValue' };
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        global.chrome.storage.local.set.mockImplementation((itemsToSet, callback) => callback());
+      }
+      await Utils.chromeStorageSet(items);
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        expect(global.chrome.storage.local.set).toHaveBeenCalledWith(items, expect.any(Function));
+      }
+    });
+
+    test('should reject if chrome.runtime.lastError is set during set', async () => {
+      const error = new Error('Storage set error');
+      if (global.chrome && global.chrome.runtime) global.chrome.runtime.lastError = error;
+      if (global.chrome && global.chrome.storage && global.chrome.storage.local) {
+        global.chrome.storage.local.set.mockImplementation((items, callback) => callback());
+      }
+      await expect(Utils.chromeStorageSet({ testKey: 'value' })).rejects.toThrow('Storage set error');
+    });
   });
-});
+
+  describe('Error Handling', () => {
+    let mockErrorElement;
+    let mockConfirmationElement;
+
+    beforeEach(() => {
+      console.error = jest.fn();
+      console.warn = jest.fn();
+      console.info = jest.fn();
+
+      mockErrorElement = {
+        textContent: '',
+        classList: { add: jest.fn(), remove: jest.fn() },
+        style: {},
+        innerHTML: '' 
+      };
+      mockConfirmationElement = { ...mockErrorElement }; 
+
+      document.getElementById = jest.fn(id => {
+        if (id === 'error-message') return mockErrorElement;
+        if (id === 'confirmation-message') return mockConfirmationElement;
+        return { classList: {add: jest.fn(), remove: jest.fn()}, style: {}, textContent: '', dataset: {} };
+      });
+      jest.useFakeTimers(); 
+    });
+
+    afterEach(() => {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    });
+
+    describe('handleError', () => {
+        test('should log to console', () => {
+            Utils.handleError('Test error', { userVisible: false });
+            expect(console.error).toHaveBeenCalledWith('Test error');
+        });
+        test('should log with correct level', () => {
+            Utils.handleError('Warning test', { type: 'warning', userVisible: false });
+            expect(console.warn).toHaveBeenCalledWith('Warning test');
+            Utils.handleError('Info test', { type: 'info', userVisible: false });
+            expect(console.info).toHaveBeenCalledWith('Info test');
+        });
+        test('should log original error if provided', () => {
+            const originalErr = new Error('Original');
+            Utils.handleError('Test error with original', { originalError: originalErr, userVisible: false });
+            expect(console.error).toHaveBeenCalledWith('Test error with original', originalErr);
+        });
+        test('should update DOM if userVisible is true and element exists', () => {
+            Utils.handleError('Visible error', { userVisible: true });
+            expect(mockErrorElement.textContent).toBe('Visible error');
+            expect(mockErrorElement.classList.remove).toHaveBeenCalledWith('hidden');
+            jest.runAllTimers();
+            expect(mockErrorElement.classList.add).toHaveBeenCalledWith('hidden');
+        });
+        test('should apply correct styling based on error type', () => {
+            Utils.handleError('Styled error', { userVisible: true, type: 'error' });
+            expect(mockErrorElement.style.backgroundColor).toBe('#f8d7da');
+            Utils.handleError('Styled warning', { userVisible: true, type: 'warning' });
+            expect(mockErrorElement.style.backgroundColor).toBe('#fff3cd');
+        });
+    });
+
+    describe('displayAuthError', () => {
+        test('should display message in provided element', () => {
+            const specificErrorEl = { textContent: '', classList: { remove: jest.fn(), add: jest.fn() } };
+            Utils.displayAuthError('Auth fail', specificErrorEl);
+            expect(specificErrorEl.textContent).toBe('Auth fail');
+            expect(specificErrorEl.classList.remove).toHaveBeenCalledWith('hidden');
+        });
+        test('should fallback to handleError if element not provided', () => {
+            Utils.displayAuthError('Auth fail no element', null);
+            expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Auth fail no element'));
+        });
+    });
+
+    describe('showConfirmationMessage', () => {
+        test('should display confirmation and hide after timeout', () => {
+            Utils.showConfirmationMessage('Confirmed!');
+            expect(mockConfirmationElement.textContent).toBe('Confirmed!');
+            expect(mockConfirmationElement.classList.remove).toHaveBeenCalledWith('hidden');
+            jest.runAllTimers();
+            expect(mockConfirmationElement.classList.add).toHaveBeenCalledWith('hidden');
+        });
+    });
+  }); 
+
+  describe('highlightStars', () => {
+    test('should add filled class to correct number of stars', () => {
+        const mockIcon = () => ({ className: '' });
+        const mockStarElement = () => ({
+            classList: { add: jest.fn(), remove: jest.fn() }, 
+            querySelector: jest.fn().mockImplementation(selector => {
+              if (selector === 'i') return mockIcon();
+              return null;
+            }), 
+            setAttribute: jest.fn()
+        });
+        
+        const starsArray = [mockStarElement(), mockStarElement(), mockStarElement(), mockStarElement(), mockStarElement()];
+        const starContainer = {
+            querySelectorAll: jest.fn(selector => {
+                if (selector === '.star') return starsArray;
+                return [];
+            })
+        };
+
+        Utils.highlightStars(3, starContainer);
+
+        expect(starsArray[0].classList.add).toHaveBeenCalledWith('filled');
+        expect(starsArray[1].classList.add).toHaveBeenCalledWith('filled');
+        expect(starsArray[2].classList.add).toHaveBeenCalledWith('filled');
+        expect(starsArray[3].classList.remove).toHaveBeenCalledWith('filled');
+        expect(starsArray[4].classList.remove).toHaveBeenCalledWith('filled');
+        // Also check if querySelector was called on each star
+        starsArray.forEach(star => expect(star.querySelector).toHaveBeenCalledWith('i'));
+    });
+  });
+
+}); 
