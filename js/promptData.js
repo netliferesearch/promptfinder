@@ -195,7 +195,7 @@ window.PromptFinder.PromptData = (function () {
     if (!db) {
         const msg = "[findPromptById] Firestore not initialized.";
         console.error(msg);
-        if (handleError) Utils.handleError(msg, { userVisible: true });
+        if (handleError && Utils && Utils.handleError) Utils.handleError(msg, { userVisible: true });
         return null;
     }
     try {
@@ -211,18 +211,28 @@ window.PromptFinder.PromptData = (function () {
       } else {
         const err = new Error(`Prompt with ID ${promptId} not found in Firestore`);
         console.warn(`[findPromptById] ${err.message}`);
+        if (handleError && Utils && Utils.handleError) { 
+            // Only call Utils.handleError if the option is true, but always throw if throwIfNotFound
+            Utils.handleError(err.message, { userVisible: true, originalError: err });
+        }
         if (throwIfNotFound) {
-          if (handleError && Utils && Utils.handleError) Utils.handleError(err.message, { userVisible: true, originalError: err });
           throw err; 
         }
         return null;
       }
     } catch (error) {
-      console.error(`[findPromptById] Error during Firestore fetch for ${promptId}:`, error);
-      if (handleError || throwIfNotFound) { 
-        Utils.handleError(`Error retrieving prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
+      // This outer catch will catch errors from await docRef.get() OR the thrown error if throwIfNotFound is true
+      console.error(`[findPromptById] Error for ${promptId}:`, error.message);
+      if (handleError && Utils && Utils.handleError) { 
+        // Avoid double-logging if it was already handled and thrown from the else block
+        if (!(error.message.includes("not found in Firestore") && throwIfNotFound)) {
+            Utils.handleError(`Error retrieving prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
+        }
       }
-      return null;
+      // If it was a `throwIfNotFound` error, it has already been thrown.
+      // If it was another type of error (e.g., network), and we are not throwing if not found, return null.
+      if (throwIfNotFound && error.message.includes("not found in Firestore")) throw error; // Re-throw the specific error
+      return null; // For other errors when not throwing
     }
   };
 
@@ -262,10 +272,7 @@ window.PromptFinder.PromptData = (function () {
       const updatedDoc = { ...docSnap.data(), ...updateData, id: promptId, updatedAt: new Date() }; 
       return updatedDoc;
     } catch (error) {
-      Utils.handleError(`Error updating prompt ${promptId} in Firestore: ${error.message}`, {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError(`Error updating prompt ${promptId} in Firestore: ${error.message}`, { userVisible: true, originalError: error });
       return null;
     }
   };
