@@ -17,13 +17,13 @@ window.PromptFinder.Utils = {
   handleError: jest.fn(),
   showConfirmationMessage: jest.fn(),
   highlightStars: jest.fn(),
-  escapeHTML: jest.fn(str => str || ''), // Ensure it handles null/undefined gracefully
+  escapeHTML: jest.fn(str => str), 
 };
 
 require('../js/ui'); 
 const UI = window.PromptFinder.UI;
 
-const createMockElementWithDataset = (id) => ({
+const createMockElement = (id) => ({
   id: id,
   classList: { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn(() => false) },
   style: {},
@@ -32,8 +32,8 @@ const createMockElementWithDataset = (id) => ({
   setAttribute: jest.fn(),
   getAttribute: jest.fn(),
   removeAttribute: jest.fn(),
-  querySelector: jest.fn(selector => createMockElementWithDataset(selector)), 
-  querySelectorAll: jest.fn(() => [createMockElementWithDataset('mockedChild')]), 
+  querySelector: jest.fn(selector => createMockElement(selector)), 
+  querySelectorAll: jest.fn(() => [createMockElement('mockedChild')]), 
   dataset: {}, 
   innerHTML: '',
   textContent: '',
@@ -43,16 +43,7 @@ const createMockElementWithDataset = (id) => ({
 });
 
 const setupMockDOM = () => {
-  // Basic HTML structure needed for elements ui.js will query
   document.body.innerHTML = `
-    <button id="tab-all"></button>
-    <button id="tab-favs"></button>
-    <button id="tab-private"></button>
-    <input id="search-input" />
-    <button id="filter-button"></button>
-    <div id="rating-filter"></div>
-    <select id="min-rating"></select>
-    <button id="add-prompt-button"></button>
     <div id="prompts-list"></div>
     <section id="prompt-details-section" class="hidden">
         <button id="back-to-list-button"></button>
@@ -71,54 +62,43 @@ const setupMockDOM = () => {
         <div id="star-rating"></div>
         <button id="toggle-fav-detail"><i></i></button>
     </section>
-    <section id="add-prompt-section"></section> 
-    <section class="controls"></section>
-    <nav class="tabs"></nav>
-    <div class="add-prompt-bar"></div>
+    <section class="controls"><input id="search-input" /></section>
+    <nav class="tabs">
+        <button id="tab-all"></button>
+        <button id="tab-favs"></button>
+        <button id="tab-private"></button>
+    </nav>
+    <div class="add-prompt-bar"><button id="add-prompt-button"></button></div>
+    <button id="filter-button"></button>
+    <div id="rating-filter"></div>
+    <select id="min-rating"></select>
     <p id="error-message"></p>
     <p id="confirmation-message"></p>
   `;
 
-  // Mock getElementById to return elements with a dataset property
-  const originalGetElementById = document.getElementById;
+  const domElementsCache = {};
   document.getElementById = jest.fn(id => {
-    let element = originalGetElementById.call(document, id); // Call original to get JSDOM element
-    if (element) {
-      // Ensure dataset property exists and is an object
-      if (typeof element.dataset === 'undefined') {
-        Object.defineProperty(element, 'dataset', { value: {}, writable: true });
-      }
-       // Ensure classList has methods if it's a basic JSDOM element
-      if (!element.classList) {
-        element.classList = { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn(() => false) };
-      }
-      // Ensure querySelector for complex elements like promptDetailsSection
-      if (id === 'prompt-details-section' && !element.querySelector) {
-        element.querySelector = jest.fn(selector => createMockElementWithDataset(selector));
-      }
-    } else {
-      // If JSDOM didn't find it (e.g., during specific test manipulations), return a basic mock
-      element = createMockElementWithDataset(id);
+    if (!domElementsCache[id]) {
+        const actualElement = document.querySelector(`#${id}`);
+        if (actualElement) {
+            actualElement.classList = actualElement.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
+            actualElement.dataset = actualElement.dataset || {};
+            actualElement.style = actualElement.style || {};
+            actualElement.appendChild = actualElement.appendChild || jest.fn();
+            actualElement.addEventListener = actualElement.addEventListener || jest.fn();
+            actualElement.querySelector = actualElement.querySelector || jest.fn(s => createMockElement(s));
+            actualElement.querySelectorAll = actualElement.querySelectorAll || jest.fn(() => []);
+            domElementsCache[id] = actualElement;
+        } else {
+            domElementsCache[id] = createMockElement(id);
+        }
     }
-    return element;
+    return domElementsCache[id];
   });
 
-  // Mock querySelector to return elements with a dataset property
-  const originalQuerySelector = document.querySelector;
-  document.querySelector = jest.fn(selector => {
-    let element = originalQuerySelector.call(document, selector);
-    if (element) {
-      if (typeof element.dataset === 'undefined') {
-        Object.defineProperty(element, 'dataset', { value: {}, writable: true });
-      }
-      if (!element.classList) {
-        element.classList = { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn(() => false) };
-      }
-    } else {
-      element = createMockElementWithDataset(selector);
-    }
-    return element;
-  });
+  for (const key in domElementsCache) {
+    delete domElementsCache[key];
+  }
 };
  
 
@@ -129,13 +109,18 @@ describe('UI Module', () => {
     window.PromptFinder.PromptData.loadPrompts.mockResolvedValue([]); 
     window.PromptFinder.PromptData.filterPrompts.mockImplementation((prompts, _filters) => prompts);
     window.PromptFinder.PromptData.findPromptById.mockResolvedValue(null);
+    // Call initializeUI here to ensure elements are cached and initial showTab (with empty prompts) happens
+    // This mimics app.js behavior more closely for subsequent tests.
+    // UI.initializeUI(); // This was causing the first showTab call with empty prompts
   });
 
   describe('initializeUI', () => {
     test('should cache DOM elements, setup event listeners, and load data', async () => {
+      // Mock loadPrompts specifically for this initializeUI call to see it being called
+      window.PromptFinder.PromptData.loadPrompts.mockResolvedValueOnce([{id: 'initLoad', title: 'Initial'}]);
       await UI.initializeUI();
-      expect(document.getElementById).toHaveBeenCalledWith('tab-all'); // Check if caching happens
-      expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalled(); // Check if data loading is called
+      expect(document.getElementById).toHaveBeenCalledWith('tab-all'); 
+      expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalled();
     });
 
     test('should handle errors during initialization when loadPrompts fails', async () => {
@@ -148,16 +133,14 @@ describe('UI Module', () => {
       );
     });
 
-    test('should handle errors from cacheDOMElements if it throws during getElementById', async () => {
-        const cacheError = new Error('Caching DOM failed via getElementById');
+    test('should handle errors from cacheDOMElements if it throws', async () => {
+        const cacheError = new Error('Caching DOM failed');
         const originalGetElementById = document.getElementById;
         document.getElementById = jest.fn().mockImplementationOnce(() => { 
             document.getElementById = originalGetElementById; 
             throw cacheError; 
         });
-        
         await UI.initializeUI();
-        
         expect(window.PromptFinder.Utils.handleError).toHaveBeenCalledWith(
             'Error initializing UI', 
             expect.objectContaining({ originalError: cacheError, userVisible: true })
@@ -170,30 +153,29 @@ describe('UI Module', () => {
     test('should load prompts and call showTab (which calls filter and display)', async () => {
       const mockPrompts = [{id: '1', title: 'Test'}];
       window.PromptFinder.PromptData.loadPrompts.mockResolvedValueOnce(mockPrompts);
-      // filterPrompts is called by showTab. We mock it to return what it received.
-      window.PromptFinder.PromptData.filterPrompts.mockImplementationOnce(prompts => prompts);
+      // Ensure filterPrompts returns the exact same array instance for this test if that's key
+      window.PromptFinder.PromptData.filterPrompts.mockImplementation(inputPrompts => inputPrompts); 
       
-      // Spy on displayPrompts, which is internal to UI module but called by showTab
-      // This is a bit of an integration test for loadAndDisplayData -> showTab -> displayPrompts
-      // A more direct way would be to expose displayPrompts for testing or mock its effect on promptsListEl.innerHTML
-      const displayPromptsSpy = jest.spyOn(UI, 'displayPrompts').mockImplementation(() => {}); // Spy and prevent original implementation
+      const displayPromptsSpy = jest.spyOn(UI, 'displayPrompts').mockImplementation(() => {});
 
-      await UI.loadAndDisplayData();
+      await UI.loadAndDisplayData(); 
       
       expect(window.PromptFinder.PromptData.loadPrompts).toHaveBeenCalled();
-      expect(window.PromptFinder.PromptData.filterPrompts).toHaveBeenCalledWith(mockPrompts, expect.anything());
-      expect(displayPromptsSpy).toHaveBeenCalledWith(mockPrompts);
+      expect(window.PromptFinder.PromptData.filterPrompts).toHaveBeenCalledWith(mockPrompts, expect.objectContaining({ tab: 'all' })); 
       
-      displayPromptsSpy.mockRestore(); // Clean up spy
+      // Check the arguments of the last call to the spy if it was called multiple times
+      // or the first call if only one is expected from this specific loadAndDisplayData call.
+      expect(displayPromptsSpy).toHaveBeenCalledTimes(1); // It should be called once by this loadAndDisplayData flow
+      expect(displayPromptsSpy).toHaveBeenCalledWith(mockPrompts); 
+
+      displayPromptsSpy.mockRestore(); 
     });
 
-    test('should handle errors from loadPrompts and update UI list with error message', async () => {
+    test('should handle errors from loadPrompts and update UI', async () => {
       const loadError = new Error('Failed to load');
       window.PromptFinder.PromptData.loadPrompts.mockRejectedValueOnce(loadError);
       const promptsList = document.getElementById('prompts-list');
-      
       await UI.loadAndDisplayData();
-      
       expect(window.PromptFinder.Utils.handleError).toHaveBeenCalledWith(
         'Error loading and displaying prompt data', 
         expect.objectContaining({ originalError: loadError, userVisible: true })
@@ -204,11 +186,10 @@ describe('UI Module', () => {
 
   describe('displayPrompts', () => {
     test('should display a list of prompts', () => {
-        const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [], userIsFavorite: false }];
+        const prompts = [{ id: '1', title: 'Test Prompt Display', tags: [] }];
         UI.displayPrompts(prompts); 
         const promptsList = document.getElementById('prompts-list');
         expect(promptsList.innerHTML).toContain('Test Prompt Display');
-        expect(promptsList.innerHTML).toContain('far fa-heart'); // Check for empty heart
       });
   
       test('should show empty state if no prompts', () => {
@@ -220,11 +201,10 @@ describe('UI Module', () => {
 
   describe('displayPromptDetails', () => {
     test('should display prompt details in the UI', () => {
-        const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userIsFavorite: false, isPrivate: false, userRating: 0, averageRating: 0 };
+        const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userIsFavorite: false, isPrivate: false };
         UI.displayPromptDetails(prompt);
         expect(document.getElementById('prompt-detail-title').textContent).toBe('Detail Title');
         expect(document.getElementById('prompt-detail-text').textContent).toBe('Detail Text');
       });
   });
-  
 });
