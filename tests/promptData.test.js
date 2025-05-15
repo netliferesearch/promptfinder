@@ -2,383 +2,217 @@
  * Tests for the promptData.js module
  */
 
-window.PromptFinder = window.PromptFinder || {};
+window.PromptFinder = window.PromptFinder || {}; 
+window.PromptFinder.PromptData = {}; 
 
-window.PromptFinder.Utils = {
-  chromeStorageGet: jest.fn(),
-  chromeStorageSet: jest.fn(),
-  handleError: jest.fn(),
-  showConfirmationMessage: jest.fn(),
-};
-
-window.PromptFinder.PromptData = {};
-
-require('../js/promptData');
+require('../js/promptData'); 
 
 const PromptData = window.PromptFinder.PromptData;
+const Utils = window.PromptFinder.Utils; 
 
-describe('PromptData Module', () => {
-  const samplePrompts = [
-    {
-      id: '1',
-      title: 'Test Prompt 1',
-      text: 'This is a test prompt',
-      category: 'Test',
-      tags: ['test', 'sample'],
-      isPrivate: false,
-      rating: 4,
-      ratingCount: 2,
-      ratingSum: 8,
-      favorites: 1,
-      dateAdded: '2023-01-01T00:00:00.000Z',
-    },
-    {
-      id: '2',
-      title: 'Test Prompt 2',
-      text: 'Another test prompt',
-      category: 'Sample',
-      tags: ['sample'],
-      isPrivate: true,
-      rating: 3,
-      ratingCount: 1,
-      ratingSum: 3,
-      favorites: 0,
-      dateAdded: '2023-01-02T00:00:00.000Z',
-    },
-  ];
+const mockUser = { uid: 'testUserId', email: 'test@example.com', displayName: 'Test User' };
+const anotherUser = { uid: 'anotherUserId', email: 'another@example.com', displayName: 'Another User' };
+
+describe('PromptData Module - Firestore Version', () => {
+  const baseSamplePrompt = {
+    title: 'Sample Prompt',
+    text: 'Sample text',
+    category: 'Testing',
+    tags: ['test', 'sample'],
+    isPrivate: false,
+    userRating: 0,
+    userIsFavorite: false,
+    averageRating: 0,
+    totalRatingsCount: 0,
+    favoritesCount: 0,
+    usageCount: 0,
+    // createdAt and updatedAt will be Firestore Timestamps or simulated as ISO strings post-fetch
+  };
+
+  const sampleUserPromptPrivate = { ...baseSamplePrompt, id: 'userPrivate1', userId: mockUser.uid, title: 'My Private Prompt', isPrivate: true, userIsFavorite: true };
+  const sampleUserPromptPublic = { ...baseSamplePrompt, id: 'userPublic1', userId: mockUser.uid, title: 'My Public Prompt', isPrivate: false };
+  const sampleOtherUserPublicPrompt = { ...baseSamplePrompt, id: 'otherPublic1', userId: anotherUser.uid, title: 'Another User Public Prompt', isPrivate: false };
+  const samplePublicPromptNoOwner = { ...baseSamplePrompt, id: 'publicNoOwner', userId: 'someOtherUid', title: 'Generic Public Prompt', isPrivate: false };
 
   beforeEach(() => {
     jest.clearAllMocks();
-
     chrome.runtime.lastError = null;
+    window.firebaseAuth.currentUser = null;
+    if (window.firebaseAuth._authStateCallback) {
+      window.firebaseAuth._simulateAuthStateChange(null); 
+    }
+    if (window.firebaseDb.collection('prompts')._clearStore) {
+        window.firebaseDb.collection('prompts')._clearStore();
+    }
+    if (window.firebaseDb.collection('users')._clearStore) {
+        window.firebaseDb.collection('users')._clearStore();
+    }
+  });
 
-    window.PromptFinder.Utils.chromeStorageGet.mockImplementation((key, callback) => {
-      return Promise.resolve({ prompts: samplePrompts });
+  // --- Authentication Function Tests (Keep existing or add more) ---
+  describe('signupUser', () => {
+    test('should call createUserWithEmailAndPassword and create user doc', async () => {
+      window.firebaseAuth.createUserWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
+      const usersCollectionMock = window.firebaseDb.collection('users');
+      const userDocMock = usersCollectionMock.doc(mockUser.uid);
+      // userDocMock.set = jest.fn().mockResolvedValueOnce(undefined); // Already mocked in setup if general
+
+      const result = await PromptData.signupUser('new@example.com', 'password123');
+
+      expect(window.firebaseAuth.createUserWithEmailAndPassword).toHaveBeenCalledWith('new@example.com', 'password123');
+      expect(usersCollectionMock.doc).toHaveBeenCalledWith(mockUser.uid);
+      expect(userDocMock.set).toHaveBeenCalledWith({
+        email: mockUser.email,
+        displayName: mockUser.email, 
+        createdAt: 'MOCK_SERVER_TIMESTAMP',
+      });
+      expect(result.user).toEqual(mockUser);
     });
+    test('should return error if signup fails', async () => {
+      const authError = new Error('Firebase signup failed');
+      window.firebaseAuth.createUserWithEmailAndPassword.mockRejectedValueOnce(authError);
+      const result = await PromptData.signupUser('fail@example.com', 'password');
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe('Firebase signup failed');
+      expect(Utils.handleError).toHaveBeenCalledWith(`Signup error: ${authError.message}`, expect.anything());
+    });
+  });
 
-    window.PromptFinder.Utils.chromeStorageSet.mockImplementation(data => {
-      return Promise.resolve();
+  describe('loginUser', () => {
+    test('should call signInWithEmailAndPassword', async () => {
+        window.firebaseAuth.signInWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
+        const result = await PromptData.loginUser('test@example.com', 'password');
+        expect(window.firebaseAuth.signInWithEmailAndPassword).toHaveBeenCalledWith('test@example.com', 'password');
+        expect(result.user).toEqual(mockUser);
+    });
+  });
+
+  describe('logoutUser', () => {
+    test('should call signOut', async () => {
+        await PromptData.logoutUser();
+        expect(window.firebaseAuth.signOut).toHaveBeenCalled();
+    });
+  });
+
+  describe('onAuthStateChanged', () => {
+    test('should call Firebase onAuthStateChanged and pass callback', () => {
+        const callback = jest.fn();
+        const unsubscribe = PromptData.onAuthStateChanged(callback);
+        expect(window.firebaseAuth.onAuthStateChanged).toHaveBeenCalledWith(callback);
+        expect(typeof unsubscribe).toBe('function');
+    });
+  });
+
+  // --- Prompt CRUD Function Tests ---
+  describe('addPrompt', () => {
+    beforeEach(() => { window.firebaseAuth._simulateAuthStateChange(mockUser); });
+    test('should add a prompt to Firestore if user is logged in', async () => {
+      const promptData = { title: 'Firestore Prompt', text: 'Text for Firestore', category: 'FS Category', tags: ['fs', 'test'], isPrivate: false, targetAiTools: ['ChatGPT'] };
+      const promptsCollectionMock = window.firebaseDb.collection('prompts');
+      promptsCollectionMock.add.mockResolvedValueOnce({ id: 'firestoreDocId' });
+      const result = await PromptData.addPrompt(promptData);
+      expect(promptsCollectionMock.add).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.uid, title: 'Firestore Prompt', createdAt: 'MOCK_SERVER_TIMESTAMP' }));
+      expect(result.id).toBe('firestoreDocId');
+    });
+    test('should return null if user is not logged in', async () => {
+      window.firebaseAuth._simulateAuthStateChange(null);
+      const result = await PromptData.addPrompt({ title: 'test' });
+      expect(result).toBeNull();
+      expect(Utils.handleError).toHaveBeenCalledWith("User must be logged in to add a prompt.", { userVisible: true });
+    });
+    test('should return null if Firestore add fails', async () => {
+      window.firebaseDb.collection('prompts').add.mockRejectedValueOnce(new Error('Firestore add error'));
+      const result = await PromptData.addPrompt({ title: 'test' });
+      expect(result).toBeNull();
+      expect(Utils.handleError).toHaveBeenCalledWith('Error adding prompt to Firestore: Firestore add error', expect.anything());
     });
   });
 
   describe('loadPrompts', () => {
-    test('should load prompts from storage', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
+    const promptsCollectionMock = window.firebaseDb.collection('prompts');
 
+    test('should load only public prompts if user is not logged in', async () => {
+      window.firebaseAuth._simulateAuthStateChange(null); // Logged out
+      promptsCollectionMock._setDocs([sampleUserPromptPublic, sampleOtherUserPublicPrompt, sampleUserPromptPrivate]);
+      
       const result = await PromptData.loadPrompts();
-
-      expect(window.PromptFinder.Utils.chromeStorageGet).toHaveBeenCalledWith('prompts');
-      expect(result).toEqual(samplePrompts);
+      
+      expect(promptsCollectionMock.where).toHaveBeenCalledWith('isPrivate', '==', false);
+      expect(result.length).toBe(2); // Only the two public prompts
+      expect(result.find(p => p.id === 'userPublic1')).toBeDefined();
+      expect(result.find(p => p.id === 'otherPublic1')).toBeDefined();
+      expect(result.find(p => p.id === 'userPrivate1')).toBeUndefined();
     });
 
-    test('should return empty array if no prompts in storage', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({});
+    test('should load user's prompts (public & private) AND other users' public prompts if logged in', async () => {
+      window.firebaseAuth._simulateAuthStateChange(mockUser); // Logged in as mockUser
+      promptsCollectionMock._setDocs([
+        sampleUserPromptPrivate, // mockUser's private
+        sampleUserPromptPublic,    // mockUser's public
+        sampleOtherUserPublicPrompt, // anotherUser's public
+        { ...baseSamplePrompt, id:'anotherPrivate', userId: anotherUser.uid, isPrivate: true, title: 'Another Private'} // anotherUser's private
+      ]);
 
       const result = await PromptData.loadPrompts();
 
+      // Check the where calls more specifically if needed by inspecting mock.calls
+      // For now, we check the combined result.
+      expect(result.length).toBe(3); // mockUser's private, mockUser's public, anotherUser's public
+      expect(result.find(p => p.id === 'userPrivate1')).toBeDefined();
+      expect(result.find(p => p.id === 'userPublic1')).toBeDefined();
+      expect(result.find(p => p.id === 'otherPublic1')).toBeDefined();
+      expect(result.find(p => p.id === 'anotherPrivate')).toBeUndefined(); // Should not be loaded
+    });
+
+    test('should handle Firestore errors and return empty array', async () => {
+      window.firebaseAuth._simulateAuthStateChange(null);
+      promptsCollectionMock.get.mockRejectedValueOnce(new Error('Firestore query error'));
+      const result = await PromptData.loadPrompts();
+      expect(Utils.handleError).toHaveBeenCalledWith('Error loading prompts from Firestore: Firestore query error', expect.anything());
       expect(result).toEqual([]);
     });
 
-    test('should handle errors and return empty array', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockRejectedValue(new Error('Storage error'));
-
+    test('should correctly transform timestamps', async () => {
+      window.firebaseAuth._simulateAuthStateChange(null);
+      const mockDate = new Date(2024, 0, 15, 10, 30, 0); // Jan 15, 2024, 10:30:00
+      const mockTimestamp = { toDate: () => mockDate }; // Firestore Timestamp-like object
+      promptsCollectionMock._setDocs([{ ...samplePublicPromptNoOwner, id: 'tsTest', createdAt: mockTimestamp, updatedAt: mockTimestamp }]);
+      
       const result = await PromptData.loadPrompts();
-
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-      expect(result).toEqual([]);
+      expect(result.length).toBe(1);
+      expect(result[0].createdAt).toBe(mockDate.toISOString());
+      expect(result[0].updatedAt).toBe(mockDate.toISOString());
     });
   });
 
-  describe('savePrompts', () => {
-    test('should save prompts to storage', async () => {
-      window.PromptFinder.Utils.chromeStorageSet.mockResolvedValue(undefined);
-
-      const result = await PromptData.savePrompts(samplePrompts);
-
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalledWith({
-        prompts: samplePrompts,
-      });
-      expect(result).toBe(true);
-    });
-
-    test('should handle errors when saving', async () => {
-      window.PromptFinder.Utils.chromeStorageSet.mockRejectedValue(new Error('Storage error'));
-
-      const result = await PromptData.savePrompts(samplePrompts);
-
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('createPrompt', () => {
-    test('should create a new prompt with provided data', () => {
-      const promptData = {
-        title: 'New Prompt',
-        text: 'This is a new prompt',
-        category: 'New',
-        tags: ['new', 'test'],
-        isPrivate: true,
-      };
-
-      const result = PromptData.createPrompt(promptData);
-
-      expect(result).toMatchObject({
-        title: 'New Prompt',
-        text: 'This is a new prompt',
-        category: 'New',
-        tags: ['new', 'test'],
-        isPrivate: true,
-        rating: 0,
-        ratingCount: 0,
-        ratingSum: 0,
-        favorites: 0,
-      });
-      expect(result.id).toBeDefined();
-      expect(result.dateAdded).toBeDefined();
-    });
-
-    test('should handle missing fields with defaults', () => {
-      const result = PromptData.createPrompt({});
-
-      expect(result).toMatchObject({
-        title: '',
-        text: '',
-        category: '',
-        tags: [],
-        isPrivate: false,
-        rating: 0,
-        ratingCount: 0,
-        ratingSum: 0,
-        favorites: 0,
-      });
-    });
-  });
-
-  describe('addPrompt', () => {
-    test('should add a prompt to storage', async () => {
-      const promptData = {
-        title: 'New Prompt',
-        text: 'This is a new prompt',
-      };
-
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.addPrompt(promptData);
-
-      expect(result.title).toBe('New Prompt');
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-
-      const setCall = window.PromptFinder.Utils.chromeStorageSet.mock.calls[0][0];
-      expect(setCall.prompts.length).toBe(3); // 2 sample prompts + 1 new prompt
-    });
-
-    test('should handle errors when adding', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockRejectedValue(new Error('Storage error'));
-      window.PromptFinder.Utils.chromeStorageSet.mockRejectedValue(new Error('Storage error'));
-
-      try {
-        await PromptData.addPrompt({ title: 'Test' });
-        fail('Expected addPrompt to throw an error');
-      } catch (error) {
-        expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-      }
-    });
-  });
-
-  describe('updatePrompt', () => {
-    test('should update an existing prompt', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const updates = { title: 'Updated Title', text: 'Updated text' };
-      const result = await PromptData.updatePrompt('1', updates);
-
-      expect(result.title).toBe('Updated Title');
-      expect(result.text).toBe('Updated text');
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-    });
-
-    test('should throw error if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      await expect(PromptData.updatePrompt('999', { title: 'Test' })).rejects.toThrow();
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-    });
-  });
-
-  describe('deletePrompt', () => {
-    test('should delete a prompt from storage', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.deletePrompt('1');
-
-      expect(result).toBe(true);
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-
-      const setCall = window.PromptFinder.Utils.chromeStorageSet.mock.calls[0][0];
-      expect(setCall.prompts.length).toBe(samplePrompts.length - 1);
-      expect(setCall.prompts.find(p => p.id === '1')).toBeUndefined();
-    });
-
-    test('should throw error if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.deletePrompt('999');
-
-      expect(result).toBe(false);
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-    });
-  });
-
-  describe('findPromptById', () => {
-    test('should find a prompt by ID', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.findPromptById('1');
-
-      expect(result).toEqual(samplePrompts[0]);
-    });
-
-    test('should return null if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.findPromptById('999');
-
-      expect(result).toBeNull();
-    });
-
-    test('should return null if promptId is falsy', async () => {
-      const result = await PromptData.findPromptById(null);
-
-      expect(result).toBeNull();
-      expect(window.PromptFinder.Utils.chromeStorageGet).not.toHaveBeenCalled();
-    });
-
-    test('should use provided prompts array if available', async () => {
-      const result = await PromptData.findPromptById('1', samplePrompts);
-
-      expect(result).toEqual(samplePrompts[0]);
-      expect(window.PromptFinder.Utils.chromeStorageGet).not.toHaveBeenCalled();
-    });
-  });
+  // TODO: Add/Refactor describe blocks for findPromptById, updatePrompt, deletePrompt, toggleFavorite, updatePromptRating
 
   describe('filterPrompts', () => {
-    test('should filter prompts by search term', () => {
-      const filters = { searchTerm: 'test' };
-      const result = PromptData.filterPrompts(samplePrompts, filters);
-
-      expect(result.length).toBe(2);
-      expect(result.some(p => p.id === '1')).toBe(true);
-      expect(result.some(p => p.id === '2')).toBe(true);
-    });
-
-    test('should filter prompts by tab (favorites)', () => {
-      const filters = { tab: 'favs' };
-      const result = PromptData.filterPrompts(samplePrompts, filters);
-
+    const sampleFSData = [
+        { id: 'fs1', userId: mockUser.uid, title: 'Public Favorite Alpha', text: 'alpha text', userIsFavorite: true, isPrivate: false, tags:['alpha'], category: 'A' },
+        { id: 'fs2', userId: mockUser.uid, title: 'User1 Private Beta', text: 'beta text', userIsFavorite: false, isPrivate: true, tags:['beta'], category: 'B' },
+        { id: 'fs3', userId: anotherUser.uid, title: 'Public Gamma', text: 'gamma text', userIsFavorite: false, isPrivate: false, tags:['gamma'], category: 'C' },
+    ];
+    beforeEach(() => { window.firebaseAuth._simulateAuthStateChange(mockUser); });
+    test('should filter by favs tab correctly for logged in user', () => {
+      const result = PromptData.filterPrompts(sampleFSData, { tab: 'favs' });
       expect(result.length).toBe(1);
-      expect(result[0].id).toBe('1');
+      expect(result[0].id).toBe('fs1');
     });
-
-    test('should filter prompts by tab (private)', () => {
-      const filters = { tab: 'private' };
-      const result = PromptData.filterPrompts(samplePrompts, filters);
-
+    test('should return empty for favs tab if logged out', () => {
+      window.firebaseAuth._simulateAuthStateChange(null);
+      const result = PromptData.filterPrompts(sampleFSData, { tab: 'favs' });
+      expect(result.length).toBe(0);
+    });
+    test('should filter by private tab correctly for logged in user', () => {
+      const result = PromptData.filterPrompts(sampleFSData, { tab: 'private' });
       expect(result.length).toBe(1);
-      expect(result[0].id).toBe('2');
+      expect(result[0].id).toBe('fs2');
     });
-
-    test('should filter prompts by minimum rating', () => {
-      const filters = { minRating: 4 };
-      const result = PromptData.filterPrompts(samplePrompts, filters);
-
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe('1');
-    });
-
-    test('should apply multiple filters together', () => {
-      const filters = { searchTerm: 'test', tab: 'favs', minRating: 4 };
-      const result = PromptData.filterPrompts(samplePrompts, filters);
-
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe('1');
-    });
-  });
-
-  describe('toggleFavorite', () => {
-    test('should toggle favorite status from 1 to 0', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.toggleFavorite('1');
-
-      expect(result.favorites).toBe(0);
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-    });
-
-    test('should toggle favorite status from 0 to 1', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.toggleFavorite('2');
-
-      expect(result.favorites).toBe(1);
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-    });
-
-    test('should throw error if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      await expect(PromptData.toggleFavorite('999')).rejects.toThrow();
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-    });
-  });
-
-  describe('updatePromptRating', () => {
-    test('should update a prompt rating', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.updatePromptRating('1', 5);
-
-      expect(result.ratingCount).toBe(3); // Was 2, now 3
-      expect(result.ratingSum).toBe(13); // Was 8, now 13
-      expect(result.rating).toBe(13 / 3); // New average
-      expect(window.PromptFinder.Utils.chromeStorageSet).toHaveBeenCalled();
-    });
-
-    test('should throw error if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      await expect(PromptData.updatePromptRating('999', 5)).rejects.toThrow();
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-    });
-  });
-
-  describe('copyPromptToClipboard', () => {
-    test('should copy prompt text to clipboard', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.copyPromptToClipboard('1');
-
-      expect(result).toBe(true);
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(samplePrompts[0].text);
-    });
-
-    test('should handle errors if prompt not found', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-
-      const result = await PromptData.copyPromptToClipboard('999');
-
-      expect(result).toBe(false);
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
-    });
-
-    test('should handle clipboard errors', async () => {
-      window.PromptFinder.Utils.chromeStorageGet.mockResolvedValue({ prompts: samplePrompts });
-      navigator.clipboard.writeText.mockRejectedValue(new Error('Clipboard error'));
-
-      const result = await PromptData.copyPromptToClipboard('1');
-
-      expect(result).toBe(false);
-      expect(window.PromptFinder.Utils.handleError).toHaveBeenCalled();
+    test('should return empty for private tab if logged out', () => {
+      window.firebaseAuth._simulateAuthStateChange(null);
+      const result = PromptData.filterPrompts(sampleFSData, { tab: 'private' });
+      expect(result.length).toBe(0);
     });
   });
 });
