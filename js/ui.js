@@ -225,10 +225,12 @@ window.PromptFinder.UI = (function () {
       promptsListEl.innerHTML = '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
       return;
     }
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     sorted.forEach(prompt => {
       const div = document.createElement('div');
       div.classList.add('prompt-item');
-      const isFavorite = prompt.userIsFavorite; 
+      // Only show filled heart if user is logged in AND it's their favorite
+      const isFavorite = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
       div.innerHTML = `
       <button class="toggle-favorite" data-id="${prompt.id}" aria-label="Toggle favorite">
         <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i>
@@ -256,34 +258,32 @@ window.PromptFinder.UI = (function () {
     if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A'; 
     if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None'; 
     
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
       favBtn.dataset.id = prompt.id; 
       const icon = favBtn.querySelector('i');
-      if (icon) icon.className = prompt.userIsFavorite ? 'fas fa-heart' : 'far fa-heart';
+      // Only show filled heart if user is logged in AND it's their favorite for this specific prompt
+      const isFavorite = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
+      if (icon) icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
     }
 
-    // Display userRating for owned prompts, averageRating for others (when applicable)
-    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     let ratingToDisplay = 0;
     let countToDisplay = 0;
+    let ratingText = '(Not rated)';
 
     if (currentUser && prompt.userId === currentUser.uid) {
         ratingToDisplay = prompt.userRating || 0;
-        // For user's own rating, count is implicitly 1 if rated, 0 if not, or just don't show count.
-        // Let's show (My Rating) to be clear.
-        if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
-        if (ratingCountEl) ratingCountEl.textContent = ratingToDisplay > 0 ? '(My Rating)' : '(Not yet rated by you)';
+        ratingText = ratingToDisplay > 0 ? '(My Rating)' : '(Not yet rated by you)';
     } else if (!prompt.isPrivate) {
         ratingToDisplay = prompt.averageRating || 0;
         countToDisplay = prompt.totalRatingsCount || 0;
-        if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
-        if (ratingCountEl) ratingCountEl.textContent = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
+        ratingText = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
     } else {
-        // Private prompt of another user (shouldn't be visible, but handle defensively)
-        if (averageRatingValueEl) averageRatingValueEl.textContent = '(N/A)';
-        if (ratingCountEl) ratingCountEl.textContent = '(N/A)';
+        ratingText = '(N/A)';
     }
+    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
+    if (ratingCountEl) ratingCountEl.textContent = ratingText;
     
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
@@ -300,7 +300,6 @@ window.PromptFinder.UI = (function () {
         if (i <= currentRating) star.classList.add('filled');
         star.addEventListener('click', async _e => {
           _e.stopPropagation();
-          // Pass only promptId and new rating value. isPrivate is known by PromptData.updatePromptRating via ownership check.
           await handleRatePrompt(prompt.id, i);
         });
         starRatingContainerEl.appendChild(star);
@@ -364,13 +363,11 @@ window.PromptFinder.UI = (function () {
         if (index !== -1) {
           allPrompts[index] = updatedPrompt;
         }
-        // Re-render the details view if it's the current one to show new rating
         if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
             displayPromptDetails(allPrompts[index]);
         }
         Utils.showConfirmationMessage(`Rated ${rating} stars!`);
       } 
-      // Error is handled by PromptData.updatePromptRating if it returns null
     } catch (error) {
         Utils.handleError('Error processing rating in UI', { userVisible: true, originalError: error });
     }
