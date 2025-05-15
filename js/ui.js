@@ -194,6 +194,7 @@ window.PromptFinder.UI = (function () {
   };
 
   const showTab = which => {
+    console.log("[UI_TEST_DEBUG] showTab called with:", which); // ADDED
     activeTab = which;
     if(tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -211,8 +212,11 @@ window.PromptFinder.UI = (function () {
       minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
     const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
+    console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length); // ADDED
     const filtered = PromptData.filterPrompts(promptsToFilter, filters);
+    console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length); // ADDED
     displayPrompts(filtered);
+    console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call"); // ADDED
   };
 
   const displayPrompts = prompts => {
@@ -406,8 +410,7 @@ window.PromptFinder.UI = (function () {
     initializeUI,
     loadAndDisplayData, 
     showTab,
-    displayPrompts, // Exposing displayPrompts for testing spy
-    // displayPromptDetails, // Still keep as internal for now unless test needs it
+    displayPrompts, 
     viewPromptDetails 
   };
 })();
