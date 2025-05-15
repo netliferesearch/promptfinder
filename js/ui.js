@@ -1,34 +1,28 @@
 /**
  * PromptFinder Extension - UI Controllers
  * Contains functions for managing the UI and interactions.
- * Using namespace pattern for Chrome extension compatibility.
  */
 
-// Extend the namespace
 window.PromptFinder = window.PromptFinder || {};
 
-// UI module
 window.PromptFinder.UI = (function () {
-  // Private references to other modules
   const Utils = window.PromptFinder.Utils;
   const PromptData = window.PromptFinder.PromptData;
 
-  // UI state
   let allPrompts = [];
   let activeTab = 'all';
   let lastActiveSectionShowFunction;
 
-  // Cached DOM Elements
   let tabAllEl, tabFavsEl, tabPrivateEl;
   let searchInputEl;
   let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
-  let addPromptButtonEl, addPromptFormEl, cancelAddPromptButtonEl;
+  let addPromptButtonEl; // addPromptFormEl and cancelAddPromptButtonEl are for inline form, not main button
   let promptsListEl;
   let promptDetailsSectionEl,
     backToListButtonEl,
     copyPromptDetailButtonEl,
     editPromptButtonEl,
-    deletePromptIconEl,
+    // deletePromptIconEl, // Assuming this was part of detail view, handled by event delegation or specific button
     deleteConfirmationEl,
     cancelDeleteButtonEl,
     confirmDeleteButtonEl,
@@ -39,50 +33,29 @@ window.PromptFinder.UI = (function () {
     averageRatingValueEl,
     ratingCountEl,
     starRatingContainerEl;
-  let addPromptSectionEl;
+  // addPromptSectionEl is for the inline form in popup.html, not the detached window flow primarily.
+  // We might remove logic tied to it if the detached window is the sole add method from popup.
+  let addPromptSectionEl; 
   let controlsEl, tabsContainerEl, bottomBarEl, addPromptBarEl;
 
-  // Form input elements (for add/edit forms - assuming they share IDs for simplicity in this refactor)
-  let formPromptTitleEl,
-    formPromptTextEl,
-    formPromptCategoryEl,
-    formPromptTagsEl,
-    formPromptPrivateEl;
-
-  /**
-   * Cache all frequently used DOM elements.
-   */
   const cacheDOMElements = () => {
-    // Tabs
     tabAllEl = document.getElementById('tab-all');
     tabFavsEl = document.getElementById('tab-favs');
     tabPrivateEl = document.getElementById('tab-private');
-
-    // Search & Filter
     searchInputEl = document.getElementById('search-input');
     filterButtonEl = document.getElementById('filter-button');
     ratingFilterPanelEl = document.getElementById('rating-filter');
     minRatingSelectEl = document.getElementById('min-rating');
-
-    // Add Prompt
-    addPromptButtonEl = document.getElementById('add-prompt-button');
-    addPromptFormEl = document.getElementById('add-prompt-form');
-    cancelAddPromptButtonEl = document.getElementById('cancel-add-prompt');
-
-    formPromptTitleEl = document.getElementById('prompt-title');
-    formPromptTextEl = document.getElementById('prompt-text');
-    formPromptCategoryEl = document.getElementById('prompt-category');
-    formPromptTagsEl = document.getElementById('prompt-tags');
-    formPromptPrivateEl = document.getElementById('prompt-private');
-
+    addPromptButtonEl = document.getElementById('add-prompt-button'); // Main button in popup
     promptsListEl = document.getElementById('prompts-list');
-
     promptDetailsSectionEl = document.getElementById('prompt-details-section');
+    addPromptSectionEl = document.getElementById('add-prompt-section'); // Inline add form section
+
     if (promptDetailsSectionEl) {
       backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
       copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
       editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
-      deletePromptIconEl = promptDetailsSectionEl.querySelector('#delete-prompt-icon');
+      // deletePromptIconEl = promptDetailsSectionEl.querySelector('#delete-prompt-icon'); // Ensure this ID exists if used
       deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
       cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
       confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
@@ -94,21 +67,36 @@ window.PromptFinder.UI = (function () {
       ratingCountEl = promptDetailsSectionEl.querySelector('#rating-count');
       starRatingContainerEl = promptDetailsSectionEl.querySelector('#star-rating');
     }
-
-    addPromptSectionEl = document.getElementById('add-prompt-section');
     controlsEl = document.querySelector('.controls');
     tabsContainerEl = document.querySelector('.tabs');
-    bottomBarEl = document.querySelector('.bottom-bar');
+    bottomBarEl = document.querySelector('.bottom-bar'); // Ensure this element exists if used
     addPromptBarEl = document.querySelector('.add-prompt-bar');
+  };
+
+  /**
+   * Fetches prompts from PromptData (Firestore) and updates the UI.
+   */
+  const loadAndDisplayData = async () => {
+    try {
+      console.log("UI: Starting loadAndDisplayData");
+      allPrompts = await PromptData.loadPrompts(); // Now fetches from Firestore
+      console.log(`UI: Loaded ${allPrompts.length} prompts from data source.`);
+      showTab(activeTab); // This will filter and call displayPrompts
+    } catch (error) {
+      Utils.handleError('Error loading and displaying prompt data', {
+        userVisible: true,
+        originalError: error,
+      });
+      if (promptsListEl) promptsListEl.innerHTML = '<p class="empty-state">Could not load prompts.</p>';
+    }
   };
 
   const initializeUI = async () => {
     try {
       cacheDOMElements();
-      allPrompts = await PromptData.loadPrompts();
       setupEventListeners();
-      setupStorageChangeListener();
-      showTab(activeTab);
+      // setupStorageChangeListener(); // This might be replaced by chrome.runtime.onMessage for Firestore updates
+      await loadAndDisplayData(); // Initial data load and render
     } catch (error) {
       Utils.handleError('Error initializing UI', {
         userVisible: true,
@@ -116,94 +104,53 @@ window.PromptFinder.UI = (function () {
       });
     }
   };
-
+  
+  // Commenting out setupStorageChangeListener as it's for chrome.storage.local.
+  // Updates from Firestore will be triggered by specific actions (add, edit, delete) 
+  // or by auth state changes, which then call loadAndDisplayData.
+  /*
   const setupStorageChangeListener = () => {
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === 'local' && changes.promptUpdated) {
-        // console.log('Detected prompt update from detached window, refreshing prompt data');
-        PromptData.loadPrompts()
-          .then(prompts => {
-            allPrompts = prompts;
-            if (!promptDetailsSectionEl || promptDetailsSectionEl.classList.contains('hidden')) {
-              const filters = {
-                tab: activeTab,
-                searchTerm: searchInputEl ? searchInputEl.value : '',
-                minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
-              };
-              const filtered = PromptData.filterPrompts(allPrompts, filters);
-              displayPrompts(filtered);
-              if (tabAllEl) tabAllEl.classList.toggle('active', activeTab === 'all');
-              if (tabFavsEl) tabFavsEl.classList.toggle('active', activeTab === 'favs');
-              if (tabPrivateEl) tabPrivateEl.classList.toggle('active', activeTab === 'private');
-            } else {
-              if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
-                const promptId = starRatingContainerEl.dataset.id;
-                // console.log('Found prompt ID in detail view:', promptId);
-                const updatedPrompt = allPrompts.find(p => p.id === promptId);
-                if (updatedPrompt) {
-                  // console.log('Found updated prompt, refreshing detail view:', updatedPrompt.title);
-                  displayPromptDetails(updatedPrompt);
-                  Utils.showConfirmationMessage('Prompt details updated with recent changes');
-                } else {
-                  // console.warn('Could not find updated prompt with ID:', promptId);
-                }
-              } else {
-                // console.warn('Could not find prompt ID in detail view');
-              }
-            }
-          })
-          .catch(error => {
-            Utils.handleError('Failed to refresh prompts after update', {
-              userVisible: true,
-              originalError: error,
-            });
-          });
+        loadAndDisplayData(); // Refresh with Firestore data
       }
     });
   };
+  */
 
   const setupEventListeners = () => {
     tabAllEl?.addEventListener('click', () => showTab('all'));
     tabFavsEl?.addEventListener('click', () => showTab('favs'));
     tabPrivateEl?.addEventListener('click', () => showTab('private'));
-    searchInputEl?.addEventListener('input', () => showTab(activeTab));
+    searchInputEl?.addEventListener('input', () => showTab(activeTab)); // Re-filter on search
     if (filterButtonEl && ratingFilterPanelEl) {
       filterButtonEl.addEventListener('click', () => {
         ratingFilterPanelEl.classList.toggle('hidden');
         filterButtonEl.classList.toggle('active');
       });
-    } else {
-      console.error('Missing filter button or panel elements');
-    }
-    minRatingSelectEl?.addEventListener('change', () => {
-      showTab(activeTab);
-    });
-    addPromptButtonEl?.addEventListener('click', openDetachedAddPromptWindow);
-    if (addPromptFormEl) {
-      addPromptFormEl.addEventListener('submit', handleAddPromptSubmit);
-      cancelAddPromptButtonEl?.addEventListener('click', () => {
-        addPromptFormEl.reset();
-        if (typeof lastActiveSectionShowFunction === 'function') {
-          lastActiveSectionShowFunction();
+    } 
+    minRatingSelectEl?.addEventListener('change', () => showTab(activeTab)); // Re-filter on rating change
+    
+    // This button now opens a new window, handled by openDetachedAddPromptWindow
+    addPromptButtonEl?.addEventListener('click', () => {
+        const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+        if (currentUser) {
+            openDetachedAddPromptWindow();
         } else {
-          showPromptList();
+            // Error message is handled in app.js for this button based on auth state
+            console.log("UI: Add prompt clicked, but user not logged in (app.js should show message).");
         }
-      });
-    }
+    });
+
     promptsListEl?.addEventListener('click', handlePromptListClick);
+
     if (promptDetailsSectionEl) {
-      backToListButtonEl?.addEventListener('click', () => {
-        PromptData.loadPrompts()
-          .then(prompts => {
-            allPrompts = prompts;
-            showPromptList();
-            showTab(activeTab);
-          })
-          .catch(error => {
-            console.error('Error refreshing prompts when going back to list:', error);
-            showPromptList();
-            showTab(activeTab);
-          });
+      backToListButtonEl?.addEventListener('click', async () => {
+        // No need to reload all prompts here if allPrompts is kept up-to-date by other actions
+        // Or, if we want to ensure fresh data after potential background changes:
+        // await loadAndDisplayData(); 
+        showPromptList(); // This will use the existing allPrompts array and re-filter/display
+        // showTab(activeTab); // showPromptList might call displayPrompts which considers activeTab or showTab calls showPromptList
       });
       copyPromptDetailButtonEl?.addEventListener('click', () => {
         if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
@@ -215,22 +162,25 @@ window.PromptFinder.UI = (function () {
           openDetachedEditWindow(starRatingContainerEl.dataset.id);
         }
       });
-      promptDetailsSectionEl.addEventListener('click', event => {
-        const favBtn = event.target.closest('#toggle-fav-detail');
-        if (favBtn && favBtn.dataset.id) {
-          handleToggleFavorite(favBtn.dataset.id);
-        }
-      });
-      deletePromptIconEl?.addEventListener('click', () => {
-        deleteConfirmationEl?.classList.remove('hidden');
+      // Example for delete icon if it's directly in details view and not part of a list item
+      const deletePromptButtonDetail = promptDetailsSectionEl.querySelector('#delete-prompt-button-detail'); // Assume this ID if needed
+      deletePromptButtonDetail?.addEventListener('click', () => {
+          if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
       });
       cancelDeleteButtonEl?.addEventListener('click', () => {
-        deleteConfirmationEl?.classList.add('hidden');
+        if(deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
       });
       confirmDeleteButtonEl?.addEventListener('click', () => {
         if (starRatingContainerEl && starRatingContainerEl.dataset.id) {
           handleDeletePrompt(starRatingContainerEl.dataset.id);
         }
+      });
+      // Favorite toggle in detail view
+      const favBtnDetail = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
+      favBtnDetail?.addEventListener('click', () => {
+          if (favBtnDetail.dataset.id) {
+            handleToggleFavorite(favBtnDetail.dataset.id);
+          }
       });
     }
   };
@@ -238,114 +188,72 @@ window.PromptFinder.UI = (function () {
   const showPromptList = () => {
     promptsListEl?.classList.remove('hidden');
     promptDetailsSectionEl?.classList.add('hidden');
-    addPromptSectionEl?.classList.add('hidden');
+    // addPromptSectionEl?.classList.add('hidden'); // If inline add form exists
     controlsEl?.classList.remove('hidden');
     tabsContainerEl?.classList.remove('hidden');
-    bottomBarEl?.classList.remove('hidden');
+    // bottomBarEl?.classList.remove('hidden');
     addPromptBarEl?.classList.remove('hidden');
-    lastActiveSectionShowFunction = showPromptList;
+    // Re-apply current filters and display. showTab already does this.
+    // This ensures when we return to list, it respects current filters.
+    // If allPrompts is up-to-date, showTab will correctly re-render.
+    // No need to call displayPrompts directly here if showTab is the main rendering trigger for the list.
+    showTab(activeTab); 
   };
 
   const showPromptDetailsView = () => {
     promptsListEl?.classList.add('hidden');
     promptDetailsSectionEl?.classList.remove('hidden');
-    addPromptSectionEl?.classList.add('hidden');
-    controlsEl?.classList.remove('hidden');
-    tabsContainerEl?.classList.remove('hidden');
-    bottomBarEl?.classList.remove('hidden');
-    addPromptBarEl?.classList.remove('hidden');
+    // addPromptSectionEl?.classList.add('hidden');
+    controlsEl?.classList.remove('hidden'); // Or hide if details view is full-screen
+    tabsContainerEl?.classList.remove('hidden'); // Or hide
+    // bottomBarEl?.classList.add('hidden');
+    addPromptBarEl?.classList.add('hidden'); // Typically hide add button when viewing details
   };
 
-  const showAddPromptView = () => {
-    promptsListEl?.classList.add('hidden');
-    promptDetailsSectionEl?.classList.add('hidden');
-    addPromptSectionEl?.classList.remove('hidden');
-    controlsEl?.classList.add('hidden');
-    tabsContainerEl?.classList.add('hidden');
-    bottomBarEl?.classList.add('hidden');
-    addPromptBarEl?.classList.add('hidden');
-  };
+  // showAddPromptView for inline form is removed as detached window is primary for add from popup
 
   const openDetachedAddPromptWindow = () => {
     try {
-      const width = 500;
-      const height = 600;
-      const left = (screen.width - width) / 2;
-      const top = (screen.height - height) / 2;
-      chrome.windows.create(
-        {
+      chrome.windows.create({
           url: chrome.runtime.getURL('pages/add-prompt.html'),
-          type: 'popup',
-          width: width,
-          height: height,
-          left: Math.round(left),
-          top: Math.round(top),
-          focused: true,
-        },
-        _window => {
-          if (chrome.runtime.lastError) {
-            console.error('Error opening detached window:', chrome.runtime.lastError);
-            if (addPromptSectionEl) {
-              showAddPromptView();
-            } else {
-              Utils.handleError('Could not open add prompt window or find inline form.');
-            }
-          } else {
-            // console.log('Detached add prompt window opened successfully');
-          }
-        }
-      );
+          type: 'popup', width: 500, height: 600, focused: true
+      }, _window => {
+        if (chrome.runtime.lastError) Utils.handleError('Could not open add prompt window.', {userVisible: true});
+      });
     } catch (error) {
-      console.error('Failed to open detached window:', error);
-      if (addPromptSectionEl) {
-        showAddPromptView();
-      } else {
-        Utils.handleError('Could not open add prompt window or find inline form.');
-      }
+      Utils.handleError('Failed to open add prompt window.', {userVisible: true, originalError: error});
     }
   };
 
   const openDetachedEditWindow = promptId => {
     try {
-      if (!promptId) {
-        Utils.handleError('No prompt ID provided for editing');
-        return;
-      }
-      const width = 500;
-      const height = 600;
-      const left = (screen.width - width) / 2;
-      const top = (screen.height - height) / 2;
-      chrome.windows.create(
-        {
+      if (!promptId) return Utils.handleError('No prompt ID for editing.', {userVisible: true});
+      chrome.windows.create({
           url: chrome.runtime.getURL(`pages/edit-prompt.html?id=${promptId}`),
-          type: 'popup',
-          width: width,
-          height: height,
-          left: Math.round(left),
-          top: Math.round(top),
-          focused: true,
-        },
-        _window => {
-          if (chrome.runtime.lastError) {
-            console.error('Error opening detached edit window:', chrome.runtime.lastError);
-            Utils.handleError('Failed to open edit window. Please try again.');
-          } else {
-            // console.log('Detached edit prompt window opened successfully');
-          }
-        }
-      );
+          type: 'popup', width: 500, height: 600, focused: true
+      }, _window => {
+         if (chrome.runtime.lastError) Utils.handleError('Could not open edit window.', {userVisible: true});
+      });
     } catch (error) {
-      console.error('Failed to open detached edit window:', error);
-      Utils.handleError('Failed to open edit window. Please try again.');
+      Utils.handleError('Failed to open edit window.', {userVisible: true, originalError: error});
     }
   };
 
   const showTab = which => {
-    showPromptList();
+    // This function now relies on allPrompts being up-to-date from loadAndDisplayData
+    console.log(`UI: Showing tab: ${which}, with ${allPrompts.length} total prompts available.`);
     activeTab = which;
     tabAllEl?.classList.toggle('active', which === 'all');
     tabFavsEl?.classList.toggle('active', which === 'favs');
     tabPrivateEl?.classList.toggle('active', which === 'private');
+    
+    if (promptsListEl && !promptDetailsSectionEl?.classList.contains('hidden')) {
+        // If details view is active, switch back to list view before applying tab filters
+        promptsListEl?.classList.remove('hidden');
+        promptDetailsSectionEl?.classList.add('hidden');
+        addPromptBarEl?.classList.remove('hidden');
+    }
+    
     const filters = {
       tab: which,
       searchTerm: searchInputEl ? searchInputEl.value : '',
@@ -357,27 +265,27 @@ window.PromptFinder.UI = (function () {
 
   const displayPrompts = prompts => {
     if (!promptsListEl) return;
+    console.log(`UI: Displaying ${prompts.length} prompts.`);
     const sorted = [...prompts].sort((a, b) =>
-      a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+      (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
     );
     promptsListEl.innerHTML = '';
     if (sorted.length === 0) {
-      const emptyDiv = document.createElement('div');
-      emptyDiv.classList.add('empty-state');
-      emptyDiv.innerHTML = `<p>No prompts found. Try adjusting your filters or add new prompts.</p>`;
-      promptsListEl.appendChild(emptyDiv);
+      promptsListEl.innerHTML = '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
       return;
     }
     sorted.forEach(prompt => {
       const div = document.createElement('div');
       div.classList.add('prompt-item');
+      // Use userIsFavorite for the heart icon status
+      const isFavorite = prompt.userIsFavorite || prompt.favorites === 1; // cater to old structure if present
       div.innerHTML = `
       <button class="toggle-favorite" data-id="${prompt.id}" aria-label="Toggle favorite">
-        <i class="${prompt.favorites === 1 ? 'fas' : 'far'} fa-heart"></i>
+        <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i>
       </button>
       <h3>${Utils.escapeHTML(prompt.title)}</h3>
       <div class="tags">
-        ${prompt.tags.map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
+        ${(prompt.tags || []).map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
       </div>
       <div class="buttons">
         <button class="view-details" data-id="${prompt.id}">View Details</button>
@@ -391,31 +299,29 @@ window.PromptFinder.UI = (function () {
   const displayPromptDetails = prompt => {
     if (!prompt || !promptDetailsSectionEl) return;
     showPromptDetailsView();
-    lastActiveSectionShowFunction = () => displayPromptDetails(prompt);
+    // lastActiveSectionShowFunction = () => displayPromptDetails(prompt); // May not be needed
     if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title;
     if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text;
     if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category;
-    if (promptDetailTagsEl) promptDetailTagsEl.textContent = prompt.tags.join(', ');
+    if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ');
+    
     const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
       favBtn.dataset.id = prompt.id;
       const icon = favBtn.querySelector('i');
-      if (icon) {
-        icon.className = prompt.favorites === 1 ? 'fas fa-heart' : 'far fa-heart';
-      }
+      if (icon) icon.className = (prompt.userIsFavorite || prompt.favorites === 1) ? 'fas fa-heart' : 'far fa-heart';
     }
-    if (averageRatingValueEl) {
-      const avgRating = prompt.rating || 0;
-      averageRatingValueEl.textContent = `(${avgRating.toFixed(1)})`;
-    }
-    if (ratingCountEl) {
-      const count = prompt.ratingCount || 0;
-      ratingCountEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
-    }
+
+    const ratingToDisplay = prompt.isPrivate ? (prompt.userRating || 0) : (prompt.averageRating || 0);
+    const ratingCountToDisplay = prompt.isPrivate ? 1 : (prompt.totalRatingsCount || 0); // Simplification for private
+
+    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
+    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`;
+    
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
       starRatingContainerEl.innerHTML = '';
-      const currentRating = Math.round(prompt.rating || 0);
+      const currentRating = Math.round(ratingToDisplay);
       for (let i = 1; i <= 5; i++) {
         const star = document.createElement('button');
         star.classList.add('star');
@@ -423,151 +329,80 @@ window.PromptFinder.UI = (function () {
         star.setAttribute('role', 'radio');
         star.setAttribute('aria-checked', i <= currentRating ? 'true' : 'false');
         star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
-        star.setAttribute('tabindex', '0');
-        star.innerHTML =
-          i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+        star.innerHTML = i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
         if (i <= currentRating) star.classList.add('filled');
-        star.addEventListener('keydown', _e => {});
         star.addEventListener('click', async _e => {
           _e.stopPropagation();
-          await handleRatePrompt(prompt.id, i);
+          await handleRatePrompt(prompt.id, i, prompt.isPrivate);
         });
         starRatingContainerEl.appendChild(star);
       }
     }
-    deleteConfirmationEl?.classList.add('hidden');
+    if (deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
   };
 
   const viewPromptDetails = async promptId => {
     try {
-      const prompt = await PromptData.findPromptById(promptId, allPrompts);
+      // Use PromptData.findPromptById which can fetch from Firestore directly
+      const prompt = await PromptData.findPromptById(promptId);
       if (prompt) {
         displayPromptDetails(prompt);
       } else {
         throw new Error(`Prompt with ID ${promptId} not found`);
       }
     } catch (error) {
-      Utils.handleError(`Error viewing prompt details`, {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError(`Error viewing prompt details: ${error.message}`, { userVisible: true, originalError: error });
     }
   };
 
   const handlePromptListClick = async event => {
-    const favoriteBtn = event.target.closest('.toggle-favorite');
-    if (favoriteBtn && favoriteBtn.dataset.id) {
-      event.preventDefault();
-      event.stopPropagation();
-      await handleToggleFavorite(favoriteBtn.dataset.id);
-      return;
-    }
-    const viewDetailsBtn = event.target.closest('.view-details');
-    if (viewDetailsBtn && viewDetailsBtn.dataset.id) {
-      event.preventDefault();
-      await viewPromptDetails(viewDetailsBtn.dataset.id);
-      return;
-    }
-    const copyBtn = event.target.closest('.copy-prompt');
-    if (copyBtn && copyBtn.dataset.id) {
-      event.preventDefault();
-      await handleCopyPrompt(copyBtn.dataset.id);
-      return;
-    }
-  };
+    const targetButton = event.target.closest('button');
+    if (!targetButton || !targetButton.dataset.id) return;
 
-  const handleAddPromptSubmit = async event => {
-    event.preventDefault();
-    const title = formPromptTitleEl
-      ? formPromptTitleEl.value
-      : document.getElementById('prompt-title')?.value;
-    const text = formPromptTextEl
-      ? formPromptTextEl.value
-      : document.getElementById('prompt-text')?.value;
-    const category = formPromptCategoryEl
-      ? formPromptCategoryEl.value
-      : document.getElementById('prompt-category')?.value || '';
-    const tagsValue = formPromptTagsEl
-      ? formPromptTagsEl.value
-      : document.getElementById('prompt-tags')?.value || '';
-    const isPrivate = formPromptPrivateEl
-      ? formPromptPrivateEl.checked
-      : document.getElementById('prompt-private')?.checked || false;
-    if (!title || !text) {
-      Utils.handleError('Please enter both a title and prompt text.');
-      return;
-    }
-    const tags = tagsValue
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag !== '');
-    try {
-      await PromptData.addPrompt({ title, text, category, tags, isPrivate });
-      allPrompts = await PromptData.loadPrompts();
-      if (event.target && typeof event.target.reset === 'function') {
-        event.target.reset();
-      } else if (addPromptFormEl) {
-        addPromptFormEl.reset();
-      }
-      Utils.showConfirmationMessage('Prompt added successfully!', {
-        withButton: true,
-        timeout: 5000,
-      });
-      showPromptList();
-      showTab(activeTab);
-    } catch (error) {
-      Utils.handleError(`Failed to add prompt: ${error.message}`, {
-        userVisible: true,
-        originalError: error,
-      });
+    const promptId = targetButton.dataset.id;
+    if (targetButton.classList.contains('toggle-favorite')) {
+      event.stopPropagation(); // Prevent card click if any
+      await handleToggleFavorite(promptId);
+    } else if (targetButton.classList.contains('view-details')) {
+      await viewPromptDetails(promptId);
+    } else if (targetButton.classList.contains('copy-prompt')) {
+      await handleCopyPrompt(promptId);
     }
   };
+  
+  // handleAddPromptSubmit is removed as it's for the inline form, which we are de-emphasizing from app.js
+  // The primary add flow is via the detached add-prompt.html page.
 
   const handleToggleFavorite = async promptId => {
+    // This will need to be refactored for Firestore
+    console.warn('handleToggleFavorite needs Firestore update');
     try {
       const updatedPrompt = await PromptData.toggleFavorite(promptId);
-      const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) allPrompts[index] = updatedPrompt;
-      if (!promptDetailsSectionEl || promptDetailsSectionEl.classList.contains('hidden')) {
-        showTab(activeTab);
-      } else {
+      allPrompts = allPrompts.map(p => p.id === promptId ? updatedPrompt : p);
+      if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && starRatingContainerEl?.dataset.id === promptId) {
         displayPromptDetails(updatedPrompt);
+      } else {
+        showTab(activeTab);
       }
-      const actionText = updatedPrompt.favorites === 1 ? 'added to' : 'removed from';
-      Utils.showConfirmationMessage(`Prompt ${actionText} favorites!`);
+      Utils.showConfirmationMessage(`Favorite status updated!`);
     } catch (error) {
-      Utils.handleError('Failed to update favorite status', {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError('Failed to update favorite status', { userVisible: true, originalError: error });
     }
   };
 
-  const handleRatePrompt = async (promptId, rating) => {
+  const handleRatePrompt = async (promptId, rating, isPrivatePrompt) => {
+    // This will need to be refactored for Firestore, especially for shared vs private ratings
+    console.warn('handleRatePrompt needs Firestore update');
     try {
-      if (!starRatingContainerEl) return;
-      Utils.highlightStars(rating, starRatingContainerEl);
-      const updatedPrompt = await PromptData.updatePromptRating(promptId, rating);
-      const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) allPrompts[index] = updatedPrompt;
-      if (ratingCountEl) {
-        const count = updatedPrompt.ratingCount || 0;
-        ratingCountEl.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
+      // For now, assume it updates the local allPrompts array like toggleFavorite for UI demo
+      const updatedPrompt = await PromptData.updatePromptRating(promptId, rating, isPrivatePrompt); // Pass isPrivatePrompt
+      allPrompts = allPrompts.map(p => p.id === promptId ? updatedPrompt : p);
+      if (starRatingContainerEl?.dataset.id === promptId) {
+         displayPromptDetails(updatedPrompt); // Re-render details view if it's the current one
       }
-      if (averageRatingValueEl) {
-        const avgRating = updatedPrompt.rating || 0;
-        averageRatingValueEl.textContent = `(${avgRating.toFixed(1)})`;
-      }
-      const newAverageRating = Math.round(updatedPrompt.rating || 0);
-      Utils.highlightStars(newAverageRating, starRatingContainerEl);
       Utils.showConfirmationMessage(`Rated ${rating} stars!`);
     } catch (error) {
       Utils.handleError('Failed to update rating', { userVisible: true, originalError: error });
-      const currentPrompt = await PromptData.findPromptById(promptId, allPrompts);
-      if (currentPrompt && starRatingContainerEl) {
-        const currentRating = Math.round(currentPrompt.rating || 0);
-        Utils.highlightStars(currentRating, starRatingContainerEl);
-      }
     }
   };
 
@@ -581,48 +416,40 @@ window.PromptFinder.UI = (function () {
   };
 
   const handleDeletePrompt = async promptId => {
+    // This will need to be refactored for Firestore
+    console.warn('handleDeletePrompt needs Firestore update');
     try {
       const success = await PromptData.deletePrompt(promptId);
       if (success) {
         allPrompts = allPrompts.filter(p => p.id !== promptId);
         Utils.showConfirmationMessage('Prompt deleted successfully!');
-        showPromptList();
-        showTab(activeTab);
+        showPromptList(); // This will call showTab and re-render
+      } else {
+        Utils.handleError('Failed to delete prompt.', { userVisible: true });
       }
     } catch (error) {
-      Utils.handleError('Failed to delete prompt', { userVisible: true, originalError: error });
+      Utils.handleError('Error during prompt deletion', { userVisible: true, originalError: error });
     }
   };
 
   if (Utils && !Utils.escapeHTML) {
     Utils.escapeHTML = function (str) {
-      if (typeof str !== 'string') return '';
-      return str.replace(/[&<>"'/]/g, function (s) {
-        return {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;',
-          '/': '&#x2F;',
-        }[s];
-      });
+      if (typeof str !== 'string' || !str) return '';
+      return str.replace(/[&<>"'/]/g, s => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;'
+      }[s]));
     };
   }
 
-  // Public API
   return {
     initializeUI,
-    openDetachedAddPromptWindow,
-    openDetachedEditWindow,
-    // For testing purposes - match what tests expect or update tests
+    loadAndDisplayData, // Exposed for app.js to call
+    // openDetachedAddPromptWindow, // This is now primarily handled by #add-prompt-button listener
+    // openDetachedEditWindow, // Can be called directly if needed
+    // Exposing other functions if app.js or other modules need direct access, though most UI interaction should be internal
     showTab,
-    displayPrompts,
-    displayPromptDetails,
-    viewPromptDetails,
-    showPromptList,
-    showPromptDetails: showPromptDetailsView, // Alias for test compatibility
-    showAddPrompt: showAddPromptView,       // Alias for test compatibility
-    handleAddPromptSubmit, // Expose if detached windows need to call it via window.opener
+    displayPrompts, 
+    displayPromptDetails, 
+    viewPromptDetails 
   };
 })();
