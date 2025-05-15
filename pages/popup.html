@@ -68,7 +68,6 @@
         </nav>
         <section id="prompts-list" class="cards-container"></section>
         
-        <!-- Details and Add sections remain, hidden/toggled by JS -->
         <section id="prompt-details-section" class="hidden">
           <div class="detail-card">
             <div class="detail-header-icons">
@@ -80,6 +79,9 @@
               </button>
               <button id="edit-prompt-button" aria-label="Edit prompt">
                 <i class="fas fa-edit"></i>
+              </button>
+              <button id="delete-prompt-detail-trigger-button" aria-label="Delete prompt">
+                <i class="fas fa-trash"></i>
               </button>
             </div>
             <div class="detail-title-container">
@@ -107,16 +109,15 @@
             <div id="delete-confirmation" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-desc">
               <h3 id="delete-dialog-title" class="visually-hidden">Confirm Deletion</h3>
               <p id="delete-dialog-desc">Are you sure you want to delete this prompt?</p>
-              <button id="confirm-delete-button">Delete Prompt</button>
-              <button id="cancel-delete-button">Cancel</button>
+              <button id="confirm-delete-button" class="button button-danger">Delete Prompt</button>
+              <button id="cancel-delete-button" class="button button-secondary">Cancel</button>
             </div>
           </div>
         </section>
 
         <section id="add-prompt-section" class="hidden">
-          <!-- Content for add prompt section, if it's an inline form in popup.html -->
           <h2>Add New Prompt (Inline)</h2>
-             <form id="add-prompt-form-inline"> <!-- Different ID if used -->
+             <form id="add-prompt-form-inline"> 
                <div><label for="prompt-title-inline">Title:</label><input type="text" id="prompt-title-inline" required /></div>
                <div><label for="prompt-text-inline">Prompt Text:</label><textarea id="prompt-text-inline" required></textarea></div>
                <button type="submit">Add</button> <button type="button" id="cancel-add-prompt-inline">Cancel</button>

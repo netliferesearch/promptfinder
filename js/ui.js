@@ -21,6 +21,7 @@ window.PromptFinder.UI = (function () {
     backToListButtonEl,
     copyPromptDetailButtonEl,
     editPromptButtonEl,
+    deletePromptTriggerButtonEl, // Added for the new delete trigger button
     deleteConfirmationEl,
     cancelDeleteButtonEl,
     confirmDeleteButtonEl,
@@ -58,6 +59,7 @@ window.PromptFinder.UI = (function () {
       backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
       copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
       editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
+      deletePromptTriggerButtonEl = promptDetailsSectionEl.querySelector('#delete-prompt-detail-trigger-button'); // Cache the new button
       deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
       cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
       confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
@@ -108,14 +110,12 @@ window.PromptFinder.UI = (function () {
         }
     });
     promptsListEl?.addEventListener('click', handlePromptListClick);
+
     if (promptDetailsSectionEl) {
       backToListButtonEl?.addEventListener('click', async () => {
         showPromptList(); 
       });
       copyPromptDetailButtonEl?.addEventListener('click', () => {
-        // const currentDetailedPromptId = promptDetailsSectionEl.dataset.currentPromptId;
-        // if (currentDetailedPromptId) handleCopyPrompt(currentDetailedPromptId);
-        // Using starRatingContainerEl.dataset.id as a fallback, but currentDetailedPromptId is better
         const promptId = promptDetailsSectionEl.dataset.currentPromptId || (starRatingContainerEl ? starRatingContainerEl.dataset.id : null);
         if (promptId) handleCopyPrompt(promptId);
       });
@@ -124,14 +124,9 @@ window.PromptFinder.UI = (function () {
         if (promptId) openDetachedEditWindow(promptId);
       });
       
-      // Event listener for showing the delete confirmation dialog
-      // This could be a dedicated trash icon button in the detail header-icons
-      // For example, if you add: <button id="delete-prompt-detail-button"><i class="fas fa-trash"></i></button>
-      const initiateDeleteButton = promptDetailsSectionEl.querySelector('#edit-prompt-button'); // Placeholder: wire it to edit for now, ideally a new button
-      // TODO: Add a dedicated delete icon/button in prompt-details-section HTML and target it here
-      // initiateDeleteButton?.addEventListener('click', () => {
-      //  if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
-      // });
+      deletePromptTriggerButtonEl?.addEventListener('click', () => { // Listener for the new delete trigger
+        if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
+      });
 
       cancelDeleteButtonEl?.addEventListener('click', () => {
         if(deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
@@ -262,7 +257,7 @@ window.PromptFinder.UI = (function () {
     
     const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
     if (favBtn) {
-      favBtn.dataset.id = prompt.id; // Ensure fav button in details also gets the ID
+      favBtn.dataset.id = prompt.id; 
       const icon = favBtn.querySelector('i');
       if (icon) icon.className = (prompt.userIsFavorite || prompt.favorites === 1) ? 'fas fa-heart' : 'far fa-heart';
     }
