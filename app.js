@@ -15,13 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelAuthButton = document.getElementById('cancel-auth-button');
   const generalErrorMessageElement = document.getElementById('error-message'); 
   const confirmationMessageElement = document.getElementById('confirmation-message');
-  
-  // Removed references to #add-prompt-section and its form elements from app.js
-  // as that form is primarily handled by add-prompt.html and add-prompt.js
-  // const addPromptSection = document.getElementById('add-prompt-section');
-  // const addPromptForm = document.getElementById('add-prompt-form');
-  // const cancelAddPromptButton = document.getElementById('cancel-add-prompt'); 
-  const addPromptButtonMain = document.getElementById('add-prompt-button'); // The button in main popup view
+  const addPromptButtonMain = document.getElementById('add-prompt-button'); 
 
   // Auth Forms
   const loginForm = document.getElementById('login-form');
@@ -41,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = null;
 
   function showAuthView() {
-    // if (addPromptSection) addPromptSection.classList.add('hidden'); // No longer needed here
     if (mainContent) mainContent.classList.add('hidden');
     if (authView) authView.classList.remove('hidden');
     if (authErrorMessage) {
@@ -52,11 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showMainContentView() {
     if (authView) authView.classList.add('hidden');
-    // if (addPromptSection) addPromptSection.classList.add('hidden'); // No longer needed here
     if (mainContent) mainContent.classList.remove('hidden');
   }
   
-  // showAddPromptView function is removed as add-prompt.html handles its own view.
+  /**
+   * Central function to load prompts and update the UI.
+   * This will be called on auth state changes and after certain actions.
+   */
+  async function loadAndRenderPrompts() {
+    if (UI && UI.loadAndDisplayData) { // Assuming UI.js has this function
+        console.log("Calling UI.loadAndDisplayData from app.js");
+        await UI.loadAndDisplayData(); 
+    } else if (UI && UI.initializeUI && typeof UI.loadPromptsForCurrentState === 'function') { 
+        // Fallback if initializeUI is meant to handle it or a more specific func exists
+        console.log("Calling UI.loadPromptsForCurrentState from app.js");
+        await UI.loadPromptsForCurrentState();
+    } else {
+        console.warn("UI function to load and render prompts not found. UI may not update.");
+    }
+  }
 
   function updateUIAfterAuthStateChange(user) {
     currentUser = user;
@@ -69,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (accountButton) accountButton.setAttribute('aria-label', 'Logout');
       if (addPromptButtonMain) addPromptButtonMain.disabled = false;
       console.log("User is logged in:", user.email);
+      loadAndRenderPrompts(); // Load prompts for the logged-in user
     } else {
       showMainContentView(); 
       if (accountButtonIcon) {
@@ -78,16 +86,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (accountButton) accountButton.setAttribute('aria-label', 'Login or Signup');
       if (addPromptButtonMain) addPromptButtonMain.disabled = true; 
       console.log("User is logged out");
+      loadAndRenderPrompts(); // Load public prompts or clear list
     }
   }
 
-  // The #add-prompt-button in popup.html should be handled by UI.js to open pages/add-prompt.html
-  // Removing direct click handler for it from app.js to avoid conflict if UI.js does it.
-  // If UI.js doesn't handle it, it needs to be added there or back here based on its actual behavior.
-  // For now, we assume UI.initializeUI() wires up the #add-prompt-button to open the separate page.
-
-  // Removed event listener for #cancel-add-prompt as it's not in popup.html anymore.
-  // Removed submit listener for #add-prompt-form from popup.html as it's handled by add-prompt.js.
+  if (addPromptButtonMain) {
+    addPromptButtonMain.addEventListener('click', () => {
+        if (currentUser) {
+            // The actual opening of add-prompt.html is handled by UI.initializeUI or similar
+            // This button primarily enables/disables. If it also needs to trigger opening, that logic is in UI.js
+            console.log("Add prompt button clicked by logged-in user.");
+            // If UI.js doesn't open the window, you might need: chrome.windows.create({ url: 'pages/add-prompt.html', type: 'popup', width: 400, height: 600 });
+        } else {
+            Utils.showConfirmationMessage('Please login to add a prompt.', { 
+                messageElement: generalErrorMessageElement, 
+                type: 'error' 
+            });
+        }
+    });
+  }
 
   if (accountButton) {
     accountButton.addEventListener('click', () => {
@@ -149,13 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     googleSignInButton.addEventListener('click', async () => {
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
       const result = await PromptData.signInWithGoogle();
-      if (result && result.user) {
-        // Success: onAuthStateChanged will handle UI update and view switch
-      } else if (result instanceof Error) {
-        // Error already displayed by signInWithGoogle or Utils.displayAuthError
-      } else {
-        Utils.displayAuthError('Google Sign-In failed. Unknown error.', authErrorMessage);
-      }
+      // UI update will be handled by onAuthStateChanged
     });
   }
 
@@ -166,30 +177,32 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUIAfterAuthStateChange(null); 
   }
   
-  // Listener for messages from other parts of the extension (e.g., add-prompt.js)
   if (chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.type === 'PROMPT_ADDED_OR_MODIFIED') {
             console.log('Message received: PROMPT_ADDED_OR_MODIFIED. Refreshing prompt list.');
-            // TODO: Call the function in UI.js to reload and render prompts from Firestore
-            // Example: if (UI && UI.loadAndRenderPrompts) UI.loadAndRenderPrompts();
-            // For now, just log. This will be crucial when loadPrompts is refactored.
-            if (UI && UI.loadAndDisplayData) { // Assuming a generic function name for now
-                UI.loadAndDisplayData();
-            }
+            loadAndRenderPrompts();
             sendResponse({ status: "success", message: "Prompt list refresh triggered in popup." });
-            return true; // Indicates you wish to send a response asynchronously (if needed)
+            return true; 
         }
     });
   }
 
+  // Initial UI setup and data load
   if (UI && UI.initializeUI) {
-    UI.initializeUI(); 
+    UI.initializeUI(); // Sets up general UI event listeners (like add prompt button to open new window)
   } else {
     console.error("PromptFinder.UI module not found.");
   }
 
+  // Initial auth state check and data load
   if (window.firebaseAuth) {
       updateUIAfterAuthStateChange(window.firebaseAuth.currentUser);
+      // Note: updateUIAfterAuthStateChange now calls loadAndRenderPrompts,
+      // so an additional call here might be redundant if onAuthStateChanged fires quickly.
+      // However, if currentUser is already set before listener attaches, this ensures initial load.
+  } else {
+      // If firebaseAuth isn't ready yet, onAuthStateChanged will handle the first load.
+      loadAndRenderPrompts(); // Load public prompts if auth isn't ready
   }
 });

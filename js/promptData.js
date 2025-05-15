@@ -19,6 +19,7 @@ window.PromptFinder.PromptData = (function () {
       const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
       console.log("User signed up:", userCredential.user);
       // TODO: Create a user document in Firestore 'users' collection here
+      // Example: if (window.firebaseDb) { try { await window.firebaseDb.collection('users').doc(userCredential.user.uid).set({ email: userCredential.user.email, createdAt: firebase.firestore.FieldValue.serverTimestamp(), displayName: userCredential.user.email }); } catch (dbError) { console.error('Error creating user doc:', dbError); } }
       return userCredential;
     } catch (error) {
       Utils.handleError(`Signup error: ${error.message}`, { userVisible: true, originalError: error });
@@ -110,29 +111,33 @@ window.PromptFinder.PromptData = (function () {
     try {
       const newPromptDoc = {
         userId: currentUser.uid,
-        authorDisplayName: currentUser.displayName || currentUser.email, // Capture current display name or email
+        authorDisplayName: currentUser.displayName || currentUser.email,
         title: promptData.title || '',
         text: promptData.text || '',
         description: promptData.description || '',
         category: promptData.category || '',
         tags: promptData.tags || [],
-        isPrivate: !!promptData.isPrivate, // Ensure boolean
+        isPrivate: !!promptData.isPrivate, 
         targetAiTools: promptData.targetAiTools || [],
-        // For private prompts, user-specific rating/favorite is on the prompt itself
         userRating: promptData.isPrivate ? (promptData.userRating || 0) : 0,
         userIsFavorite: promptData.isPrivate ? (promptData.userIsFavorite || false) : false,
-        // For shared prompts, these are aggregates (initialized to 0 or defaults)
         averageRating: !promptData.isPrivate ? 0 : 0, 
         totalRatingsCount: !promptData.isPrivate ? 0 : 0,
         favoritesCount: !promptData.isPrivate ? 0 : 0,
         usageCount: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Use global firebase for FieldValue
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
 
       const docRef = await db.collection('prompts').add(newPromptDoc);
       console.log("Prompt added with ID: ", docRef.id);
-      return { ...newPromptDoc, id: docRef.id, createdAt: new Date(), updatedAt: new Date() }; // Return with ID and approximate client-side timestamps for immediate UI use
+      // For immediate UI use, we can simulate the server timestamps with client-side new Date()
+      // The actual server timestamps will be on the doc in Firestore
+      const locallySimulatedTimestamps = {
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      return { ...newPromptDoc, ...locallySimulatedTimestamps, id: docRef.id }; 
     } catch (error) {
       Utils.handleError(`Error adding prompt to Firestore: ${error.message}`, {
         userVisible: true,
@@ -141,63 +146,119 @@ window.PromptFinder.PromptData = (function () {
       return null;
     }
   };
-  
-  // Deprecate or remove old createPrompt as addPrompt now handles full object creation for Firestore.
-  // const createPrompt = promptData => { ... }; 
 
-  // TODO: Refactor loadPrompts, updatePrompt, deletePrompt, etc., for Firestore
+  /**
+   * Load prompts from Firestore.
+   * If a user is logged in, loads their prompts (public/private) + other users' public prompts.
+   * If not logged in, loads only public prompts.
+   * @returns {Promise<Array>} Array of prompt objects.
+   */
   const loadPrompts = async () => {
-    console.warn("loadPrompts is still using chrome.storage.local and needs refactoring for Firestore.");
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    const db = window.firebaseDb;
+
+    if (!db) {
+      Utils.handleError("Firestore not initialized for loading prompts.", { userVisible: true });
+      return [];
+    }
+
+    let allPrompts = [];
+    const fetchedPromptIds = new Set(); // To handle potential duplicates
+
     try {
-      const data = await Utils.chromeStorageGet('prompts');
-      return data.prompts || [];
+      if (currentUser) {
+        // 1. Get all prompts authored by the current user
+        const userPromptsQuery = db.collection('prompts').where('userId', '==', currentUser.uid);
+        const userPromptsSnapshot = await userPromptsQuery.get();
+        userPromptsSnapshot.forEach(doc => {
+          if (!fetchedPromptIds.has(doc.id)) {
+            const data = doc.data();
+            allPrompts.push({
+              id: doc.id,
+              ...data,
+              // Convert Firestore Timestamps to JS Date objects or ISO strings for consistency
+              createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+              updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
+            });
+            fetchedPromptIds.add(doc.id);
+          }
+        });
+
+        // 2. Get all public prompts NOT authored by the current user
+        const publicPromptsQuery = db.collection('prompts')
+                                     .where('isPrivate', '==', false)
+                                     .where('userId', '!=', currentUser.uid); // Firestore allows this negative comparison
+        const publicPromptsSnapshot = await publicPromptsQuery.get();
+        publicPromptsSnapshot.forEach(doc => {
+          if (!fetchedPromptIds.has(doc.id)) { // Should be redundant due to query, but good practice
+            const data = doc.data();
+            allPrompts.push({
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+              updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
+            });
+            fetchedPromptIds.add(doc.id);
+          }
+        });
+
+      } else {
+        // No user logged in, fetch only public prompts
+        const publicPromptsQuery = db.collection('prompts').where('isPrivate', '==', false);
+        const publicPromptsSnapshot = await publicPromptsQuery.get();
+        publicPromptsSnapshot.forEach(doc => {
+          // No need to check fetchedPromptIds here as it's a single query set
+          const data = doc.data();
+          allPrompts.push({
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+            updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
+          });
+        });
+      }
+      console.log("Prompts loaded from Firestore:", allPrompts.length);
+      return allPrompts;
     } catch (error) {
-      Utils.handleError(`Error loading prompts (local): ${error.message}`, { userVisible: true, originalError: error });
+      Utils.handleError(`Error loading prompts from Firestore: ${error.message}`, {
+        userVisible: true,
+        originalError: error,
+      });
       return [];
     }
   };
-
+  
+  // TODO: Refactor updatePrompt, deletePrompt, etc., for Firestore
   const updatePrompt = async (promptId, updates) => {
     console.warn(`updatePrompt for ID ${promptId} is still using chrome.storage.local.`);
-    // Placeholder - needs Firestore implementation
     return null;
   };
 
   const deletePrompt = async (promptId) => {
     console.warn(`deletePrompt for ID ${promptId} is still using chrome.storage.local.`);
-    // Placeholder - needs Firestore implementation
     return false;
   };
 
   const updatePromptRating = async (promptId, rating) => {
     console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
-    // Placeholder - needs Firestore implementation
     return null;
   };
 
   const toggleFavorite = async promptId => {
     console.warn(`toggleFavorite for ID ${promptId} is still using chrome.storage.local.`);
-    // Placeholder - needs Firestore implementation
     return null;
   };
   
-  // --- Helper/Existing functions that might not need immediate refactoring or will be refactored alongside UI --- 
   const savePrompts = async prompts => {
-    // This function will be removed once all data ops use Firestore directly
     console.warn("savePrompts is for chrome.storage.local and will be removed.");
-    try {
-      await Utils.chromeStorageSet({ prompts });
-      return true;
-    } catch (error) {
-      Utils.handleError(`Error saving prompts (local): ${error.message}`, { userVisible: true, originalError: error });
-      return false;
-    }
+    return false;
   };
   const copyPromptToClipboard = async promptId => {
-    // This function might need to load the specific prompt from Firestore if not already loaded
-    // For now, it will rely on the existing loadPrompts structure.
     try {
-      const allPrompts = await loadPrompts(); // This needs to become Firestore-aware
+      // This will use the new loadPrompts which gets data from Firestore.
+      // However, this means it loads ALL prompts just to copy one if not already loaded.
+      // Optimization: pass loaded prompts array or fetch single doc by ID if needed.
+      const allPrompts = await loadPrompts(); 
       const prompt = allPrompts.find(p => p.id === promptId);
       if (!prompt) throw new Error(`Prompt with ID ${promptId} not found`);
       await navigator.clipboard.writeText(prompt.text);
@@ -208,38 +269,53 @@ window.PromptFinder.PromptData = (function () {
     }
   };
   const findPromptById = async (promptId, prompts = null, options = {}) => {
-    // This will also need to be Firestore-aware if `prompts` is not passed
-    console.warn("findPromptById might use chrome.storage.local if prompts array not provided.");
-    // ... (rest of existing logic, will fail if prompts not provided and loadPrompts not updated)
     const { throwIfNotFound = false, handleError = false } = options;
     if (!promptId) return Promise.resolve(null);
+    const db = window.firebaseDb;
+    if (!db) {
+        Utils.handleError("Firestore not initialized for findPromptById.", { userVisible: true });
+        return null;
+    }
     try {
-      let prompt = null;
-      if (prompts) {
-        prompt = prompts.find(p => p.id === promptId) || null;
-      } else {
-        const allPrompts = await loadPrompts(); // This needs to become Firestore-aware
-        prompt = allPrompts.find(p => p.id === promptId) || null;
+      if (prompts) { // If an array is passed, search within it (e.g., already loaded data)
+        const prompt = prompts.find(p => p.id === promptId) || null;
+        if (!prompt && throwIfNotFound) throw new Error(`Prompt with ID ${promptId} not found in provided list`);
+        return prompt;
+      } else { // Fetch directly from Firestore
+        const docRef = db.collection('prompts').doc(promptId);
+        const docSnap = await docRef.get();
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+            updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
+          };
+        } else {
+          if (throwIfNotFound) throw new Error(`Prompt with ID ${promptId} not found in Firestore`);
+          return null;
+        }
       }
-      if (!prompt && throwIfNotFound) {
-        throw new Error(`Prompt with ID ${promptId} not found`);
-      }
-      return prompt;
     } catch (error) {
-      if (handleError) {
-        Utils.handleError(`Error retrieving prompt: ${error.message}`, { userVisible: true, originalError: error });
+      if (handleError || throwIfNotFound) { // Ensure error is handled if it was meant to throw
+        Utils.handleError(`Error retrieving prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
       }
       return null;
     }
   };
   const filterPrompts = (prompts, filters) => {
-    // This function operates on an array; how it gets that array will change with Firestore.
-    // The filtering logic itself might remain similar.
     let result = [...prompts];
     if (filters.tab === 'favs') {
-      result = result.filter(p => p.userIsFavorite || p.favorites === 1); // Adjust for new data model
+      // For Firestore, userIsFavorite for private, and a separate mechanism for shared needed
+      result = result.filter(p => p.userIsFavorite === true); // Simplification: only shows user's direct favorites for now
     } else if (filters.tab === 'private') {
-      result = result.filter(p => p.isPrivate);
+      const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+      if (currentUser) {
+          result = result.filter(p => p.isPrivate && p.userId === currentUser.uid);
+      } else {
+          result = []; // No private prompts if not logged in
+      }
     }
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
@@ -253,7 +329,6 @@ window.PromptFinder.PromptData = (function () {
       );
     }
     if (filters.minRating > 0) {
-      // Adjust for new data model: userRating for private, averageRating for shared
       result = result.filter(p => (p.isPrivate ? (p.userRating || 0) : (p.averageRating || 0)) >= filters.minRating);
     }
     return result;
@@ -265,17 +340,15 @@ window.PromptFinder.PromptData = (function () {
     signInWithGoogle,
     logoutUser,
     onAuthStateChanged,
-    addPrompt, // Refactored
-    loadPrompts, // Needs refactoring
-    updatePrompt, // Needs refactoring
-    deletePrompt, // Needs refactoring
-    updatePromptRating, // Needs refactoring
-    toggleFavorite, // Needs refactoring
-    // --- Helper or to be removed/refactored --- 
-    // createPrompt, // Deprecated by addPrompt's direct object creation
-    // savePrompts, // To be removed once all ops use Firestore
+    addPrompt, 
+    loadPrompts, // Refactored
+    updatePrompt, 
+    deletePrompt, 
+    updatePromptRating, 
+    toggleFavorite, 
+    // savePrompts, // To be removed
     copyPromptToClipboard,
-    findPromptById,
+    findPromptById, // Refactored for direct Firestore fetch
     filterPrompts,
   };
 })();
