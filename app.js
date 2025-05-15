@@ -14,7 +14,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const accountButtonIcon = accountButton ? accountButton.querySelector('i') : null;
   const cancelAuthButton = document.getElementById('cancel-auth-button');
   const generalErrorMessageElement = document.getElementById('error-message'); 
-  const confirmationMessageElement = document.getElementById('confirmation-message'); 
+  const confirmationMessageElement = document.getElementById('confirmation-message');
+  
+  const addPromptSection = document.getElementById('add-prompt-section');
+  const addPromptForm = document.getElementById('add-prompt-form'); // Form within popup.html
+  const promptTitleInput = document.getElementById('prompt-title');
+  const promptTextInput = document.getElementById('prompt-text');
+  const promptCategoryInput = document.getElementById('prompt-category');
+  const promptTagsInput = document.getElementById('prompt-tags');
+  const promptPrivateCheckbox = document.getElementById('prompt-private');
+  const cancelAddPromptButton = document.getElementById('cancel-add-prompt');
+  const addPromptButtonMain = document.getElementById('add-prompt-button'); // The button in main view
+
 
   // Auth Forms
   const loginForm = document.getElementById('login-form');
@@ -34,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = null;
 
   function showAuthView() {
+    if (addPromptSection) addPromptSection.classList.add('hidden'); // Hide add prompt if open
     if (mainContent) mainContent.classList.add('hidden');
     if (authView) authView.classList.remove('hidden');
     if (authErrorMessage) {
@@ -44,7 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showMainContentView() {
     if (authView) authView.classList.add('hidden');
+    if (addPromptSection) addPromptSection.classList.add('hidden'); // Hide add prompt if open
     if (mainContent) mainContent.classList.remove('hidden');
+  }
+  
+  function showAddPromptView() {
+    if (authView) authView.classList.add('hidden');
+    if (mainContent) mainContent.classList.add('hidden');
+    if (addPromptSection) addPromptSection.classList.remove('hidden');
   }
 
   function updateUIAfterAuthStateChange(user) {
@@ -56,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         accountButtonIcon.classList.add('fa-sign-out-alt');   
       }
       if (accountButton) accountButton.setAttribute('aria-label', 'Logout');
+      if (addPromptButtonMain) addPromptButtonMain.disabled = false;
       console.log("User is logged in:", user.email);
     } else {
       showMainContentView(); 
@@ -64,8 +84,66 @@ document.addEventListener('DOMContentLoaded', () => {
         accountButtonIcon.classList.add('fa-user-circle');
       }
       if (accountButton) accountButton.setAttribute('aria-label', 'Login or Signup');
+      if (addPromptButtonMain) addPromptButtonMain.disabled = true; // Disable add prompt if not logged in
       console.log("User is logged out");
     }
+  }
+
+  if (addPromptButtonMain) {
+    addPromptButtonMain.addEventListener('click', () => {
+        if (currentUser) {
+            showAddPromptView();
+        } else {
+            Utils.showConfirmationMessage('Please login to add a prompt.', { 
+                messageElement: generalErrorMessageElement, // Use general error for this
+                type: 'error' 
+            });
+            // Or, alternatively, redirect to auth view: showAuthView();
+        }
+    });
+  }
+
+  if (cancelAddPromptButton) {
+    cancelAddPromptButton.addEventListener('click', () => {
+        showMainContentView();
+        addPromptForm.reset();
+    });
+  }
+
+  if (addPromptForm) {
+    addPromptForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!currentUser) {
+            Utils.handleError("You must be logged in to add prompts.", {messageElement: generalErrorMessageElement, userVisible: true, type: 'error'});
+            showAuthView(); // Redirect to login
+            return;
+        }
+
+        const promptData = {
+            title: promptTitleInput.value,
+            text: promptTextInput.value,
+            category: promptCategoryInput.value,
+            tags: promptTagsInput.value ? promptTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+            isPrivate: promptPrivateCheckbox.checked,
+            targetAiTools: [] // Placeholder for now
+        };
+
+        const newPrompt = await PromptData.addPrompt(promptData);
+        if (newPrompt) {
+            Utils.showConfirmationMessage('Prompt added successfully!', { messageElement: confirmationMessageElement });
+            addPromptForm.reset();
+            showMainContentView();
+            // TODO: Refresh prompt list in UI (call a UI function)
+            if (UI && UI.renderPrompts) {
+                // This assumes UI.renderPrompts will call loadPrompts itself or be passed the new list
+                // UI.loadAndRenderPrompts(); // Example of how UI might handle it
+            }
+        } else {
+            // Error already handled by PromptData.addPrompt's call to Utils.handleError for Firestore issues
+            // but we might want a specific message if it returned null due to no user (already checked above)
+             Utils.handleError("Failed to add prompt. Please try again.", {messageElement: generalErrorMessageElement, userVisible: true, type: 'error'});
+        }
+    });
   }
 
   if (accountButton) {
@@ -132,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Success: onAuthStateChanged will handle UI update and view switch
       } else if (result instanceof Error) {
         // Error already displayed by signInWithGoogle or Utils.displayAuthError
-        // No additional error display needed here unless specific handling is required
       } else {
         Utils.displayAuthError('Google Sign-In failed. Unknown error.', authErrorMessage);
       }
@@ -147,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (UI && UI.initializeUI) {
-    UI.initializeUI();
+    UI.initializeUI(); // This might need to be called after auth state is known if it loads prompts
   } else {
     console.error("PromptFinder.UI module not found.");
   }
