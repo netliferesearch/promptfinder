@@ -221,16 +221,9 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  /**
-   * Updates an existing prompt in Firestore.
-   * @param {string} promptId ID of the prompt to update.
-   * @param {Object} updates Object containing the fields to update.
-   * @returns {Promise<Object | null>} The updated prompt data or null on error.
-   */
   const updatePrompt = async (promptId, updates) => {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const db = window.firebaseDb;
-
     if (!currentUser) {
       Utils.handleError("User must be logged in to update a prompt.", { userVisible: true });
       return null;
@@ -247,30 +240,21 @@ window.PromptFinder.PromptData = (function () {
         Utils.handleError("No updates provided for the prompt.", { userVisible: true });
         return null;
     }
-
     try {
       const docRef = db.collection('prompts').doc(promptId);
       const docSnap = await docRef.get();
-
       if (!docSnap.exists) {
         Utils.handleError(`Prompt with ID ${promptId} not found for update.`, { userVisible: true });
         return null;
       }
-
       if (docSnap.data().userId !== currentUser.uid) {
         Utils.handleError("You do not have permission to update this prompt.", { userVisible: true });
         return null;
       }
-
-      const updateData = {
-        ...updates,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
+      const updateData = { ...updates, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
       await docRef.update(updateData);
       console.log(`Prompt with ID ${promptId} updated successfully in Firestore.`);
-      // Return the merged data for UI update
-      const updatedDoc = { ...docSnap.data(), ...updateData, id: promptId, updatedAt: new Date() }; // Simulate timestamp for immediate UI use
+      const updatedDoc = { ...docSnap.data(), ...updateData, id: promptId, updatedAt: new Date() }; 
       return updatedDoc;
     } catch (error) {
       Utils.handleError(`Error updating prompt ${promptId} in Firestore: ${error.message}`, {
@@ -319,13 +303,69 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  // TODO: Refactor updatePromptRating, toggleFavorite for Firestore
+  /**
+   * Toggles the favorite status (userIsFavorite field) for a user's own prompt.
+   * @param {string} promptId ID of the prompt to toggle.
+   * @returns {Promise<Object|null>} The updated prompt data or null on error.
+   */
+  const toggleFavorite = async (promptId) => {
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    const db = window.firebaseDb;
+
+    if (!currentUser) {
+      Utils.handleError("User must be logged in to change favorite status.", { userVisible: true });
+      return null;
+    }
+    if (!db) {
+      Utils.handleError("Firestore not initialized.", { userVisible: true });
+      return null;
+    }
+    if (!promptId) {
+      Utils.handleError("No prompt ID provided for toggling favorite.", { userVisible: true });
+      return null;
+    }
+
+    try {
+      const docRef = db.collection('prompts').doc(promptId);
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        Utils.handleError(`Prompt with ID ${promptId} not found.`, { userVisible: true });
+        return null;
+      }
+
+      const promptData = docSnap.data();
+
+      // User can only toggle 'userIsFavorite' for their own prompts
+      if (promptData.userId !== currentUser.uid) {
+        Utils.handleError("You can only favorite/unfavorite your own prompts directly.", { userVisible: true });
+        // TODO: Later, implement favoriting of shared prompts by others via user_prompt_interactions collection
+        return null;
+      }
+
+      const newFavoriteStatus = !promptData.userIsFavorite;
+      const updates = {
+        userIsFavorite: newFavoriteStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      await docRef.update(updates);
+      console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus}.`);
+      return { ...promptData, ...updates, id: promptId, updatedAt: new Date() };
+
+    } catch (error) {
+      Utils.handleError(`Error toggling favorite for prompt ${promptId}: ${error.message}`, {
+        userVisible: true,
+        originalError: error,
+      });
+      return null;
+    }
+  };
+
+  // TODO: Refactor updatePromptRating for Firestore
   const updatePromptRating = async (promptId, rating) => {
     console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
-    return null;
-  };
-  const toggleFavorite = async promptId => {
-    console.warn(`toggleFavorite for ID ${promptId} is still using chrome.storage.local.`);
+    // Placeholder - needs Firestore implementation for userRating (private) and averageRating (shared)
     return null;
   };
   
@@ -343,6 +383,7 @@ window.PromptFinder.PromptData = (function () {
   const filterPrompts = (prompts, filters) => {
     let result = [...prompts];
     if (filters.tab === 'favs') {
+      // This will filter based on the userIsFavorite field after it's updated by toggleFavorite
       result = result.filter(p => p.userIsFavorite === true); 
     } else if (filters.tab === 'private') {
       const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
@@ -377,10 +418,10 @@ window.PromptFinder.PromptData = (function () {
     onAuthStateChanged,
     addPrompt, 
     loadPrompts, 
-    updatePrompt, // Refactored
+    updatePrompt, 
     deletePrompt, 
     updatePromptRating, 
-    toggleFavorite, 
+    toggleFavorite, // Refactored
     copyPromptToClipboard,
     findPromptById, 
     filterPrompts,
