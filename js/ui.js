@@ -21,7 +21,7 @@ window.PromptFinder.UI = (function () {
     backToListButtonEl,
     copyPromptDetailButtonEl,
     editPromptButtonEl,
-    deletePromptTriggerButtonEl, // Added for the new delete trigger button
+    deletePromptTriggerButtonEl, 
     deleteConfirmationEl,
     cancelDeleteButtonEl,
     confirmDeleteButtonEl,
@@ -59,7 +59,7 @@ window.PromptFinder.UI = (function () {
       backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
       copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
       editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
-      deletePromptTriggerButtonEl = promptDetailsSectionEl.querySelector('#delete-prompt-detail-trigger-button'); // Cache the new button
+      deletePromptTriggerButtonEl = promptDetailsSectionEl.querySelector('#delete-prompt-detail-trigger-button'); 
       deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
       cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
       confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
@@ -124,7 +124,7 @@ window.PromptFinder.UI = (function () {
         if (promptId) openDetachedEditWindow(promptId);
       });
       
-      deletePromptTriggerButtonEl?.addEventListener('click', () => { // Listener for the new delete trigger
+      deletePromptTriggerButtonEl?.addEventListener('click', () => { 
         if(deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
       });
 
@@ -210,7 +210,9 @@ window.PromptFinder.UI = (function () {
       searchTerm: searchInputEl ? searchInputEl.value : '',
       minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
-    const filtered = PromptData.filterPrompts(allPrompts, filters);
+    // Ensure allPrompts is an array before filtering
+    const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
+    const filtered = PromptData.filterPrompts(promptsToFilter, filters);
     displayPrompts(filtered);
   };
 
@@ -227,7 +229,8 @@ window.PromptFinder.UI = (function () {
     sorted.forEach(prompt => {
       const div = document.createElement('div');
       div.classList.add('prompt-item');
-      const isFavorite = prompt.userIsFavorite || prompt.favorites === 1; 
+      // Use userIsFavorite for the heart icon status
+      const isFavorite = prompt.userIsFavorite; // Relies on userIsFavorite field from Firestore
       div.innerHTML = `
       <button class="toggle-favorite" data-id="${prompt.id}" aria-label="Toggle favorite">
         <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i>
@@ -259,7 +262,8 @@ window.PromptFinder.UI = (function () {
     if (favBtn) {
       favBtn.dataset.id = prompt.id; 
       const icon = favBtn.querySelector('i');
-      if (icon) icon.className = (prompt.userIsFavorite || prompt.favorites === 1) ? 'fas fa-heart' : 'far fa-heart';
+      // Use userIsFavorite for the heart icon status
+      if (icon) icon.className = prompt.userIsFavorite ? 'fas fa-heart' : 'far fa-heart';
     }
 
     const ratingToDisplay = prompt.isPrivate ? (prompt.userRating || 0) : (prompt.averageRating || 0);
@@ -318,31 +322,49 @@ window.PromptFinder.UI = (function () {
     }
   };
   
-  const handleToggleFavorite = async promptId => {
-    console.warn('handleToggleFavorite needs Firestore update');
-    const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-    if (promptIndex !== -1) {
-        allPrompts[promptIndex].userIsFavorite = !allPrompts[promptIndex].userIsFavorite;
-        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
-            displayPromptDetails(allPrompts[promptIndex]);
-        } else {
-            showTab(activeTab);
+  const handleToggleFavorite = async (promptId) => {
+    try {
+      const updatedPrompt = await PromptData.toggleFavorite(promptId);
+      if (updatedPrompt) {
+        // Update the prompt in the local allPrompts cache
+        const index = allPrompts.findIndex(p => p.id === promptId);
+        if (index !== -1) {
+          allPrompts[index] = updatedPrompt;
+        }\ else {
+          // If for some reason it wasn't in the cache, add it (or reload all)
+          allPrompts.push(updatedPrompt); 
         }
-        Utils.showConfirmationMessage(`Favorite status updated!`);
-    } else {
-        Utils.handleError('Prompt not found to toggle favorite.', {userVisible: true});
+
+        // Re-render based on current view
+        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
+          displayPromptDetails(updatedPrompt); // Update detail view if it's showing this prompt
+        } else {
+          showTab(activeTab); // Refresh list view (will re-filter and re-render)
+        }
+        Utils.showConfirmationMessage('Favorite status updated!');
+      } else {
+        // Error already handled by PromptData.toggleFavorite
+        // Utils.handleError('Failed to update favorite status.', { userVisible: true }); // Redundant
+      }
+    } catch (error) {
+      Utils.handleError('Error toggling favorite status in UI', { userVisible: true, originalError: error });
     }
   };
 
   const handleRatePrompt = async (promptId, rating, isPrivatePrompt) => {
-    console.warn('handleRatePrompt needs Firestore update');
+    console.warn('handleRatePrompt needs Firestore update for actual rating submission');
+    // TODO: Refactor with PromptData.updatePromptRating(promptId, rating, isPrivatePrompt) after it's Firestore-ready
     const promptIndex = allPrompts.findIndex(p => p.id === promptId);
     if (promptIndex !== -1) {
+        // Optimistically update UI for demo purposes for private prompts
         if(isPrivatePrompt) allPrompts[promptIndex].userRating = rating;
+        // For shared prompts, this would be more complex (calling an update for averageRating etc.)
+        
+        // Re-render the details view if it's the current one to show new rating
         if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
             displayPromptDetails(allPrompts[promptIndex]);
         }
-        Utils.showConfirmationMessage(`Rated ${rating} stars!`);
+        Utils.showConfirmationMessage(`Rated ${rating} stars! (UI only)`);
     } else {
         Utils.handleError('Prompt not found to rate.', {userVisible: true});
     }
@@ -362,8 +384,9 @@ window.PromptFinder.UI = (function () {
       const success = await PromptData.deletePrompt(promptId);
       if (success) {
         Utils.showConfirmationMessage('Prompt deleted successfully!');
-        allPrompts = allPrompts.filter(p => p.id !== promptId);
-        showPromptList(); 
+        // Data will be reloaded from Firestore to ensure consistency
+        await loadAndDisplayData(); 
+        showPromptList(); // Ensure we are back to the list view
       } 
     } catch (error) {
       Utils.handleError('Error during prompt deletion process', { userVisible: true, originalError: error });
