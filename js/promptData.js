@@ -18,8 +18,20 @@ window.PromptFinder.PromptData = (function () {
     try {
       const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
       console.log("User signed up:", userCredential.user);
-      // TODO: Create a user document in Firestore 'users' collection here
-      // Example: if (window.firebaseDb) { try { await window.firebaseDb.collection('users').doc(userCredential.user.uid).set({ email: userCredential.user.email, createdAt: firebase.firestore.FieldValue.serverTimestamp(), displayName: userCredential.user.email }); } catch (dbError) { console.error('Error creating user doc:', dbError); } }
+      if (window.firebaseDb) { 
+        try { 
+          await window.firebaseDb.collection('users').doc(userCredential.user.uid).set({
+            email: userCredential.user.email,
+            displayName: userCredential.user.email, // Default display name
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log("User document created in Firestore for UID:", userCredential.user.uid);
+        } catch (dbError) { 
+          console.error('Error creating user document in Firestore:', dbError);
+          Utils.handleError('Could not save user details after signup.', { userVisible: true, originalError: dbError });
+          // Non-fatal for signup, but good to log
+        } 
+      }
       return userCredential;
     } catch (error) {
       Utils.handleError(`Signup error: ${error.message}`, { userVisible: true, originalError: error });
@@ -88,17 +100,9 @@ window.PromptFinder.PromptData = (function () {
   };
 
   // --- Prompt Functions (Refactored for Firebase Firestore) ---
-
-  /**
-   * Add a prompt to Firestore.
-   * User must be logged in.
-   * @param {Object} promptData - Data for the new prompt (title, text, category, tags, isPrivate, targetAiTools).
-   * @returns {Promise<Object | null>} The added prompt data (with ID) or null on error.
-   */
   const addPrompt = async (promptData) => {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const db = window.firebaseDb;
-
     if (!currentUser) {
       Utils.handleError("User must be logged in to add a prompt.", { userVisible: true });
       return null;
@@ -107,7 +111,6 @@ window.PromptFinder.PromptData = (function () {
       Utils.handleError("Firestore not initialized.", { userVisible: true });
       return null;
     }
-
     try {
       const newPromptDoc = {
         userId: currentUser.uid,
@@ -128,11 +131,8 @@ window.PromptFinder.PromptData = (function () {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
-
       const docRef = await db.collection('prompts').add(newPromptDoc);
       console.log("Prompt added with ID: ", docRef.id);
-      // For immediate UI use, we can simulate the server timestamps with client-side new Date()
-      // The actual server timestamps will be on the doc in Firestore
       const locallySimulatedTimestamps = {
         createdAt: new Date(),
         updatedAt: new Date()
@@ -147,71 +147,52 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  /**
-   * Load prompts from Firestore.
-   * If a user is logged in, loads their prompts (public/private) + other users' public prompts.
-   * If not logged in, loads only public prompts.
-   * @returns {Promise<Array>} Array of prompt objects.
-   */
   const loadPrompts = async () => {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const db = window.firebaseDb;
-
     if (!db) {
       Utils.handleError("Firestore not initialized for loading prompts.", { userVisible: true });
       return [];
     }
-
     let allPrompts = [];
-    const fetchedPromptIds = new Set(); // To handle potential duplicates
-
+    const fetchedPromptIds = new Set();
     try {
       if (currentUser) {
-        // 1. Get all prompts authored by the current user
         const userPromptsQuery = db.collection('prompts').where('userId', '==', currentUser.uid);
         const userPromptsSnapshot = await userPromptsQuery.get();
         userPromptsSnapshot.forEach(doc => {
           if (!fetchedPromptIds.has(doc.id)) {
             const data = doc.data();
             allPrompts.push({
-              id: doc.id,
-              ...data,
-              // Convert Firestore Timestamps to JS Date objects or ISO strings for consistency
+              id: doc.id, ...data,
               createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
               updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
             });
             fetchedPromptIds.add(doc.id);
           }
         });
-
-        // 2. Get all public prompts NOT authored by the current user
         const publicPromptsQuery = db.collection('prompts')
                                      .where('isPrivate', '==', false)
-                                     .where('userId', '!=', currentUser.uid); // Firestore allows this negative comparison
+                                     .where('userId', '!=', currentUser.uid); 
         const publicPromptsSnapshot = await publicPromptsQuery.get();
         publicPromptsSnapshot.forEach(doc => {
-          if (!fetchedPromptIds.has(doc.id)) { // Should be redundant due to query, but good practice
+          if (!fetchedPromptIds.has(doc.id)) { 
             const data = doc.data();
             allPrompts.push({
-              id: doc.id,
-              ...data,
+              id: doc.id, ...data,
               createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
               updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
             });
             fetchedPromptIds.add(doc.id);
           }
         });
-
       } else {
-        // No user logged in, fetch only public prompts
         const publicPromptsQuery = db.collection('prompts').where('isPrivate', '==', false);
         const publicPromptsSnapshot = await publicPromptsQuery.get();
         publicPromptsSnapshot.forEach(doc => {
-          // No need to check fetchedPromptIds here as it's a single query set
           const data = doc.data();
           allPrompts.push({
-            id: doc.id,
-            ...data,
+            id: doc.id, ...data,
             createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
             updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
           });
@@ -220,47 +201,97 @@ window.PromptFinder.PromptData = (function () {
       console.log("Prompts loaded from Firestore:", allPrompts.length);
       return allPrompts;
     } catch (error) {
-      Utils.handleError(`Error loading prompts from Firestore: ${error.message}`, {
-        userVisible: true,
-        originalError: error,
-      });
+      Utils.handleError(`Error loading prompts from Firestore: ${error.message}`, { userVisible: true, originalError: error });
       return [];
     }
   };
   
+  const findPromptById = async (promptId, prompts = null, options = {}) => {
+    const { throwIfNotFound = false, handleError = true } = options; // Default handleError to true for this function
+    console.log(`[findPromptById] Attempting to find prompt with ID: ${promptId}`);
+
+    if (!promptId) {
+        console.warn("[findPromptById] No promptId provided.");
+        return Promise.resolve(null);
+    }
+
+    const db = window.firebaseDb;
+    if (!db) {
+        const msg = "[findPromptById] Firestore not initialized.";
+        console.error(msg);
+        if (handleError) Utils.handleError(msg, { userVisible: true });
+        return null;
+    }
+
+    try {
+      // If a prompts array is passed and is not empty, try to find it there first.
+      // This can be an optimization if allPrompts is already loaded and up-to-date in UI.js
+      if (prompts && Array.isArray(prompts) && prompts.length > 0) {
+        console.log(`[findPromptById] Searching within provided list of ${prompts.length} prompts.`);
+        const promptFromList = prompts.find(p => p.id === promptId) || null;
+        if (promptFromList) {
+          console.log(`[findPromptById] Found prompt in provided list:`, promptFromList);
+          return promptFromList;
+        }
+        console.log(`[findPromptById] Prompt ID ${promptId} not found in provided list. Will try Firestore.`);
+      }
+
+      console.log(`[findPromptById] Fetching directly from Firestore: prompts/${promptId}`);
+      const docRef = db.collection('prompts').doc(promptId);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists()) {
+        console.log(`[findPromptById] Document snapshot exists. Data:`, docSnap.data());
+        const data = docSnap.data();
+        const prompt = {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
+        };
+        console.log("[findPromptById] Successfully fetched and constructed prompt:", prompt);
+        return prompt;
+      } else {
+        console.warn(`[findPromptById] Document prompts/${promptId} does not exist in Firestore.`);
+        if (throwIfNotFound) {
+          throw new Error(`Prompt with ID ${promptId} not found in Firestore`);
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error(`[findPromptById] Error during Firestore fetch for ${promptId}:`, error);
+      if (handleError || throwIfNotFound) { 
+        Utils.handleError(`Error retrieving prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
+      }
+      return null;
+    }
+  };
+
   // TODO: Refactor updatePrompt, deletePrompt, etc., for Firestore
   const updatePrompt = async (promptId, updates) => {
     console.warn(`updatePrompt for ID ${promptId} is still using chrome.storage.local.`);
     return null;
   };
-
   const deletePrompt = async (promptId) => {
     console.warn(`deletePrompt for ID ${promptId} is still using chrome.storage.local.`);
     return false;
   };
-
   const updatePromptRating = async (promptId, rating) => {
     console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
     return null;
   };
-
   const toggleFavorite = async promptId => {
     console.warn(`toggleFavorite for ID ${promptId} is still using chrome.storage.local.`);
     return null;
   };
-  
   const savePrompts = async prompts => {
     console.warn("savePrompts is for chrome.storage.local and will be removed.");
     return false;
   };
   const copyPromptToClipboard = async promptId => {
     try {
-      // This will use the new loadPrompts which gets data from Firestore.
-      // However, this means it loads ALL prompts just to copy one if not already loaded.
-      // Optimization: pass loaded prompts array or fetch single doc by ID if needed.
-      const allPrompts = await loadPrompts(); 
-      const prompt = allPrompts.find(p => p.id === promptId);
-      if (!prompt) throw new Error(`Prompt with ID ${promptId} not found`);
+      const prompt = await findPromptById(promptId); // Now uses Firestore-aware findById
+      if (!prompt) throw new Error(`Prompt with ID ${promptId} not found for copying`);
       await navigator.clipboard.writeText(prompt.text);
       return true;
     } catch (error) {
@@ -268,53 +299,16 @@ window.PromptFinder.PromptData = (function () {
       return false;
     }
   };
-  const findPromptById = async (promptId, prompts = null, options = {}) => {
-    const { throwIfNotFound = false, handleError = false } = options;
-    if (!promptId) return Promise.resolve(null);
-    const db = window.firebaseDb;
-    if (!db) {
-        Utils.handleError("Firestore not initialized for findPromptById.", { userVisible: true });
-        return null;
-    }
-    try {
-      if (prompts) { // If an array is passed, search within it (e.g., already loaded data)
-        const prompt = prompts.find(p => p.id === promptId) || null;
-        if (!prompt && throwIfNotFound) throw new Error(`Prompt with ID ${promptId} not found in provided list`);
-        return prompt;
-      } else { // Fetch directly from Firestore
-        const docRef = db.collection('prompts').doc(promptId);
-        const docSnap = await docRef.get();
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          return {
-            id: docSnap.id,
-            ...data,
-            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
-            updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : new Date().toISOString(),
-          };
-        } else {
-          if (throwIfNotFound) throw new Error(`Prompt with ID ${promptId} not found in Firestore`);
-          return null;
-        }
-      }
-    } catch (error) {
-      if (handleError || throwIfNotFound) { // Ensure error is handled if it was meant to throw
-        Utils.handleError(`Error retrieving prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
-      }
-      return null;
-    }
-  };
   const filterPrompts = (prompts, filters) => {
     let result = [...prompts];
     if (filters.tab === 'favs') {
-      // For Firestore, userIsFavorite for private, and a separate mechanism for shared needed
-      result = result.filter(p => p.userIsFavorite === true); // Simplification: only shows user's direct favorites for now
+      result = result.filter(p => p.userIsFavorite === true); 
     } else if (filters.tab === 'private') {
       const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
       if (currentUser) {
           result = result.filter(p => p.isPrivate && p.userId === currentUser.uid);
       } else {
-          result = []; // No private prompts if not logged in
+          result = []; 
       }
     }
     if (filters.searchTerm) {
@@ -341,14 +335,13 @@ window.PromptFinder.PromptData = (function () {
     logoutUser,
     onAuthStateChanged,
     addPrompt, 
-    loadPrompts, // Refactored
+    loadPrompts, 
     updatePrompt, 
     deletePrompt, 
     updatePromptRating, 
     toggleFavorite, 
-    // savePrompts, // To be removed
     copyPromptToClipboard,
-    findPromptById, // Refactored for direct Firestore fetch
+    findPromptById, 
     filterPrompts,
   };
 })();
