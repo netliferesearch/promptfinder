@@ -71,9 +71,13 @@ window.PromptFinder.UI = (function () {
 
   const loadAndDisplayData = async () => {
     try {
+      console.log("[UI_DEBUG] loadAndDisplayData - START");
       allPrompts = await PromptData.loadPrompts(); 
+      console.log(`[UI_DEBUG] loadAndDisplayData - after PromptData.loadPrompts, count: ${allPrompts ? allPrompts.length : 'undefined'}`);
       showTab(activeTab); 
+      console.log("[UI_DEBUG] loadAndDisplayData - END");
     } catch (error) {
+      console.error("[UI_DEBUG] loadAndDisplayData - CAUGHT ERROR:", error);
       Utils.handleError('Error loading and displaying prompt data', { userVisible: true, originalError: error });
       if (promptsListEl) promptsListEl.innerHTML = '<p class="empty-state">Could not load prompts.</p>';
     }
@@ -81,15 +85,21 @@ window.PromptFinder.UI = (function () {
 
   const initializeUI = async () => {
     try {
+      console.log("[UI_DEBUG] initializeUI - START");
       cacheDOMElements();
+      console.log("[UI_DEBUG] initializeUI - after cacheDOMElements");
       setupEventListeners();
+      console.log("[UI_DEBUG] initializeUI - after setupEventListeners");
       await loadAndDisplayData(); 
-    } catch (error) {
+      console.log("[UI_DEBUG] initializeUI - after loadAndDisplayData");
+    } catch (error) { 
+      console.error("[UI_DEBUG] initializeUI - CAUGHT ERROR:", error);
       Utils.handleError('Error initializing UI', { userVisible: true, originalError: error });
     }
   };
 
   const setupEventListeners = () => {
+    console.log("[UI_DEBUG] setupEventListeners - START");
     tabAllEl?.addEventListener('click', () => showTab('all'));
     tabFavsEl?.addEventListener('click', () => showTab('favs'));
     tabPrivateEl?.addEventListener('click', () => showTab('private'));
@@ -147,6 +157,7 @@ window.PromptFinder.UI = (function () {
           }
       });
     }
+    console.log("[UI_DEBUG] setupEventListeners - END");
   };
 
   const showPromptList = () => {
@@ -194,7 +205,7 @@ window.PromptFinder.UI = (function () {
   };
 
   const showTab = which => {
-    // console.log("[UI_TEST_DEBUG] showTab called with:", which);
+    console.log("[UI_TEST_DEBUG] showTab called with:", which); 
     activeTab = which;
     if(tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -212,11 +223,11 @@ window.PromptFinder.UI = (function () {
       minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
     const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
-    // console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length);
+    console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length);
     const filtered = PromptData.filterPrompts(promptsToFilter, filters);
-    // console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length);
+    console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length);
     displayPrompts(filtered);
-    // console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call");
+    console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call");
   };
 
   const displayPrompts = prompts => {
@@ -292,9 +303,9 @@ window.PromptFinder.UI = (function () {
       starRatingContainerEl.innerHTML = '';
       const currentRating = Math.round(ratingToDisplay);
       for (let i = 1; i <= 5; i++) {
-        const star = document.createElement('button'); // This element needs a .dataset property
+        const star = document.createElement('button'); // This element needs dataset property
         star.classList.add('star');
-        star.dataset.value = i; // This was failing
+        star.dataset.value = i; // Error occurs here if star.dataset is undefined
         star.setAttribute('role', 'radio');
         star.setAttribute('aria-checked', i <= currentRating ? 'true' : 'false');
         star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
