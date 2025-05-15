@@ -26,57 +26,58 @@ console.log('EXEC_ORDER: ui.test.js - After require(../js/ui)');
 const UI = window.PromptFinder.UI;
 
 const createDOMMockElement = (tagName = 'div', id = '') => {
-  const elem = document.createElement(tagName); // Use JSDOM's createElement
+  // Use JSDOM's createElement to get a more realistic Node
+  const elem = document.createElement(tagName);
   if (id) elem.id = id;
 
-  // Enhance with Jest mocks for methods we might call or spy on
-  elem.classList.add = jest.fn();
-  elem.classList.remove = jest.fn();
-  elem.classList.toggle = jest.fn();
-  // elem.classList.contains = jest.fn(() => false); // JSDOM has this
-  elem.style = elem.style || {}; // JSDOM has this
-  elem.appendChild = jest.fn(elem.appendChild.bind(elem)); // Spy on real appendChild
+  // Augment with Jest spies for methods we want to track or control
+  // We need to be careful not to overwrite native getters/setters like dataset if JSDOM provides them well.
+  elem.classList.add = jest.fn(elem.classList.add.bind(elem.classList));
+  elem.classList.remove = jest.fn(elem.classList.remove.bind(elem.classList));
+  elem.classList.toggle = jest.fn(elem.classList.toggle.bind(elem.classList));
+  // elem.classList.contains = jest.fn(elem.classList.contains.bind(elem.classList)); // JSDOM provides this
+  
+  elem.style = elem.style || {}; // JSDOM provides this
+  
+  // Spy on appendChild by wrapping the original
+  const originalAppendChild = elem.appendChild.bind(elem);
+  elem.appendChild = jest.fn(originalAppendChild);
+
   elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
   elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
   elem.getAttribute = jest.fn(elem.getAttribute.bind(elem));
   elem.removeAttribute = jest.fn(elem.removeAttribute.bind(elem));
   
-  // querySelector and querySelectorAll on JSDOM elements are usually fine
-  // but if we create complex structures, we might mock them if needed for children
   const originalQuerySelector = elem.querySelector?.bind(elem);
   elem.querySelector = jest.fn(selector => {
       if (originalQuerySelector) {
           const child = originalQuerySelector(selector);
           if (child) {
-              if(!child.dataset) child.dataset = {}; // Ensure dataset exists
-              child.classList.add = child.classList.add || jest.fn(); // Augment if needed
+              // Enhance child only if necessary (e.g., if it's a plain JSDOM node without Jest spies)
+              if (!child.dataset) child.dataset = {}; // Ensure dataset for all children found
+              child.classList.add = child.classList.add || jest.fn();
+              child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i'));
               return child;
           }
       }
-      // Fallback if querySelector or child not found
-      const mockChild = createDOMMockElement('div', selector.replace(/[#.]/g, ''));
-      // Special case for the icon inside toggle-fav-detail button
-      if (selector === 'i' && (elem.id === 'toggle-fav-detail' || elem.classList.contains('toggle-favorite'))) {
-        mockChild.className = ''; // Mock the className property for the icon
-      }
-      return mockChild;
+      return createDOMMockElement('div', selector.replace(/[#.]/g, '')); // Fallback
   });
   elem.querySelectorAll = elem.querySelectorAll || jest.fn(() => []);
 
-  // dataset is a DOMStringMap. We typically don't overwrite it.
-  // Ensure it exists, which JSDOM elements should have.
-  if (typeof elem.dataset === 'undefined') {
-    elem.dataset = {}; 
-  }
+  // JSDOM elements have `dataset` as a DOMStringMap. It's writable for properties.
+  // If `elem` is a JSDOM element, `elem.dataset` is already a DOMStringMap.
+  // If we are creating a pure mock, initialize it.
+  if (typeof elem.dataset === 'undefined') elem.dataset = {}; 
   
-  elem.innerHTML = '';
-  elem.textContent = '';
-  elem.value = '';
-  elem.checked = false;
-  elem.reset = jest.fn();
-  elem.focus = jest.fn();
-  elem.click = jest.fn();
-  // elem.nodeType = 1; // JSDOM elements have this natively
+  // elem.innerHTML = ''; // JSDOM elements have this
+  // elem.textContent = ''; // JSDOM elements have this
+  elem.value = elem.value || ''; // JSDOM input elements have this
+  elem.checked = elem.checked || false;
+  elem.reset = elem.reset || jest.fn();
+  elem.focus = elem.focus || jest.fn();
+  elem.click = elem.click || jest.fn();
+  // nodeType is a read-only property of actual DOM nodes. Do not set it here.
+  // JSDOM elements will have their correct nodeType.
   return elem;
 };
 
@@ -116,25 +117,38 @@ const setupMockDOM = () => {
 
   const domElementsCache = {}; 
   
+  // Store original createElement before mocking it
+  const originalDocumentCreateElement = document.createElement;
+
   document.getElementById = jest.fn(id => {
     if (domElementsCache[id]) return domElementsCache[id];
     
-    const actualElement = document.body.querySelector(`#${id}`);
-    let elementToCache;
+    let elementToCache = document.body.querySelector(`#${id}`);
 
-    if (actualElement) {
-        elementToCache = actualElement;
-        // Augment with Jest mocks ONLY IF the method doesn't exist or needs spying
-        elementToCache.classList.add = jest.fn(elementToCache.classList.add?.bind(elementToCache.classList));
-        elementToCache.classList.remove = jest.fn(elementToCache.classList.remove?.bind(elementToCache.classList));
-        elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle?.bind(elementToCache.classList));
-        // dataset is fine on JSDOM elements for property access el.dataset.foo = 'bar'
-        if (typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
+    if (elementToCache) {
+        // Augment the JSDOM element with Jest spies for methods IF they exist
+        // This ensures we are spying on actual JSDOM methods where possible
+        elementToCache.classList.add = jest.fn(elementToCache.classList.add.bind(elementToCache.classList));
+        elementToCache.classList.remove = jest.fn(elementToCache.classList.remove.bind(elementToCache.classList));
+        elementToCache.classList.toggle = jest.fn(elementToCache.classList.toggle.bind(elementToCache.classList));
+        // Do not overwrite dataset or nodeType on actual JSDOM elements.
+        // Ensure dataset exists (it should on HTMLElement)
+        if(typeof elementToCache.dataset === 'undefined') elementToCache.dataset = {};
         
-        elementToCache.appendChild = jest.fn(elementToCache.appendChild?.bind(elementToCache));
-        elementToCache.addEventListener = jest.fn(elementToCache.addEventListener?.bind(elementToCache));
-        elementToCache.querySelector = jest.fn(elementToCache.querySelector?.bind(elementToCache));
-
+        elementToCache.appendChild = jest.fn(elementToCache.appendChild.bind(elementToCache));
+        elementToCache.addEventListener = jest.fn(elementToCache.addEventListener.bind(elementToCache));
+        
+        const originalQuerySelector = elementToCache.querySelector?.bind(elementToCache);
+        elementToCache.querySelector = jest.fn(selector => {
+            const child = originalQuerySelector ? originalQuerySelector(selector) : null;
+            if (child) {
+                 child.classList = child.classList || { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn() };
+                 if(!child.dataset) child.dataset = {};
+                 child.querySelector = child.querySelector || jest.fn().mockReturnValue(createDOMMockElement('i')); 
+                 return child;
+            }
+            return createDOMMockElement('div', selector.replace(/[#.]/g, ''));
+        });
     } else {
         elementToCache = createDOMMockElement('div', id);
     }
@@ -142,16 +156,16 @@ const setupMockDOM = () => {
     return elementToCache;
   });
 
-  // document.createElement should return an actual JSDOM element, then we can mock methods on it if needed
+  // Mock document.createElement to return JSDOM elements enhanced with spies
   document.createElement = jest.fn((tagName) => {
-    const elem = document.createElement(tagName); // Use actual JSDOM createElement
+    const elem = originalDocumentCreateElement.call(document, tagName); // Use actual JSDOM createElement
     // Enhance with Jest spied methods AFTER creation
     elem.classList.add = jest.fn(elem.classList.add.bind(elem.classList));
     elem.classList.remove = jest.fn(elem.classList.remove.bind(elem.classList));
     elem.appendChild = jest.fn(elem.appendChild.bind(elem));
     elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
     elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
-    if(typeof elem.dataset === 'undefined') elem.dataset = {}; // Ensure dataset exists, JSDOM elements have it
+    if(typeof elem.dataset === 'undefined') elem.dataset = {}; 
     return elem;
   });
 };
@@ -185,7 +199,7 @@ describe('UI Module', () => {
       );
     });
 
-    test('should handle errors from cacheDOMElements if it throws (e.g., getElementById fails)', async () => {
+    test('should handle errors from cacheDOMElements if it throws', async () => {
         const cacheError = new Error('Caching DOM failed');
         const originalGetElementById = document.getElementById;
         document.getElementById = jest.fn().mockImplementationOnce(() => { 
@@ -236,8 +250,8 @@ describe('UI Module', () => {
 
   describe('displayPrompts', () => {
     let promptsList;
-    beforeEach(async () => { // Make beforeEach async if UI.initializeUI is async
-        await UI.initializeUI(); // Ensure elements are cached
+    beforeEach(async () => { 
+        await UI.initializeUI(); 
         promptsList = document.getElementById('prompts-list'); 
     });
 
@@ -246,7 +260,7 @@ describe('UI Module', () => {
         UI.displayPrompts(prompts); 
         if (promptsList) {
             expect(promptsList.innerHTML).toContain('Test Prompt Display');
-            expect(promptsList.appendChild).toHaveBeenCalled(); // Check if elements were added
+            expect(promptsList.appendChild).toHaveBeenCalled(); 
         }
       });
   
