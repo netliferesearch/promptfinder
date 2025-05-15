@@ -1,9 +1,8 @@
 /**
  * Jest setup file for PromptFinder extension tests
  */
-console.log('EXEC_ORDER: setupTests.js - START'); // Log start
+console.log('EXEC_ORDER: setupTests.js - START');
 
-// Mock Chrome API
 global.chrome = {
   storage: {
     local: {
@@ -136,7 +135,7 @@ global.window.firebaseDb = {
       _clearStore: () => { for(const id in mockDocs) delete mockDocs[id]; }, 
       _setDocs: (docsArray) => { 
         for(const id in mockDocs) delete mockDocs[id]; 
-        docsArray.forEach(doc => { if(doc && doc.id) mockDocs[doc.id] = doc; }); // Ensure doc and doc.id exist
+        docsArray.forEach(doc => { if(doc && doc.id) mockDocs[doc.id] = doc; });
       }
     };
     return chainableMock;
@@ -148,17 +147,19 @@ global.window.firebase = {
   initializeApp: jest.fn(config => ({})),
   auth: jest.fn(() => global.window.firebaseAuth),
   firestore: jest.fn(() => global.window.firebaseDb),
-  // Keep both structures for auth for wider compatibility with SDK versions if necessary
-  auth: {
+  // Duplicating structure for firebase.auth().X and firebase.auth.X to be safe
+  auth: Object.assign(jest.fn(() => global.window.firebaseAuth), {
     GoogleAuthProvider: jest.fn(),
-    ...(global.window.firebaseAuth) // Spread existing auth mock here
-  },
-  firestore: {
+    // Add other auth static properties or methods if needed by your code
+    ...global.window.firebaseAuth // Spreading direct methods like createUserWithEmailAndPassword if accessed as firebase.auth.createUser...
+  }),
+  firestore: Object.assign(jest.fn(() => global.window.firebaseDb), {
     FieldValue: {
       serverTimestamp: jest.fn(() => 'MOCK_SERVER_TIMESTAMP'),
     },
-    ...(global.window.firebaseDb) // Spread existing db mock here (though not typical for firestore namespace)
-  },
+    // Add other firestore static properties or methods if needed
+    ...global.window.firebaseDb // Spreading direct methods like collection if accessed as firebase.firestore.collection
+  }),
 };
 console.log('EXEC_ORDER: setupTests.js - global firebase object mocked');
 
@@ -173,4 +174,4 @@ window.PromptFinder.Utils = {
   chromeStorageGet: global.chrome.storage.local.get, 
   chromeStorageSet: global.chrome.storage.local.set,
 };
-console.log('EXEC_ORDER: setupTests.js - END'); // Log end
+console.log('EXEC_ORDER: setupTests.js - END');
