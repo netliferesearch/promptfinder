@@ -194,7 +194,7 @@ window.PromptFinder.UI = (function () {
   };
 
   const showTab = which => {
-    console.log("[UI_TEST_DEBUG] showTab called with:", which); 
+    // console.log("[UI_TEST_DEBUG] showTab called with:", which);
     activeTab = which;
     if(tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -212,11 +212,11 @@ window.PromptFinder.UI = (function () {
       minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
     const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
-    console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length);
+    // console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length);
     const filtered = PromptData.filterPrompts(promptsToFilter, filters);
-    console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length);
+    // console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length);
     displayPrompts(filtered);
-    console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call");
+    // console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call");
   };
 
   const displayPrompts = prompts => {
@@ -292,9 +292,9 @@ window.PromptFinder.UI = (function () {
       starRatingContainerEl.innerHTML = '';
       const currentRating = Math.round(ratingToDisplay);
       for (let i = 1; i <= 5; i++) {
-        const star = document.createElement('button');
+        const star = document.createElement('button'); // This element needs a .dataset property
         star.classList.add('star');
-        star.dataset.value = i;
+        star.dataset.value = i; // This was failing
         star.setAttribute('role', 'radio');
         star.setAttribute('aria-checked', i <= currentRating ? 'true' : 'false');
         star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
@@ -411,7 +411,7 @@ window.PromptFinder.UI = (function () {
     loadAndDisplayData, 
     showTab,
     displayPrompts, 
-    displayPromptDetails, // Exposing displayPromptDetails for testing spy
+    displayPromptDetails, 
     viewPromptDetails 
   };
 })();
