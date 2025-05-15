@@ -59,10 +59,10 @@ global.window.firebaseAuth = {
   signOut: jest.fn().mockResolvedValue(undefined),
   onAuthStateChanged: jest.fn((callback) => {
     global.window.firebaseAuth._authStateCallback = callback;
-    return jest.fn(); // Return an unsubscribe function
+    return jest.fn(); 
   }),
-  _authStateCallback: null, // Store the callback
-  _simulateAuthStateChange: (user) => { // Helper to trigger auth state change
+  _authStateCallback: null, 
+  _simulateAuthStateChange: (user) => { 
     global.window.firebaseAuth.currentUser = user;
     if (global.window.firebaseAuth._authStateCallback) {
       global.window.firebaseAuth._authStateCallback(user);
@@ -79,31 +79,37 @@ const mockDocSnapshot = (data, id) => ({
 
 // Create persistent mock instances for collections and their documents
 const createMockCollection = () => {
-    const _docsStore = {}; // Internal store for documents in this collection <docId, data>
-    const _docMocks = {}; // Cache for document mock objects <docId, mockDocObject>
+    const _docsStore = {}; 
+    const _docMocks = {}; 
     let _queryFilters = [];
 
     const getOrCreateDocMock = (docId) => {
         if (!_docMocks[docId]) {
             _docMocks[docId] = {
                 id: docId,
-                get: jest.fn(async () => Promise.resolve(mockDocSnapshot(_docsStore[docId], docId))),
+                get: jest.fn(async () => {
+                    console.log(`[Mock Firestore] doc('${docId}').get() called. Data:`, _docsStore[docId]);
+                    return Promise.resolve(mockDocSnapshot(_docsStore[docId], docId));
+                }),
                 update: jest.fn(async (updateData) => {
-                    if (_docsStore[docId] !== undefined) { // Check for undefined to allow null values
+                    console.log(`[Mock Firestore] doc('${docId}').update() called with:`, updateData);
+                    if (_docsStore[docId] !== undefined) { 
                         _docsStore[docId] = { ..._docsStore[docId], ...updateData };
                         return Promise.resolve();
                     }
                     return Promise.reject(new Error(`Mock doc '${docId}' not found for update`));
                 }),
                 delete: jest.fn(async () => {
+                    console.log(`[Mock Firestore] doc('${docId}').delete() called.`);
                     if (_docsStore[docId] !== undefined) {
                         delete _docsStore[docId];
-                        delete _docMocks[docId]; // Remove doc mock too
+                        delete _docMocks[docId]; 
                         return Promise.resolve();
                     }
                     return Promise.reject(new Error(`Mock doc '${docId}' not found for delete`));
                 }),
                 set: jest.fn(async (setData) => {
+                    console.log(`[Mock Firestore] doc('${docId}').set() called with:`, setData);
                     _docsStore[docId] = setData;
                     return Promise.resolve();
                 })
@@ -115,9 +121,10 @@ const createMockCollection = () => {
     const self = {
       add: jest.fn(async (data) => {
         const newId = `newMockId_${Object.keys(_docsStore).length}`;
+        console.log(`[Mock Firestore] collection.add() called. New ID: ${newId}, Data:`, data);
         _docsStore[newId] = data; 
         getOrCreateDocMock(newId); 
-        return Promise.resolve({ id: newId }); // Firestore add returns a DocumentReference-like object with an id
+        return Promise.resolve({ id: newId }); 
       }),
       doc: jest.fn(getOrCreateDocMock),
       where: jest.fn((field, op, value) => {
@@ -125,6 +132,7 @@ const createMockCollection = () => {
         return self; 
       }),
       get: jest.fn(async () => {
+        console.log(`[Mock Firestore] collection.get() called with filters:`, _queryFilters);
         let results = Object.entries(_docsStore).map(([id, data]) => mockDocSnapshot(data, id));
         _queryFilters.forEach(filter => {
           results = results.filter(docInstance => {
@@ -138,6 +146,7 @@ const createMockCollection = () => {
           });
         });
         _queryFilters = []; 
+        console.log(`[Mock Firestore] collection.get() returning ${results.length} docs.`);
         return Promise.resolve({
           docs: results,
           forEach: (callback) => results.forEach(callback),
@@ -156,6 +165,7 @@ const createMockCollection = () => {
       _setDocs: (docsArray) => { 
         self._clearStore(); 
         docsArray.forEach(doc => { if(doc && doc.id) _docsStore[doc.id] = doc; });
+        console.log('[Mock Firestore] _setDocs completed. Store:', _docsStore);
       },
       _getDocStore: () => _docsStore 
     };
@@ -169,20 +179,17 @@ global.window.firebaseDb = {
   collection: jest.fn(collectionName => {
     if (collectionName === 'prompts') return mockPromptsCollection;
     if (collectionName === 'users') return mockUsersCollection;
-    return createMockCollection(); // Fallback for any other collection
+    return createMockCollection(); 
   })
 };
 console.log('EXEC_ORDER: setupTests.js - firebaseDb mocked with persistent collection mocks');
 
 global.window.firebase = {
   initializeApp: jest.fn(config => ({})),
-  auth: jest.fn(() => global.window.firebaseAuth), // Main way to get auth instance
-  firestore: jest.fn(() => global.window.firebaseDb), // Main way to get firestore instance
-  // For compat version, firebase.auth.X and firebase.firestore.X might also be used directly
-  auth: Object.assign(jest.fn(() => global.window.firebaseAuth), { // Ensures firebase.auth is a function and an object
+  auth: jest.fn(() => global.window.firebaseAuth), 
+  firestore: jest.fn(() => global.window.firebaseDb), 
+  auth: Object.assign(jest.fn(() => global.window.firebaseAuth), {
     GoogleAuthProvider: jest.fn(),
-    // Spreading the actual auth methods directly onto firebase.auth if compat SDK accesses them that way
-    // This might be redundant if the above auth: jest.fn() is always used by the SDK
     ...Object.keys(global.window.firebaseAuth).reduce((acc, key) => {
         if (typeof global.window.firebaseAuth[key] === 'function') {
             acc[key] = global.window.firebaseAuth[key];
@@ -194,7 +201,6 @@ global.window.firebase = {
     FieldValue: {
       serverTimestamp: jest.fn(() => 'MOCK_SERVER_TIMESTAMP'),
     },
-    // Spreading collection, doc etc. if SDK accesses firebase.firestore.collection directly
     ...Object.keys(global.window.firebaseDb).reduce((acc, key) => {
         if (typeof global.window.firebaseDb[key] === 'function') {
             acc[key] = global.window.firebaseDb[key];
@@ -208,10 +214,14 @@ console.log('EXEC_ORDER: setupTests.js - global firebase object mocked');
 window.PromptFinder = window.PromptFinder || {};
 window.PromptFinder.Utils = {
   ...(window.PromptFinder.Utils || {}), 
-  handleError: jest.fn((message, options) => {}),
+  handleError: jest.fn((message, options) => {
+    // console.error("[MOCKED handleError Call]", message, options?.originalError?.message);
+  }),
   displayAuthError: jest.fn(),
   showConfirmationMessage: jest.fn(),
-  escapeHTML: jest.fn(str => str), 
+  escapeHTML: jest.fn(str => typeof str === 'string' ? str.replace(/[&<>"'/]/g, s => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;'
+  }[s])) : str), 
   highlightStars: jest.fn(),
   chromeStorageGet: global.chrome.storage.local.get, 
   chromeStorageSet: global.chrome.storage.local.set,
