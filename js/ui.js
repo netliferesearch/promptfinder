@@ -229,11 +229,10 @@ window.PromptFinder.UI = (function () {
     sorted.forEach(prompt => {
       const div = document.createElement('div');
       div.classList.add('prompt-item');
-      // Only show filled heart if user is logged in AND it's their favorite
-      const isFavorite = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
+      const isFavoriteDisplay = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
       div.innerHTML = `
       <button class="toggle-favorite" data-id="${prompt.id}" aria-label="Toggle favorite">
-        <i class="${isFavorite ? 'fas' : 'far'} fa-heart"></i>
+        <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
       </button>
       <h3>${Utils.escapeHTML(prompt.title)}</h3>
       <div class="tags">
@@ -263,9 +262,8 @@ window.PromptFinder.UI = (function () {
     if (favBtn) {
       favBtn.dataset.id = prompt.id; 
       const icon = favBtn.querySelector('i');
-      // Only show filled heart if user is logged in AND it's their favorite for this specific prompt
-      const isFavorite = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
-      if (icon) icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+      const isFavoriteDisplay = currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
+      if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
     }
 
     let ratingToDisplay = 0;
@@ -408,6 +406,8 @@ window.PromptFinder.UI = (function () {
     initializeUI,
     loadAndDisplayData, 
     showTab,
+    displayPrompts, // Exposing displayPrompts for testing spy
+    // displayPromptDetails, // Still keep as internal for now unless test needs it
     viewPromptDetails 
   };
 })();
