@@ -194,7 +194,7 @@ window.PromptFinder.UI = (function () {
   };
 
   const showTab = which => {
-    console.log("[UI_TEST_DEBUG] showTab called with:", which); // ADDED
+    console.log("[UI_TEST_DEBUG] showTab called with:", which); 
     activeTab = which;
     if(tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
     if(tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -212,11 +212,11 @@ window.PromptFinder.UI = (function () {
       minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
     };
     const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
-    console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length); // ADDED
+    console.log("[UI_TEST_DEBUG] showTab - promptsToFilter count:", promptsToFilter.length);
     const filtered = PromptData.filterPrompts(promptsToFilter, filters);
-    console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length); // ADDED
+    console.log("[UI_TEST_DEBUG] showTab - filtered prompts count:", filtered.length);
     displayPrompts(filtered);
-    console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call"); // ADDED
+    console.log("[UI_TEST_DEBUG] showTab - after displayPrompts call");
   };
 
   const displayPrompts = prompts => {
@@ -411,6 +411,7 @@ window.PromptFinder.UI = (function () {
     loadAndDisplayData, 
     showTab,
     displayPrompts, 
+    displayPromptDetails, // Exposing displayPromptDetails for testing spy
     viewPromptDetails 
   };
 })();
