@@ -30,8 +30,8 @@ describe('PromptData Module - Firestore Version', () => {
     totalRatingsCount: 0,
     favoritesCount: 0,
     usageCount: 0,
-    targetAiTools: [], // Added for consistency with addPrompt structure
-    description: '',    // Added for consistency
+    targetAiTools: [], 
+    description: '',    
   };
 
   const samplePromptFS1 = { ...baseSamplePrompt, id: 'fs1', userId: mockUser.uid, title: 'My Firestore Prompt 1' };
@@ -114,15 +114,14 @@ describe('PromptData Module - Firestore Version', () => {
         if (window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(mockUser); 
     });
     test('should add a prompt to Firestore if user is logged in', async () => {
-      const promptData = { title: 'Firestore Prompt', text: 'Text for Firestore' }; // Minimal data for test
+      const promptData = { title: 'Firestore Prompt', text: 'Text for Firestore' }; 
       if(promptsCollectionMock) promptsCollectionMock.add.mockResolvedValueOnce({ id: 'firestoreDocId' });
       const result = await PromptData.addPrompt(promptData);
       if(promptsCollectionMock) expect(promptsCollectionMock.add).toHaveBeenCalledWith(expect.objectContaining({
          userId: mockUser.uid,
          title: 'Firestore Prompt',
          text: 'Text for Firestore',
-         // Ensure other expected default fields are present based on addPrompt implementation
-         isPrivate: false, // Assuming default from addPrompt if not provided
+         isPrivate: false, 
          authorDisplayName: mockUser.displayName || mockUser.email,
          createdAt: 'MOCK_SERVER_TIMESTAMP',
          updatedAt: 'MOCK_SERVER_TIMESTAMP' 
@@ -161,7 +160,7 @@ describe('PromptData Module - Firestore Version', () => {
       expect(result.find(p => p.id === 'pub1')).toBeDefined();
       expect(result.find(p => p.id === 'pub2')).toBeDefined();
     });
-    test('should load user's prompts (public & private) AND other users' public prompts if logged in', async () => {
+    test('should load users prompts (public & private) and other users public prompts if logged in', async () => {
       if(window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(mockUser);
       if(promptsCollectionMock) promptsCollectionMock._setDocs([
         { ...baseSamplePrompt, id: 'userPrivate1', userId: mockUser.uid, isPrivate: true, title: "User's Private" }, 
@@ -180,7 +179,6 @@ describe('PromptData Module - Firestore Version', () => {
       if(window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(null);
       if(promptsCollectionMock && promptsCollectionMock.get) promptsCollectionMock.get.mockRejectedValueOnce(new Error('Firestore query error'));
       else if (promptsCollectionMock && promptsCollectionMock.where) {
-        // Mock the chained get call if .where().get() is the structure
         const chainedMock = { get: jest.fn().mockRejectedValueOnce(new Error('Firestore query error')) };
         promptsCollectionMock.where.mockReturnValue(chainedMock);
       }
@@ -190,12 +188,11 @@ describe('PromptData Module - Firestore Version', () => {
     });
     test('should correctly transform timestamps', async () => {
       if(window.firebaseAuth) window.firebaseAuth._simulateAuthStateChange(null);
-      // Ensure the object passed to _setDocs is a complete prompt object as expected by loadPrompts transformation
       const promptForTimestampTest = {
         ...baseSamplePrompt, // Spread base to get all default fields
         id: 'tsTest', 
-        userId: 'someUserId', // needs a userId even for public prompts
-        isPrivate: false, // Explicitly public for this test case
+        userId: 'someUserId',
+        isPrivate: false,      // Moved comment, ensured comma
         createdAt: mockTimestamp, 
         updatedAt: mockTimestamp 
       };
