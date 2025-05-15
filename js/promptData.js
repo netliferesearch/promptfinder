@@ -209,7 +209,12 @@ window.PromptFinder.PromptData = (function () {
         const data = docSnap.data();
         return { id: docSnap.id, ...data, createdAt: data.createdAt?.toDate().toISOString(), updatedAt: data.updatedAt?.toDate().toISOString() };
       } else {
-        if (throwIfNotFound) throw new Error(`Prompt with ID ${promptId} not found in Firestore`);
+        const err = new Error(`Prompt with ID ${promptId} not found in Firestore`);
+        console.warn(`[findPromptById] ${err.message}`);
+        if (throwIfNotFound) {
+          if (handleError && Utils && Utils.handleError) Utils.handleError(err.message, { userVisible: true, originalError: err });
+          throw err; 
+        }
         return null;
       }
     } catch (error) {
@@ -399,16 +404,12 @@ window.PromptFinder.PromptData = (function () {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
 
     if (filters.tab === 'favs') {
-      if (!currentUser) return []; // No favorites if not logged in
-      // Only show favorites that belong to the current user and are marked as userIsFavorite
+      if (!currentUser) return []; 
       result = result.filter(p => p.userId === currentUser.uid && p.userIsFavorite === true);
     } else if (filters.tab === 'private') {
-      if (!currentUser) return []; // No private prompts if not logged in
+      if (!currentUser) return []; 
       result = result.filter(p => p.isPrivate && p.userId === currentUser.uid);
     }
-    // Note: 'all' tab does not need special filtering here beyond what loadPrompts already does 
-    // (i.e., loads user's own prompts + all other public prompts).
-
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
       result = result.filter(
