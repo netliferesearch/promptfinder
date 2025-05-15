@@ -303,15 +303,9 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  /**
-   * Toggles the favorite status (userIsFavorite field) for a user's own prompt.
-   * @param {string} promptId ID of the prompt to toggle.
-   * @returns {Promise<Object|null>} The updated prompt data or null on error.
-   */
   const toggleFavorite = async (promptId) => {
     const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     const db = window.firebaseDb;
-
     if (!currentUser) {
       Utils.handleError("User must be logged in to change favorite status.", { userVisible: true });
       return null;
@@ -323,6 +317,55 @@ window.PromptFinder.PromptData = (function () {
     if (!promptId) {
       Utils.handleError("No prompt ID provided for toggling favorite.", { userVisible: true });
       return null;
+    }
+    try {
+      const docRef = db.collection('prompts').doc(promptId);
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) {
+        Utils.handleError(`Prompt with ID ${promptId} not found.`, { userVisible: true });
+        return null;
+      }
+      const promptData = docSnap.data();
+      if (promptData.userId !== currentUser.uid) {
+        Utils.handleError("You can only favorite/unfavorite your own prompts directly.", { userVisible: true });
+        return null;
+      }
+      const newFavoriteStatus = !promptData.userIsFavorite;
+      const updates = { userIsFavorite: newFavoriteStatus, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+      await docRef.update(updates);
+      console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus}.`);
+      return { ...promptData, ...updates, id: promptId, updatedAt: new Date() };
+    } catch (error) {
+      Utils.handleError(`Error toggling favorite for prompt ${promptId}: ${error.message}`, { userVisible: true, originalError: error });
+      return null;
+    }
+  };
+
+  /**
+   * Updates the user-specific rating (userRating) for a user's own prompt.
+   * @param {string} promptId ID of the prompt to rate.
+   * @param {number} rating The new rating value (1-5).
+   * @returns {Promise<Object|null>} The updated prompt data or null on error.
+   */
+  const updatePromptRating = async (promptId, rating) => {
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    const db = window.firebaseDb;
+
+    if (!currentUser) {
+      Utils.handleError("User must be logged in to rate a prompt.", { userVisible: true });
+      return null;
+    }
+    if (!db) {
+      Utils.handleError("Firestore not initialized.", { userVisible: true });
+      return null;
+    }
+    if (!promptId) {
+      Utils.handleError("No prompt ID provided for rating.", { userVisible: true });
+      return null;
+    }
+    if (typeof rating !== 'number' || rating < 0 || rating > 5) { // Allow 0 to clear rating maybe?
+        Utils.handleError("Invalid rating value. Must be a number between 0 and 5.", { userVisible: true });
+        return null;
     }
 
     try {
@@ -336,37 +379,29 @@ window.PromptFinder.PromptData = (function () {
 
       const promptData = docSnap.data();
 
-      // User can only toggle 'userIsFavorite' for their own prompts
+      // User can only set userRating for their own prompts
       if (promptData.userId !== currentUser.uid) {
-        Utils.handleError("You can only favorite/unfavorite your own prompts directly.", { userVisible: true });
-        // TODO: Later, implement favoriting of shared prompts by others via user_prompt_interactions collection
+        Utils.handleError("You can only rate your own prompts this way.", { userVisible: true });
+        // TODO: Later, implement community ratings for shared prompts by others.
         return null;
       }
 
-      const newFavoriteStatus = !promptData.userIsFavorite;
       const updates = {
-        userIsFavorite: newFavoriteStatus,
+        userRating: rating,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       await docRef.update(updates);
-      console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus}.`);
+      console.log(`Prompt ${promptId} userRating updated to ${rating}.`);
       return { ...promptData, ...updates, id: promptId, updatedAt: new Date() };
 
     } catch (error) {
-      Utils.handleError(`Error toggling favorite for prompt ${promptId}: ${error.message}`, {
+      Utils.handleError(`Error updating userRating for prompt ${promptId}: ${error.message}`, {
         userVisible: true,
         originalError: error,
       });
       return null;
     }
-  };
-
-  // TODO: Refactor updatePromptRating for Firestore
-  const updatePromptRating = async (promptId, rating) => {
-    console.warn(`updatePromptRating for ID ${promptId} is still using chrome.storage.local.`);
-    // Placeholder - needs Firestore implementation for userRating (private) and averageRating (shared)
-    return null;
   };
   
   const copyPromptToClipboard = async promptId => {
@@ -383,7 +418,6 @@ window.PromptFinder.PromptData = (function () {
   const filterPrompts = (prompts, filters) => {
     let result = [...prompts];
     if (filters.tab === 'favs') {
-      // This will filter based on the userIsFavorite field after it's updated by toggleFavorite
       result = result.filter(p => p.userIsFavorite === true); 
     } else if (filters.tab === 'private') {
       const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
@@ -405,7 +439,17 @@ window.PromptFinder.PromptData = (function () {
       );
     }
     if (filters.minRating > 0) {
-      result = result.filter(p => (p.isPrivate ? (p.userRating || 0) : (p.averageRating || 0)) >= filters.minRating);
+      // This logic should now refer to userRating for prompts owned by the user
+      // or averageRating for shared prompts (when that part is implemented)
+      const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+      result = result.filter(p => {
+        if (currentUser && p.userId === currentUser.uid) {
+            return (p.userRating || 0) >= filters.minRating;
+        } else if (!p.isPrivate) {
+            return (p.averageRating || 0) >= filters.minRating; // For shared prompts by others
+        }
+        return false; // Don't include private prompts of others in general rating filter
+      });
     }
     return result;
   };
@@ -420,8 +464,8 @@ window.PromptFinder.PromptData = (function () {
     loadPrompts, 
     updatePrompt, 
     deletePrompt, 
-    updatePromptRating, 
-    toggleFavorite, // Refactored
+    updatePromptRating, // Refactored
+    toggleFavorite, 
     copyPromptToClipboard,
     findPromptById, 
     filterPrompts,

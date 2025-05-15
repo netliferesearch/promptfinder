@@ -263,11 +263,27 @@ window.PromptFinder.UI = (function () {
       if (icon) icon.className = prompt.userIsFavorite ? 'fas fa-heart' : 'far fa-heart';
     }
 
-    const ratingToDisplay = prompt.isPrivate ? (prompt.userRating || 0) : (prompt.averageRating || 0);
-    const ratingCountToDisplay = prompt.isPrivate ? 1 : (prompt.totalRatingsCount || 0); 
+    // Display userRating for owned prompts, averageRating for others (when applicable)
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+    let ratingToDisplay = 0;
+    let countToDisplay = 0;
 
-    if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`; 
-    if (ratingCountEl) ratingCountEl.textContent = `(${ratingCountToDisplay} ${ratingCountToDisplay === 1 ? 'rating' : 'ratings'})`; 
+    if (currentUser && prompt.userId === currentUser.uid) {
+        ratingToDisplay = prompt.userRating || 0;
+        // For user's own rating, count is implicitly 1 if rated, 0 if not, or just don't show count.
+        // Let's show (My Rating) to be clear.
+        if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
+        if (ratingCountEl) ratingCountEl.textContent = ratingToDisplay > 0 ? '(My Rating)' : '(Not yet rated by you)';
+    } else if (!prompt.isPrivate) {
+        ratingToDisplay = prompt.averageRating || 0;
+        countToDisplay = prompt.totalRatingsCount || 0;
+        if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
+        if (ratingCountEl) ratingCountEl.textContent = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
+    } else {
+        // Private prompt of another user (shouldn't be visible, but handle defensively)
+        if (averageRatingValueEl) averageRatingValueEl.textContent = '(N/A)';
+        if (ratingCountEl) ratingCountEl.textContent = '(N/A)';
+    }
     
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
@@ -284,7 +300,8 @@ window.PromptFinder.UI = (function () {
         if (i <= currentRating) star.classList.add('filled');
         star.addEventListener('click', async _e => {
           _e.stopPropagation();
-          await handleRatePrompt(prompt.id, i, prompt.isPrivate);
+          // Pass only promptId and new rating value. isPrivate is known by PromptData.updatePromptRating via ownership check.
+          await handleRatePrompt(prompt.id, i);
         });
         starRatingContainerEl.appendChild(star);
       }
@@ -326,8 +343,6 @@ window.PromptFinder.UI = (function () {
         const index = allPrompts.findIndex(p => p.id === promptId);
         if (index !== -1) {
           allPrompts[index] = updatedPrompt;
-        } else {
-          allPrompts.push(updatedPrompt); 
         }
         if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
           displayPromptDetails(updatedPrompt); 
@@ -341,17 +356,23 @@ window.PromptFinder.UI = (function () {
     }
   };
 
-  const handleRatePrompt = async (promptId, rating, isPrivatePrompt) => {
-    console.warn('handleRatePrompt needs Firestore update for actual rating submission');
-    const promptIndex = allPrompts.findIndex(p => p.id === promptId);
-    if (promptIndex !== -1) {
-        if(isPrivatePrompt) allPrompts[promptIndex].userRating = rating;
-        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
-            displayPromptDetails(allPrompts[promptIndex]);
+  const handleRatePrompt = async (promptId, rating) => {
+    try {
+      const updatedPrompt = await PromptData.updatePromptRating(promptId, rating);
+      if (updatedPrompt) {
+        const index = allPrompts.findIndex(p => p.id === promptId);
+        if (index !== -1) {
+          allPrompts[index] = updatedPrompt;
         }
-        Utils.showConfirmationMessage(`Rated ${rating} stars! (UI only)`);
-    } else {
-        Utils.handleError('Prompt not found to rate.', {userVisible: true});
+        // Re-render the details view if it's the current one to show new rating
+        if (promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden') && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
+            displayPromptDetails(allPrompts[index]);
+        }
+        Utils.showConfirmationMessage(`Rated ${rating} stars!`);
+      } 
+      // Error is handled by PromptData.updatePromptRating if it returns null
+    } catch (error) {
+        Utils.handleError('Error processing rating in UI', { userVisible: true, originalError: error });
     }
   };
 
@@ -366,16 +387,13 @@ window.PromptFinder.UI = (function () {
 
   const handleDeletePrompt = async (promptId) => {
     try {
-      const success = await PromptData.deletePrompt(promptId); // This is line 333 based on original calculation
+      const success = await PromptData.deletePrompt(promptId);
       if (success) {
         Utils.showConfirmationMessage('Prompt deleted successfully!');
         await loadAndDisplayData(); 
         showPromptList(); 
       } 
-      // No explicit else, as PromptData.deletePrompt handles its own error display if it returns false
     } catch (error) {
-      // This catch is for unexpected errors during the handleDeletePrompt flow itself,
-      // not for errors from PromptData.deletePrompt (which should return false and log its own error).
       Utils.handleError('Error during prompt deletion process', { userVisible: true, originalError: error });
     }
   };
