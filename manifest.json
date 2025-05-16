@@ -6,6 +6,10 @@
   "action": {
     "default_popup": "pages/popup.html"
   },
+  "oauth2": {
+    "client_id": "1003470911937-7e1tji24qgc65kdl8h27tl0m1t9ldg01.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
   "permissions": ["storage", "clipboardWrite", "windows", "identity", "identity.email"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
