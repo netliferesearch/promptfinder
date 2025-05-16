@@ -6,23 +6,24 @@ import replace from '@rollup/plugin-replace';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const commonPlugins = (isProd) => [
-  resolve({
-    browser: true, 
-  }),
-  commonjs(),
-  replace({
-    preventAssignment: true,
-    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
-    'process.env.DEBUG': JSON.stringify(false),
-  }),
-  babel({
-    babelHelpers: 'bundled',
-    exclude: 'node_modules/**',
-    presets: [['@babel/preset-env', { modules: false }]]
-  }),
-  isProd && terser(),
-].filter(Boolean);
+const commonPlugins = isProd =>
+  [
+    resolve({
+      browser: true,
+    }),
+    commonjs(),
+    replace({
+      preventAssignment: true,
+      'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
+      'process.env.DEBUG': JSON.stringify(false),
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      exclude: 'node_modules/**',
+      presets: [['@babel/preset-env', { modules: false }]],
+    }),
+    isProd && terser(),
+  ].filter(Boolean);
 
 const entryPoints = [
   {
