@@ -54,6 +54,19 @@
   resize: vertical;
 }
 
+/* Style for textareas intended for code/prompt text input */
+.code-input-textarea {
+  font-family: var(--font-family-monospace, monospace);
+  font-size: var(--font-size-sm, 0.875rem); /* Slightly smaller for code */
+  color: var(--color-code-text, #333); /* Ensure good contrast */
+  background-color: var(--color-gray-100, #f8f9fa); /* Light background like code blocks */
+  border: 1px solid var(--color-gray-300, #e0e0e0);
+  line-height: 1.5; /* Improve readability for code */
+  white-space: pre; /* Preserve whitespace like tabs and multiple spaces */
+  overflow-wrap: normal; /* Allow horizontal scrolling for long lines */
+  overflow-x: auto; /* Enable horizontal scrollbar */
+}
+
 .form-checkbox {
   margin-right: var(--spacing-xs);
   width: 18px;
