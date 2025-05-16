@@ -7,7 +7,7 @@
     "default_popup": "pages/popup.html"
   },
   "oauth2": {
-    "client_id": "1003470911937-7e1tji24qgc65kdl8h27tl0m1t9ldg01.apps.googleusercontent.com",
+    "client_id": "1003470911937-8fi33jknb9f9dars6utr5cr1q26ai778.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
   "permissions": ["storage", "clipboardWrite", "windows", "identity", "identity.email"],
