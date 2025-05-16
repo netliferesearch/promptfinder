@@ -3,8 +3,9 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
-  GoogleAuthProvider,
+  GoogleAuthProvider, // Will be used by launchWebAuthFlow internally for creating credential
   signInWithCredential,
+  updateProfile, // Import updateProfile
 } from 'firebase/auth';
 
 import {
@@ -26,7 +27,8 @@ import { auth, db } from '../js/firebase-init.js';
 import * as Utils from '../js/utils.js';
 
 // --- Firebase Authentication Functions ---
-export const signupUser = async (email, password) => {
+export const signupUser = async (email, password, displayName) => {
+  // Added displayName parameter
   if (!auth) {
     const err = new Error('Firebase Auth not available from firebase-init.js.');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
@@ -35,12 +37,28 @@ export const signupUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     console.log('User signed up:', userCredential.user);
+
+    // Update Firebase Auth user profile with displayName
+    if (userCredential.user && displayName) {
+      try {
+        await updateProfile(userCredential.user, { displayName: displayName });
+        console.log('Firebase Auth profile updated with displayName.');
+      } catch (profileError) {
+        console.error('Error updating Firebase Auth profile:', profileError);
+        Utils.handleError('Could not set display name in auth profile.', {
+          userVisible: false,
+          originalError: profileError,
+        });
+        // Continue even if profile update fails, Firestore part is more critical for app data
+      }
+    }
+
     if (db) {
       try {
         const userDocRef = doc(db, 'users', userCredential.user.uid);
         await setDoc(userDocRef, {
           email: userCredential.user.email,
-          displayName: userCredential.user.email,
+          displayName: displayName, // Use provided displayName
           createdAt: serverTimestamp(),
         });
         console.log('User document created in Firestore for UID:', userCredential.user.uid);
@@ -104,18 +122,16 @@ export const signInWithGoogle = async () => {
       return Promise.reject(new Error(errMsg));
     }
 
-    const redirectUri = chrome.identity.getRedirectURL(); // e.g., https://<extension-id>.chromiumapp.org/
+    const redirectUri = chrome.identity.getRedirectURL();
     const scopes = manifest.oauth2?.scopes || ['openid', 'email', 'profile'];
-    const nonce = Math.random().toString(36).substring(2, 15); // Simple nonce
+    const nonce = Math.random().toString(36).substring(2, 15);
 
     let authUrl = `https://accounts.google.com/o/oauth2/v2/auth`;
     authUrl += `?client_id=${clientId}`;
     authUrl += `&redirect_uri=${encodeURIComponent(redirectUri)}`;
-    authUrl += `&response_type=id_token`; // Request ID token
+    authUrl += `&response_type=id_token`;
     authUrl += `&scope=${encodeURIComponent(scopes.join(' '))}`;
     authUrl += `&nonce=${nonce}`;
-    // Add prompt=consent if you always want the user to see the consent screen, even if already granted.
-    // authUrl += `&prompt=consent`;
 
     console.log('Launching Google Web Auth Flow with URL:', authUrl);
 
@@ -133,8 +149,6 @@ export const signInWithGoogle = async () => {
 
     console.log('Callback URL from launchWebAuthFlow:', callbackUrl);
 
-    // Parse the ID token from the callback URL fragment
-    // Example callbackUrl: https://<extension-id>.chromiumapp.org/#id_token=XXXXX&...
     const params = new URLSearchParams(callbackUrl.substring(callbackUrl.indexOf('#') + 1));
     const idToken = params.get('id_token');
 
@@ -230,7 +244,7 @@ export const addPrompt = async promptData => {
   try {
     const newPromptDocData = {
       userId: currentUser.uid,
-      authorDisplayName: currentUser.displayName || currentUser.email,
+      authorDisplayName: currentUser.displayName || currentUser.email, // This will now use the updated displayName
       title: promptData.title || '',
       text: promptData.text || '',
       description: promptData.description || '',
