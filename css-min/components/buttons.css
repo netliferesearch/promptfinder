@@ -170,7 +170,10 @@
   font-size: var(--font-size-md);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s,
+    box-shadow 0.2s;
 }
 
 /* Add more shadow to form buttons */
@@ -200,7 +203,9 @@
   font-size: 24px;
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
 }
 
 .floating-button:hover {

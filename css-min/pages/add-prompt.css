@@ -123,7 +123,9 @@
   border-radius: var(--border-radius-lg);
   font-size: var(--font-size-md);
   background-color: var(--color-white);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 #add-prompt-form input[type='text']:focus,
