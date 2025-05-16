@@ -90,12 +90,16 @@
                 <i class="far fa-heart"></i>
               </button>
             </div>
+            <p><strong>Description:</strong> <span id="prompt-detail-description"></span></p>
             <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
             <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
             <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
+            <p><strong>Target AI Tools:</strong> <span id="prompt-detail-tools"></span></p>
+
             <div>
-              <strong id="rating-label">Average rating: </strong
-              ><span id="average-rating-value">(0.0)</span>
+              <strong id="rating-label">Rating: </strong>
+              <span id="average-rating-value">(0.0)</span>
+              <span id="rating-count">(0 ratings)</span>
               <div class="star-rating-wrapper">
                 <div
                   id="star-rating"
@@ -103,9 +107,17 @@
                   role="radiogroup"
                   aria-labelledby="rating-label"
                 ></div>
-                <span id="rating-count">(0 ratings)</span>
               </div>
             </div>
+
+            <div class="prompt-meta">
+              <p><strong>Author:</strong> <span id="prompt-detail-author"></span></p>
+              <p><strong>Usage Count:</strong> <span id="prompt-detail-usage">0</span></p>
+              <p><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></p>
+              <p><strong>Created:</strong> <span id="prompt-detail-created"></span></p>
+              <p><strong>Last Updated:</strong> <span id="prompt-detail-updated"></span></p>
+            </div>
+
             <div
               id="delete-confirmation"
               class="hidden"
