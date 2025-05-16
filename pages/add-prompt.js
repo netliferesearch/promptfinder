@@ -4,7 +4,7 @@
  */
 import { auth } from '../js/firebase-init.js';
 import { addPrompt } from '../js/promptData.js';
-import { handleError, showConfirmationMessage } from '../js/utils.js'; // Removed unused escapeHTML
+import { handleError, showConfirmationMessage } from '../js/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder detached add prompt window initialized (ESM)');
@@ -12,8 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn(
       'Firebase Auth service not immediately available from firebase-init.js in add-prompt.js. This might be an issue if auth state is needed before user interaction.'
     );
-    // Potentially show an error and disable form if auth isn't ready
-    // For now, rely on the submit handler to check currentUser
   }
   initializeForm();
 });
@@ -27,7 +25,7 @@ function initializeForm() {
   const cancelAddPromptButton = document.getElementById('cancel-add-prompt');
   if (cancelAddPromptButton) {
     cancelAddPromptButton.addEventListener('click', () => {
-      window.close(); // Closes the detached window
+      window.close();
     });
   }
 }
@@ -49,13 +47,16 @@ async function handleAddPromptSubmit(event) {
   }
 
   const titleInput = document.getElementById('prompt-title');
+  const descriptionInput = document.getElementById('prompt-description'); // Added
   const textInput = document.getElementById('prompt-text');
   const categoryInput = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
+  const toolsInput = document.getElementById('prompt-tools'); // Added
   const privateCheckbox = document.getElementById('prompt-private');
 
   if (!titleInput || !textInput) {
-    handleError('Form elements missing', {
+    // Basic check, can be expanded
+    handleError('Form elements missing (title or text)', {
       specificErrorElement: errorMessageElement,
       userVisible: true,
     });
@@ -64,6 +65,7 @@ async function handleAddPromptSubmit(event) {
 
   const title = titleInput.value.trim();
   const text = textInput.value.trim();
+  const description = descriptionInput ? descriptionInput.value.trim() : ''; // Added
 
   if (!title || !text) {
     handleError('Please enter both a title and prompt text.', {
@@ -80,25 +82,30 @@ async function handleAddPromptSubmit(event) {
         .map(tag => tag.trim())
         .filter(tag => tag !== '')
     : [];
+  const targetAiTools = toolsInput // Added
+    ? toolsInput.value
+        .split(',')
+        .map(tool => tool.trim())
+        .filter(tool => tool !== '')
+    : [];
   const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
 
   const promptDataPayload = {
     title,
     text,
+    description, // Added
     category,
     tags,
+    targetAiTools, // Added
     isPrivate,
-    targetAiTools: [],
   };
 
   try {
     const newPrompt = await addPrompt(promptDataPayload);
 
     if (newPrompt && newPrompt.id) {
-      // Check for truthy newPrompt and its ID
       if (chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' }, _response => {
-          // Changed to _response
           if (chrome.runtime.lastError) {
             console.warn(
               'Could not send PROMPT_ADDED_OR_MODIFIED message:',
@@ -122,17 +129,14 @@ async function handleAddPromptSubmit(event) {
         window.close();
       }, 3500);
     } else {
-      // addPrompt returns null on failure, and handleError should have been called within addPrompt.
-      // This is a fallback if something unexpected happens or error wasn't user-visible.
       if (!errorMessageElement || errorMessageElement.classList.contains('hidden')) {
-        handleError('Failed to add prompt. An unexpected error occurred.', {
+        handleError('Failed to add prompt. Please check details or try again.', {
           specificErrorElement: errorMessageElement,
           userVisible: true,
         });
       }
     }
   } catch (error) {
-    // This catch is for unexpected errors from addPrompt itself, though it aims to handle its own.
     handleError(`Critical error adding prompt: ${error.message}`, {
       userVisible: true,
       originalError: error,
