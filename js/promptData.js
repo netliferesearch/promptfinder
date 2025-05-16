@@ -4,7 +4,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   GoogleAuthProvider,
-  signInWithCredential,
+  signInWithCredential
 } from 'firebase/auth';
 
 import {
@@ -19,7 +19,7 @@ import {
   query,
   where,
   serverTimestamp,
-  Timestamp,
+  Timestamp
 } from 'firebase/firestore';
 
 import { auth, db } from '../js/firebase-init.js';
@@ -79,83 +79,105 @@ export const loginUser = async (email, password) => {
 };
 
 export const signInWithGoogle = async () => {
-  console.log('signInWithGoogle (v9 - chrome.identity) called');
-  if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
-    const errMsg = 'chrome.identity API not available. Google Sign-In cannot proceed.';
+  console.log("signInWithGoogle (v9 - chrome.identity.launchWebAuthFlow) called");
+  if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.launchWebAuthFlow) {
+    const errMsg = "chrome.identity.launchWebAuthFlow API not available. Google Sign-In cannot proceed.";
     console.error(errMsg);
     Utils.handleError(errMsg, { userVisible: true });
     return Promise.reject(new Error(errMsg));
   }
   if (!auth) {
-    const errMsg = 'Firebase Auth service not initialized.';
+    const errMsg = "Firebase Auth service not initialized.";
     console.error(errMsg);
     Utils.handleError(errMsg, { userVisible: true });
     return Promise.reject(new Error(errMsg));
   }
 
   try {
-    console.log('Requesting Google ID token via chrome.identity.getAuthToken...');
-    const tokenInfo = await new Promise((resolve, reject) => {
-      chrome.identity.getAuthToken({ interactive: true }, token => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(token);
-        }
-      });
-    });
-
-    if (!tokenInfo) {
-      const errMsg = 'Google Sign-In failed: No token received from chrome.identity.';
+    const manifest = chrome.runtime.getManifest();
+    const clientId = manifest.oauth2?.client_id;
+    if (!clientId) {
+      const errMsg = "OAuth2 client_id not found in manifest.json.";
       console.error(errMsg);
       Utils.handleError(errMsg, { userVisible: true });
       return Promise.reject(new Error(errMsg));
     }
 
-    console.log('Google token received from chrome.identity:', tokenInfo);
-    try {
-      const payload = JSON.parse(atob(tokenInfo.split('.')[1]));
-      console.log('Decoded token payload:', payload);
-      if (payload.aud) {
-        console.log('Token audience (aud):', payload.aud);
-      }
-    } catch (e) {
-      console.warn('Could not decode token as JWT:', e, 'Token was:', tokenInfo);
+    const redirectUri = chrome.identity.getRedirectURL(); // e.g., https://<extension-id>.chromiumapp.org/
+    const scopes = manifest.oauth2?.scopes || ["openid", "email", "profile"];
+    const nonce = Math.random().toString(36).substring(2, 15); // Simple nonce
+
+    let authUrl = `https://accounts.google.com/o/oauth2/v2/auth`;
+    authUrl += `?client_id=${clientId}`;
+    authUrl += `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    authUrl += `&response_type=id_token`; // Request ID token
+    authUrl += `&scope=${encodeURIComponent(scopes.join(' '))}`;
+    authUrl += `&nonce=${nonce}`;
+    // Add prompt=consent if you always want the user to see the consent screen, even if already granted.
+    // authUrl += `&prompt=consent`;
+
+    console.log("Launching Google Web Auth Flow with URL:", authUrl);
+
+    const callbackUrl = await new Promise((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        { url: authUrl, interactive: true },
+        (responseUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (!responseUrl) {
+            reject(new Error("Google Sign-In cancelled or no response URL received."));
+          } else {
+            resolve(responseUrl);
+          }
+        }
+      );
+    });
+
+    console.log("Callback URL from launchWebAuthFlow:", callbackUrl);
+
+    // Parse the ID token from the callback URL fragment
+    // Example callbackUrl: https://<extension-id>.chromiumapp.org/#id_token=XXXXX&... 
+    const params = new URLSearchParams(callbackUrl.substring(callbackUrl.indexOf('#') + 1));
+    const idToken = params.get('id_token');
+
+    if (!idToken) {
+      const errMsg = "Google Sign-In failed: ID token not found in callback URL.";
+      console.error(errMsg, "Callback URL params:", params.toString());
+      Utils.handleError(errMsg, { userVisible: true });
+      return Promise.reject(new Error(errMsg));
     }
 
-    console.log('Google ID token received, creating Firebase credential...');
-    const credential = GoogleAuthProvider.credential(tokenInfo);
+    console.log('Google ID token extracted, creating Firebase credential...');
+    const credential = GoogleAuthProvider.credential(idToken);
 
-    console.log('Signing into Firebase with Google credential...');
+    console.log("Signing into Firebase with Google ID token credential...");
     const userCredential = await signInWithCredential(auth, credential);
-    console.log('Firebase Sign-In with Google credential successful:', userCredential.user);
+    console.log("Firebase Sign-In with Google ID token successful:", userCredential.user);
 
     if (db && userCredential.user) {
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      const userDocRef = doc(db, "users", userCredential.user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (!userDocSnap.exists()) {
-        console.log('New Google Sign-In user, creating user document in Firestore...');
+        console.log("New Google Sign-In user (launchWebAuthFlow), creating user document...");
         try {
           await setDoc(userDocRef, {
             email: userCredential.user.email,
             displayName: userCredential.user.displayName || userCredential.user.email,
             createdAt: serverTimestamp(),
-            photoURL: userCredential.user.photoURL || null,
+            photoURL: userCredential.user.photoURL || null
           });
-          console.log('User document created for Google user:', userCredential.user.uid);
+          console.log("User document created for Google user (launchWebAuthFlow):", userCredential.user.uid);
         } catch (dbError) {
-          console.error('Error creating user document for Google user:', dbError);
-          Utils.handleError('Could not save Google user details after signup.', {
-            userVisible: true,
-            originalError: dbError,
-          });
+          console.error('Error creating user document for Google user (launchWebAuthFlow):', dbError);
+          Utils.handleError('Could not save Google user details after signup.', { userVisible: true, originalError: dbError });
         }
       }
     }
     return userCredential;
+
   } catch (error) {
-    console.error('Error in signInWithGoogle (chrome.identity) flow:', error);
-    const errMsg = error.message || 'An unknown error occurred during Google Sign-In.';
+    console.error("Error in signInWithGoogle (launchWebAuthFlow) flow:", error);
+    const errMsg = error.message || "An unknown error occurred during Google Sign-In.";
     Utils.handleError(errMsg, { userVisible: true, originalError: error });
     return Promise.reject(error);
   }
@@ -171,15 +193,12 @@ export const logoutUser = async () => {
     console.log('User logged out (v9)');
     return true;
   } catch (error) {
-    Utils.handleError(`Logout error (v9): ${error.message}`, {
-      userVisible: true,
-      originalError: error,
-    });
+    Utils.handleError(`Logout error (v9): ${error.message}`, { userVisible: true, originalError: error });
     return false;
   }
 };
 
-export const onAuthStateChanged = callback => {
+export const onAuthStateChanged = (callback) => {
   if (!auth) {
     Utils.handleError('Firebase Auth not available from firebase-init.js.', { userVisible: false });
     callback(null);
@@ -189,7 +208,7 @@ export const onAuthStateChanged = callback => {
 };
 
 // --- Prompt Functions (Firestore) ---
-export const addPrompt = async promptData => {
+export const addPrompt = async (promptData) => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
     Utils.handleError('User must be logged in to add a prompt.', { userVisible: true });
@@ -210,9 +229,9 @@ export const addPrompt = async promptData => {
       tags: promptData.tags || [],
       isPrivate: !!promptData.isPrivate,
       targetAiTools: promptData.targetAiTools || [],
-      userRating: promptData.isPrivate ? promptData.userRating || 0 : 0,
-      userIsFavorite: promptData.isPrivate ? promptData.userIsFavorite || false : false,
-      averageRating: 0,
+      userRating: promptData.isPrivate ? (promptData.userRating || 0) : 0,
+      userIsFavorite: promptData.isPrivate ? (promptData.userIsFavorite || false) : false,
+      averageRating: 0, 
       totalRatingsCount: 0,
       favoritesCount: 0,
       usageCount: 0,
@@ -232,9 +251,9 @@ export const addPrompt = async promptData => {
   }
 };
 
-const formatLoadedPrompt = docSnapshot => {
+const formatLoadedPrompt = (docSnapshot) => {
   const data = docSnapshot.data();
-  const convertTimestamp = ts =>
+  const convertTimestamp = (ts) =>
     ts instanceof Timestamp ? ts.toDate().toISOString() : ts ? new Date(ts).toISOString() : null;
   return {
     id: docSnapshot.id,
