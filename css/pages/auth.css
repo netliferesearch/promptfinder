@@ -6,7 +6,8 @@
   gap: var(--spacing-md);
 }
 
-.auth-container h2, .auth-container h3 {
+.auth-container h2,
+.auth-container h3 {
   text-align: center;
   margin-bottom: var(--spacing-sm);
 }
@@ -31,8 +32,8 @@
   font-size: var(--font-size-sm);
 }
 
-.auth-container input[type="email"],
-.auth-container input[type="password"] {
+.auth-container input[type='email'],
+.auth-container input[type='password'] {
   padding: var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
@@ -58,10 +59,10 @@
 }
 
 #google-signin-button i {
-    margin-right: var(--spacing-sm);
+  margin-right: var(--spacing-sm);
 }
 
 #cancel-auth-button {
-    margin-top: var(--spacing-md);
-    text-align: center;
+  margin-top: var(--spacing-md);
+  text-align: center;
 }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -49,21 +49,17 @@
           </div>
           <div class="form-buttons">
             <button type="submit" class="button button-primary">Save Changes</button>
-            <button type="button" id="cancel-edit-prompt" class="button button-cancel">Cancel</button>
+            <button type="button" id="cancel-edit-prompt" class="button button-cancel">
+              Cancel
+            </button>
           </div>
         </form>
       </section>
     </div>
 
-    <!-- Load Firebase SDK Compatibility (UMD) bundles from node_modules -->
-    <script src="../node_modules/firebase/firebase-app-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-auth-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-firestore-compat.js"></script> <!-- Added Firestore SDK -->
-
-    <script src="../js/firebase-init.js"></script> <!-- Uses global firebase -->
-    <script src="../js/utils.js"></script>
-    <script src="../js/promptData.js"></script>
+    <!-- Bundled script for this page -->
+    <script src="../dist/pages/edit-prompt.js"></script>
+    <!-- css-class-helper is separate, can be kept if not part of the bundle -->
     <script src="../js/css-class-helper.js"></script>
-    <script src="edit-prompt.js"></script>
   </body>
 </html>

@@ -16,7 +16,7 @@ To install PromptFinder in your Chrome browser:
     ```bash
     npm install
     ```
-    *(This will create a `node_modules` folder in your project directory.)*
+    _(This will create a `node_modules` folder in your project directory.)_
 4.  **Load in Chrome:** Open Chrome and go to `chrome://extensions/`.
 5.  Enable "Developer mode" in the top right corner.
 6.  Click "Load unpacked" and select the directory where you downloaded/cloned the PromptFinder source code (the same directory where you ran `npm install`).
@@ -49,13 +49,13 @@ To install PromptFinder in your Chrome browser:
 ### Planned Features (Roadmap)
 
 - **Cloud Sync & Backup:** Migrate storage to a cloud database (e.g., Firebase Firestore) to enable:
-    -   Synchronization across multiple Chrome browsers/profiles.
-    -   User accounts and authentication.
-    -   Secure backup of prompts.
+  - Synchronization across multiple Chrome browsers/profiles.
+  - User accounts and authentication.
+  - Secure backup of prompts.
 - **Shared Prompts Community:**
-    -   Option to share prompts publicly with other users.
-    -   Browse and use prompts shared by the community.
-    -   Community ratings and comments on shared prompts.
+  - Option to share prompts publicly with other users.
+  - Browse and use prompts shared by the community.
+  - Community ratings and comments on shared prompts.
 - **Advanced Filtering & Sorting:** More granular control over how prompts are displayed.
 - **Import/Export:** Allow users to import and export their prompt libraries (e.g., JSON, CSV).
 - **Usage Statistics:** Track how often prompts are used.

@@ -24,7 +24,6 @@
   gap: var(--spacing-sm); /* Adds a small gap between buttons */
 }
 
-
 /* Header with accent color for detached windows */
 .pf-header--accent {
   background-color: var(--color-primary);

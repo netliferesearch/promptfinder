@@ -1,23 +1,23 @@
 /**
- * PromptFinder Extension - Detached Add Prompt Window
+ * PromptFinder Extension - Detached Add Prompt Window (ESM Version)
  * Handles the form submission in the detached window.
  */
+import { auth } from '../js/firebase-init.js';
+import { addPrompt } from '../js/promptData.js';
+import { handleError, showConfirmationMessage } from '../js/utils.js'; // Removed unused escapeHTML
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.info('PromptFinder detached add prompt window initialized');
-  // Ensure Firebase is initialized and auth state is known if possible
-  // This page runs in its own context, so firebaseAuth needs to be available.
-  if (!window.firebaseAuth) {
-      console.warn("Firebase Auth not immediately available in add-prompt.js. This might be an issue if auth state is needed before user interaction.");
-      // If firebase-init.js from popup has already run and set window.firebaseAuth, it will be used.
-      // Otherwise, this page relies on the popup having established an auth session.
+  console.info('PromptFinder detached add prompt window initialized (ESM)');
+  if (!auth) {
+    console.warn(
+      'Firebase Auth service not immediately available from firebase-init.js in add-prompt.js. This might be an issue if auth state is needed before user interaction.'
+    );
+    // Potentially show an error and disable form if auth isn't ready
+    // For now, rely on the submit handler to check currentUser
   }
   initializeForm();
 });
 
-/**
- * Initialize the form and set up event listeners
- */
 function initializeForm() {
   const addPromptForm = document.getElementById('add-prompt-form');
   if (addPromptForm) {
@@ -32,24 +32,18 @@ function initializeForm() {
   }
 }
 
-/**
- * Handle form submission for adding a new prompt
- * @param {Event} event - The submit event
- */
 async function handleAddPromptSubmit(event) {
   event.preventDefault();
 
-  const Utils = window.PromptFinder.Utils;
-  const PromptData = window.PromptFinder.PromptData;
   const confirmationMessageElement = document.getElementById('confirmation-message');
   const errorMessageElement = document.getElementById('error-message');
 
-  // Check if user is logged in (PromptData.addPrompt will also check, but good for early UI feedback)
-  if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
-    Utils.handleError('You must be logged in to add a prompt. Please log in via the extension popup.', {
-        userVisible: true,
-        specificErrorElement: errorMessageElement, // Use the error element on this page
-        timeout: 7000
+  const currentUser = auth ? auth.currentUser : null;
+  if (!currentUser) {
+    handleError('You must be logged in to add a prompt. Please log in via the extension popup.', {
+      userVisible: true,
+      specificErrorElement: errorMessageElement,
+      timeout: 7000,
     });
     return;
   }
@@ -61,7 +55,10 @@ async function handleAddPromptSubmit(event) {
   const privateCheckbox = document.getElementById('prompt-private');
 
   if (!titleInput || !textInput) {
-    Utils.handleError('Form elements missing', { specificErrorElement: errorMessageElement, userVisible: true });
+    handleError('Form elements missing', {
+      specificErrorElement: errorMessageElement,
+      userVisible: true,
+    });
     return;
   }
 
@@ -69,7 +66,10 @@ async function handleAddPromptSubmit(event) {
   const text = textInput.value.trim();
 
   if (!title || !text) {
-    Utils.handleError('Please enter both a title and prompt text.', { specificErrorElement: errorMessageElement, userVisible: true });
+    handleError('Please enter both a title and prompt text.', {
+      specificErrorElement: errorMessageElement,
+      userVisible: true,
+    });
     return;
   }
 
@@ -88,23 +88,24 @@ async function handleAddPromptSubmit(event) {
     category,
     tags,
     isPrivate,
-    targetAiTools: [] // Placeholder, can be expanded later if UI is added to this form
-    // userRating and userIsFavorite are handled by addPrompt based on isPrivate
+    targetAiTools: [],
   };
 
   try {
-    // PromptData.addPrompt now handles Firestore logic and user check
-    const newPrompt = await PromptData.addPrompt(promptDataPayload);
+    const newPrompt = await addPrompt(promptDataPayload);
 
-    if (newPrompt) {
-      // Notify main popup window (if open) that prompts have been updated so it can refresh its list.
-      // This is more robust than relying on storage events for cross-context communication.
+    if (newPrompt && newPrompt.id) {
+      // Check for truthy newPrompt and its ID
       if (chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' }, response => {
+        chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' }, _response => {
+          // Changed to _response
           if (chrome.runtime.lastError) {
-            console.warn("Could not send PROMPT_ADDED_OR_MODIFIED message:", chrome.runtime.lastError.message);
+            console.warn(
+              'Could not send PROMPT_ADDED_OR_MODIFIED message:',
+              chrome.runtime.lastError.message
+            );
           } else {
-            console.log("PROMPT_ADDED_OR_MODIFIED message sent.");
+            console.log('PROMPT_ADDED_OR_MODIFIED message sent from add-prompt.js.');
           }
         });
       }
@@ -112,31 +113,30 @@ async function handleAddPromptSubmit(event) {
       const form = document.getElementById('add-prompt-form');
       if (form) form.reset();
 
-      Utils.showConfirmationMessage('Prompt added successfully!', {
+      showConfirmationMessage('Prompt added successfully!', {
         messageElement: confirmationMessageElement,
-        timeout: 3000, // Shorter timeout as window will close
+        timeout: 3000,
       });
 
-      // Close the detached window after a short delay
       setTimeout(() => {
         window.close();
       }, 3500);
-
     } else {
-      // Error should have been handled and displayed by PromptData.addPrompt or the initial user check.
-      // If we reach here and newPrompt is null, it means an error occurred.
-      // Utils.handleError might have already shown a message if userVisible was true.
-      // We can ensure a generic one is shown on this page if not.
+      // addPrompt returns null on failure, and handleError should have been called within addPrompt.
+      // This is a fallback if something unexpected happens or error wasn't user-visible.
       if (!errorMessageElement || errorMessageElement.classList.contains('hidden')) {
-         Utils.handleError('Failed to add prompt. Please check details or try again.', { specificErrorElement: errorMessageElement, userVisible: true });
+        handleError('Failed to add prompt. An unexpected error occurred.', {
+          specificErrorElement: errorMessageElement,
+          userVisible: true,
+        });
       }
     }
   } catch (error) {
-    // This catch is unlikely to be hit if PromptData.addPrompt handles its own errors and returns null.
-    Utils.handleError(`Critical error adding prompt: ${error.message}`, {
+    // This catch is for unexpected errors from addPrompt itself, though it aims to handle its own.
+    handleError(`Critical error adding prompt: ${error.message}`, {
       userVisible: true,
       originalError: error,
-      specificErrorElement: errorMessageElement
+      specificErrorElement: errorMessageElement,
     });
   }
 }
