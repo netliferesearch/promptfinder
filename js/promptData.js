@@ -1,8 +1,10 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut, // aliased to avoid conflict if Utils.signOut exists
-  onAuthStateChanged as firebaseOnAuthStateChanged, // aliased
+  signOut as firebaseSignOut,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential
 } from 'firebase/auth';
 
 import {
@@ -17,14 +19,11 @@ import {
   query,
   where,
   serverTimestamp,
-  Timestamp,
+  Timestamp
 } from 'firebase/firestore';
 
-// Import initialized auth and db from firebase-init.js
 import { auth, db } from '../js/firebase-init.js';
-import * as Utils from '../js/utils.js'; // Assuming Utils is also modular or will be
-
-const OFFSCREEN_DOCUMENT_PATH = 'pages/offscreen.html';
+import * as Utils from '../js/utils.js';
 
 // --- Firebase Authentication Functions ---
 export const signupUser = async (email, password) => {
@@ -41,7 +40,7 @@ export const signupUser = async (email, password) => {
         const userDocRef = doc(db, 'users', userCredential.user.uid);
         await setDoc(userDocRef, {
           email: userCredential.user.email,
-          displayName: userCredential.user.email, // Or a preferred initial display name
+          displayName: userCredential.user.email,
           createdAt: serverTimestamp(),
         });
         console.log('User document created in Firestore for UID:', userCredential.user.uid);
@@ -51,7 +50,6 @@ export const signupUser = async (email, password) => {
           userVisible: true,
           originalError: dbError,
         });
-        // Decide if signup should still be considered successful if DB write fails
       }
     }
     return userCredential;
@@ -80,73 +78,73 @@ export const loginUser = async (email, password) => {
   }
 };
 
-async function hasOffscreenDocument(path) {
-  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.getManifest().offscreen) {
-    console.warn(
-      'Offscreen permission or document path not declared in manifest, or chrome.runtime not available.'
-    );
-    return false;
-  }
-  const offscreenUrl = chrome.runtime.getURL(path);
-  if (chrome.runtime.getContexts) {
-    const contexts = await chrome.runtime.getContexts({
-      contextTypes: ['OFFSCREEN_DOCUMENT'],
-      documentUrls: [offscreenUrl],
-    });
-    return !!contexts.length;
-  } else {
-    console.warn('chrome.runtime.getContexts API not available.');
-    return false;
-  }
-}
-
 export const signInWithGoogle = async () => {
-  console.log('signInWithGoogle (v9) called');
-  if (typeof chrome === 'undefined' || !chrome.offscreen) {
-    const errMsg = 'Offscreen API not available. Google Sign-In via popup cannot proceed.';
+  console.log("signInWithGoogle (v9 - chrome.identity) called");
+  if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.getAuthToken) {
+    const errMsg = "chrome.identity API not available. Google Sign-In cannot proceed.";
+    console.error(errMsg);
+    Utils.handleError(errMsg, { userVisible: true });
+    return Promise.reject(new Error(errMsg));
+  }
+  if (!auth) {
+    const errMsg = "Firebase Auth service not initialized.";
     console.error(errMsg);
     Utils.handleError(errMsg, { userVisible: true });
     return Promise.reject(new Error(errMsg));
   }
 
-  const path = OFFSCREEN_DOCUMENT_PATH;
   try {
-    const docExists = await hasOffscreenDocument(path);
-    if (!docExists) {
-      console.log('Creating offscreen document with IFRAME_SCRIPTING reason (v9)');
-      await chrome.offscreen.createDocument({
-        url: path,
-        reasons: ['IFRAME_SCRIPTING'],
-        justification:
-          'Firebase Google Sign-In requires an offscreen document for its UI flow in MV3.',
+    console.log("Requesting Google ID token via chrome.identity.getAuthToken...");
+    const tokenInfo = await new Promise((resolve, reject) => {
+      chrome.identity.getAuthToken({ interactive: true }, (token) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(token);
+        }
       });
-    } else {
-      console.log('Offscreen document already exists (v9).');
-    }
-
-    console.log('Sending message to offscreen document for Google Sign-In (v9)');
-    const response = await chrome.runtime.sendMessage({
-      target: 'offscreen',
-      action: 'firebase-google-signin', // offscreen.js will handle this with its own Firebase instance
     });
 
-    if (response && response.success) {
-      console.log('Google Sign-In successful (response from offscreen v9):', response.user);
-      return response.user;
-    } else {
-      console.error('Google Sign-In failed (response from offscreen v9):', response?.error);
-      const errMsg =
-        response?.error?.message ||
-        'An unknown error occurred during Google Sign-In via offscreen.';
-      Utils.handleError(errMsg, { userVisible: true, originalError: response?.error });
-      return Promise.reject(response?.error || new Error(errMsg));
+    if (!tokenInfo) {
+      const errMsg = "Google Sign-In failed: No token received from chrome.identity.";
+      console.error(errMsg);
+      Utils.handleError(errMsg, { userVisible: true });
+      return Promise.reject(new Error(errMsg));
     }
+
+    console.log("Google ID token received, creating Firebase credential...");
+    const credential = GoogleAuthProvider.credential(tokenInfo); // tokenInfo here is the ID token string
+    
+    console.log("Signing into Firebase with Google credential...");
+    const userCredential = await signInWithCredential(auth, credential);
+    console.log("Firebase Sign-In with Google credential successful:", userCredential.user);
+    
+    // Check if this is a new user to Firestore and create a document if so
+    if (db && userCredential.user) {
+        const userDocRef = doc(db, "users", userCredential.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+            console.log("New Google Sign-In user, creating user document in Firestore...");
+            try {
+                await setDoc(userDocRef, {
+                    email: userCredential.user.email,
+                    displayName: userCredential.user.displayName || userCredential.user.email,
+                    createdAt: serverTimestamp(),
+                    photoURL: userCredential.user.photoURL || null
+                });
+                console.log("User document created for Google user:", userCredential.user.uid);
+            } catch (dbError) {
+                console.error('Error creating user document for Google user:', dbError);
+                Utils.handleError('Could not save Google user details after signup.', { userVisible: true, originalError: dbError });
+            }
+        }
+    }
+    return userCredential; // Return the Firebase userCredential
+
   } catch (error) {
-    console.error('Error in signInWithGoogle flow (v9):', error);
-    Utils.handleError(`Google Sign-In client-side error (v9): ${error.message}`, {
-      userVisible: true,
-      originalError: error,
-    });
+    console.error("Error in signInWithGoogle (chrome.identity) flow:", error);
+    const errMsg = error.message || "An unknown error occurred during Google Sign-In.";
+    Utils.handleError(errMsg, { userVisible: true, originalError: error });
     return Promise.reject(error);
   }
 };
@@ -154,22 +152,19 @@ export const signInWithGoogle = async () => {
 export const logoutUser = async () => {
   if (!auth) {
     Utils.handleError('Firebase Auth not available from firebase-init.js.', { userVisible: true });
-    return Promise.resolve(false); // Consistent return type with other async fns
+    return Promise.resolve(false);
   }
   try {
     await firebaseSignOut(auth);
     console.log('User logged out (v9)');
     return true;
   } catch (error) {
-    Utils.handleError(`Logout error (v9): ${error.message}`, {
-      userVisible: true,
-      originalError: error,
-    });
+    Utils.handleError(`Logout error (v9): ${error.message}`, { userVisible: true, originalError: error });
     return false;
   }
 };
 
-export const onAuthStateChanged = callback => {
+export const onAuthStateChanged = (callback) => {
   if (!auth) {
     Utils.handleError('Firebase Auth not available from firebase-init.js.', { userVisible: false });
     callback(null);
@@ -179,7 +174,7 @@ export const onAuthStateChanged = callback => {
 };
 
 // --- Prompt Functions (Firestore) ---
-export const addPrompt = async promptData => {
+export const addPrompt = async (promptData) => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
     Utils.handleError('User must be logged in to add a prompt.', { userVisible: true });
@@ -200,18 +195,17 @@ export const addPrompt = async promptData => {
       tags: promptData.tags || [],
       isPrivate: !!promptData.isPrivate,
       targetAiTools: promptData.targetAiTools || [],
-      userRating: promptData.isPrivate ? promptData.userRating || 0 : 0,
-      userIsFavorite: promptData.isPrivate ? promptData.userIsFavorite || false : false,
-      averageRating: 0, // Reverted to 0 for all new prompts
-      totalRatingsCount: 0, // Reverted to 0 for all new prompts
-      favoritesCount: 0, // Reverted to 0 for all new prompts
+      userRating: promptData.isPrivate ? (promptData.userRating || 0) : 0,
+      userIsFavorite: promptData.isPrivate ? (promptData.userIsFavorite || false) : false,
+      averageRating: 0, 
+      totalRatingsCount: 0,
+      favoritesCount: 0,
       usageCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
     const docRef = await addDoc(collection(db, 'prompts'), newPromptDocData);
     console.log('Prompt added with ID (v9): ', docRef.id);
-    // For immediate UI update, simulate server timestamps locally
     const locallySimulatedTimestamps = { createdAt: new Date(), updatedAt: new Date() };
     return { ...newPromptDocData, ...locallySimulatedTimestamps, id: docRef.id };
   } catch (error) {
@@ -223,9 +217,9 @@ export const addPrompt = async promptData => {
   }
 };
 
-const formatLoadedPrompt = docSnapshot => {
+const formatLoadedPrompt = (docSnapshot) => {
   const data = docSnapshot.data();
-  const convertTimestamp = ts =>
+  const convertTimestamp = (ts) =>
     ts instanceof Timestamp ? ts.toDate().toISOString() : ts ? new Date(ts).toISOString() : null;
   return {
     id: docSnapshot.id,
@@ -575,6 +569,3 @@ export const filterPrompts = (prompts, filters) => {
   }
   return result;
 };
-
-// Note: signInWithGoogle is already exported above.
-// The IIFE structure is removed; functions are exported directly.
