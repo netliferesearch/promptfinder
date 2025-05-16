@@ -46,7 +46,7 @@ Use CSS variables for consistent styling:
 ```css
 /* Old approach */
 .button {
-  background-color: #7C4DFF;
+  background-color: #7c4dff;
   padding: 10px 20px;
   border-radius: 24px;
 }
@@ -65,14 +65,10 @@ Use predefined component classes:
 
 ```html
 <!-- Old approach -->
-<button onclick="doSomething()" style="background-color: #7C4DFF; color: white;">
-  Click Me
-</button>
+<button onclick="doSomething()" style="background-color: #7C4DFF; color: white;">Click Me</button>
 
 <!-- New approach -->
-<button onclick="doSomething()" class="button button-primary">
-  Click Me
-</button>
+<button onclick="doSomething()" class="button button-primary">Click Me</button>
 ```
 
 ### Utility Classes
@@ -81,14 +77,10 @@ Use utility classes for common styling needs:
 
 ```html
 <!-- Old approach with inline CSS -->
-<div style="display: flex; justify-content: center; margin-top: 20px;">
-  Content
-</div>
+<div style="display: flex; justify-content: center; margin-top: 20px;">Content</div>
 
 <!-- New approach with utility classes -->
-<div class="flex justify-center" style="margin-top: var(--spacing-lg);">
-  Content
-</div>
+<div class="flex justify-center" style="margin-top: var(--spacing-lg);">Content</div>
 ```
 
 ## Migrating Your Code

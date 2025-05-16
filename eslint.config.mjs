@@ -1,50 +1,84 @@
 // eslint.config.mjs
-import globals from "globals";
-import js from "@eslint/js";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import globals from 'globals';
+import js from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
-function trimGlobalKeys(globalsObj) {
-  const trimmed = {};
-  if (globalsObj) {
-    for (const key in globalsObj) {
-      trimmed[key.trim()] = globalsObj[key];
+// Helper function to trim whitespace from global keys
+function sanitizeGlobals(globalsSet) {
+  const sanitized = {};
+  if (globalsSet) {
+    for (const key in globalsSet) {
+      sanitized[key.trim()] = globalsSet[key];
     }
   }
-  return trimmed;
+  return sanitized;
 }
 
 export default [
+  // Global ignores - apply to all subsequent configurations
   {
     ignores: [
-      "node_modules/",
-      "dist/",
-      "build/",
-      "coverage/",
-      "scripts/",
-      "**/*.test.js",
-      "**/*.config.js",
-      ".vscode/",
-      ".idx/",
-      "eslint.config.mjs" // Corrected ignore for the config file itself
-    ]
+      'node_modules/',
+      'dist/',
+      'build/',
+      'coverage/',
+      'scripts/',
+      'purgecss.config.mjs',
+      'rollup.config.js',
+      'babel.config.json',
+      '.vscode/',
+      '.idx/',
+    ],
   },
+
   js.configs.recommended,
   eslintPluginPrettierRecommended,
+
+  // Configuration for main source code (extension code)
   {
+    files: ['app.js', 'js/**/*.js', 'pages/**/*.js'],
     languageOptions: {
-      ecmaVersion: "latest",
-      sourceType: "module",
+      ecmaVersion: 'latest',
+      sourceType: 'module',
       globals: {
-        ...trimGlobalKeys(globals.browser),
-        ...trimGlobalKeys(globals.webextensions),
-        chrome: "readonly",
-        PromptFinder: "writable",
-        PnP: "readonly"
-      }
+        ...sanitizeGlobals(globals.browser),
+        ...sanitizeGlobals(globals.webextensions),
+      },
     },
     rules: {
-      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-      "no-console": "off"
-    }
-  }
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+    },
+  },
+
+  // Configuration for test files
+  {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...sanitizeGlobals(globals.node),
+        ...sanitizeGlobals(globals.jest),
+        ...sanitizeGlobals(globals.browser), // Add browser globals for JSDOM
+        ...sanitizeGlobals(globals.webextensions), // Add extension globals for chrome.* mocks
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+    },
+  },
+
+  // Configuration for ESLint config file itself (eslint.config.mjs)
+  {
+    files: ['eslint.config.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...sanitizeGlobals(globals.node),
+      },
+    },
+  },
 ];

@@ -6,12 +6,7 @@
   "action": {
     "default_popup": "pages/popup.html"
   },
-  "permissions": [
-    "storage", 
-    "clipboardWrite", 
-    "windows", 
-    "offscreen" 
-  ],
+  "permissions": ["storage", "clipboardWrite", "windows", "offscreen"],
   "offscreen": {
     "pages": ["pages/offscreen.html"],
     "reasons": ["IFRAME_SCRIPTING"],

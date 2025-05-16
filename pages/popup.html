@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
     <title>PromptFinder</title>
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/pages/popup.css" />
-    <link rel="stylesheet" href="../css/pages/auth.css" /> 
+    <link rel="stylesheet" href="../css/pages/auth.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -21,7 +21,7 @@
         <h1>PromptFinder</h1>
         <div class="header-actions">
           <button id="account-button" aria-label="Account">
-            <i class="fas fa-user-circle"></i> 
+            <i class="fas fa-user-circle"></i>
           </button>
           <button id="settings-button" aria-label="Settings">
             <i class="fas fa-cog"></i>
@@ -55,7 +55,7 @@
           </div>
         </section>
         <p id="confirmation-message" class="hidden" aria-live="polite"></p>
-        <p id="error-message" class="hidden" aria-live="assertive"></p> 
+        <p id="error-message" class="hidden" aria-live="assertive"></p>
         <div class="add-prompt-bar">
           <button id="add-prompt-button" class="button button-primary">
             <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
@@ -67,7 +67,7 @@
           <button id="tab-private" role="tab" aria-selected="false">Private</button>
         </nav>
         <section id="prompts-list" class="cards-container"></section>
-        
+
         <section id="prompt-details-section" class="hidden">
           <div class="detail-card">
             <div class="detail-header-icons">
@@ -85,10 +85,10 @@
               </button>
             </div>
             <div class="detail-title-container">
-               <h2 id="prompt-detail-title-heading"><span id="prompt-detail-title"></span></h2>
-               <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
-                 <i class="far fa-heart"></i>
-               </button>
+              <h2 id="prompt-detail-title-heading"><span id="prompt-detail-title"></span></h2>
+              <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
+                <i class="far fa-heart"></i>
+              </button>
             </div>
             <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
             <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
@@ -106,7 +106,14 @@
                 <span id="rating-count">(0 ratings)</span>
               </div>
             </div>
-            <div id="delete-confirmation" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-desc">
+            <div
+              id="delete-confirmation"
+              class="hidden"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="delete-dialog-title"
+              aria-describedby="delete-dialog-desc"
+            >
               <h3 id="delete-dialog-title" class="visually-hidden">Confirm Deletion</h3>
               <p id="delete-dialog-desc">Are you sure you want to delete this prompt?</p>
               <button id="confirm-delete-button" class="button button-danger">Delete Prompt</button>
@@ -117,11 +124,18 @@
 
         <section id="add-prompt-section" class="hidden">
           <h2>Add New Prompt (Inline)</h2>
-             <form id="add-prompt-form-inline"> 
-               <div><label for="prompt-title-inline">Title:</label><input type="text" id="prompt-title-inline" required /></div>
-               <div><label for="prompt-text-inline">Prompt Text:</label><textarea id="prompt-text-inline" required></textarea></div>
-               <button type="submit">Add</button> <button type="button" id="cancel-add-prompt-inline">Cancel</button>
-             </form>
+          <form id="add-prompt-form-inline">
+            <div>
+              <label for="prompt-title-inline">Title:</label
+              ><input type="text" id="prompt-title-inline" required />
+            </div>
+            <div>
+              <label for="prompt-text-inline">Prompt Text:</label
+              ><textarea id="prompt-text-inline" required></textarea>
+            </div>
+            <button type="submit">Add</button>
+            <button type="button" id="cancel-add-prompt-inline">Cancel</button>
+          </form>
         </section>
         <footer class="bottom-bar hidden"></footer>
       </main>
@@ -129,7 +143,7 @@
       <!-- Authentication View (initially hidden) -->
       <section id="auth-view" class="hidden auth-container">
         <h2>Login or Signup</h2>
-        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p> 
+        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
         <form id="login-form">
           <h3>Login</h3>
           <div>
@@ -163,18 +177,10 @@
         </div>
         <button id="cancel-auth-button" class="button button-link">Cancel</button>
       </section>
-
     </div>
 
-    <!-- Load Firebase SDK Compatibility (UMD) bundles from node_modules -->
-    <script src="../node_modules/firebase/firebase-app-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-auth-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-firestore-compat.js"></script> 
-
-    <script src="../js/firebase-init.js"></script> 
-    <script src="../js/utils.js"></script>
-    <script src="../js/promptData.js"></script>
-    <script src="../js/ui.js"></script>
-    <script src="../app.js"></script>
+    <!-- Bundled Scripts -->
+    <script src="../dist/js/firebase-init.js"></script>
+    <script src="../dist/js/app.js"></script>
   </body>
 </html>
