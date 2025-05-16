@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupForm = document.getElementById('signup-form');
   const loginEmailInput = document.getElementById('login-email');
   const loginPasswordInput = document.getElementById('login-password');
+  const signupDisplayNameInput = document.getElementById('signup-display-name'); // Added
   const signupEmailInput = document.getElementById('signup-email');
   const signupPasswordInput = document.getElementById('signup-password');
   const authErrorMessage = document.getElementById('auth-error-message');
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (accountButton) accountButton.setAttribute('aria-label', 'Logout');
       if (addPromptButtonMain) addPromptButtonMain.disabled = false;
-      console.log('User is logged in (app.js v9):', user.email);
+      console.log('User is logged in (app.js v9):', user.email, 'Display Name:', user.displayName);
       loadAndRenderPrompts();
     } else {
       showMainContentView();
@@ -89,13 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
     addPromptButtonMain.addEventListener('click', () => {
       if (currentUser) {
         console.log('Add prompt button clicked by logged-in user (app.js v9).');
-        // The UI module (specifically initializeUI and its event listeners) should handle opening the window.
-        // If not, a direct call could be: chrome.windows.create({ url: 'pages/add-prompt.html', type: 'popup', width: 400, height: 600 });
-        // but it's better if UI.js manages its own component interactions.
-        // Typically UI.addPromptButtonEl?.addEventListener('click', openDetachedAddPromptWindow); in UI.js
       } else {
         Utils.showConfirmationMessage('Please login to add a prompt.', {
-          specificErrorElement: generalErrorMessageElement, // Use specificErrorElement for clarity
+          specificErrorElement: generalErrorMessageElement,
           type: 'error',
         });
       }
@@ -128,10 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userCredential = await loginUser(email, password);
         if (userCredential && userCredential.user) {
           loginForm.reset();
-          // onAuthStateChanged will handle UI update
-        } else {
-          // This case should ideally not happen if loginUser rejects on failure
-          Utils.displayAuthError('Login failed. Unknown reason.', authErrorMessage);
         }
       } catch (error) {
         Utils.displayAuthError(
@@ -146,15 +139,27 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.addEventListener('submit', async event => {
       event.preventDefault();
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
+      const displayName = signupDisplayNameInput.value.trim(); // Get display name
       const email = signupEmailInput.value;
       const password = signupPasswordInput.value;
+
+      if (!displayName) {
+        // Basic validation for display name
+        Utils.displayAuthError('Please enter a display name.', authErrorMessage);
+        return;
+      }
+      // Add more validation for display name if needed (e.g., no email format)
+      if (displayName.includes('@') || displayName.includes('.')) {
+        Utils.displayAuthError('Display name cannot be an email address.', authErrorMessage);
+        return;
+      }
+
       try {
-        const userCredential = await signupUser(email, password);
+        const userCredential = await signupUser(email, password, displayName); // Pass displayName
         if (userCredential && userCredential.user) {
           signupForm.reset();
-          // onAuthStateChanged will handle UI update
           Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
-            specificErrorElement: confirmationMessageElement, // Use specificErrorElement for clarity
+            specificErrorElement: confirmationMessageElement,
             timeout: 5000,
           });
         }
@@ -172,17 +177,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
       try {
         await signInWithGoogle();
-        // onAuthStateChanged will handle UI update
       } catch (error) {
         Utils.displayAuthError(error.message || 'Google Sign-In failed.', authErrorMessage);
       }
     });
   }
 
-  // Setup Firebase auth state listener
   onAuthStateChanged(updateUIAfterAuthStateChange);
 
-  // Message listener for updates from other parts of the extension
   if (chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'PROMPT_ADDED_OR_MODIFIED') {
@@ -193,23 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sendResponse({ status: 'success', message: 'Prompt list refresh triggered in popup.' });
         return true;
       }
-      return false; // Important for async sendResponse or if not handling the message
+      return false;
     });
   }
 
-  // Initial UI setup using the (to be refactored) UI module
   if (UI && UI.initializeUI) {
     UI.initializeUI();
   } else {
     console.error('UI.initializeUI module/function not found.');
   }
-
-  // The onAuthStateChanged listener will call updateUIAfterAuthStateChange,
-  // which in turn calls loadAndRenderPrompts. So, an explicit call to
-  // updateUIAfterAuthStateChange(auth.currentUser) immediately might be redundant
-  // if onAuthStateChanged fires quickly. However, it ensures the UI reflects
-  // the synchronous currentUser state if already available before the listener fires.
-  // For v9, auth is imported, so we can check auth.currentUser directly.
-  // However, it's better to rely on onAuthStateChanged for the initial state as well.
-  // The onAuthStateChanged callback will be invoked with the current user when it's registered.
 });
