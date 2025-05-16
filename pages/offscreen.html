@@ -3,11 +3,15 @@
 <head>
   <meta charset="utf-8">
   <title>Offscreen Document</title>
-  <!-- Firebase App (Core) -->
-  <script src="../lib/firebase/firebase-app.js"></script>
-  <!-- Firebase Auth -->
-  <script src="../lib/firebase/firebase-auth.js"></script>
+  <!-- Firebase App (Core) - Load as module -->
+  <script type="module" src="../lib/firebase/firebase-app.js"></script>
+  <!-- Firebase Auth - Load as module -->
+  <script type="module" src="../lib/firebase/firebase-auth.js"></script>
   <!-- Firebase Initialization (contains your specific config) -->
+  <!-- This likely needs to be a module too if it uses import/export, -->
+  <!-- or if it expects firebase to be set up by modules loaded before it. -->
+  <!-- For now, let's assume firebase-init.js is a classic script that expects global firebase -->
+  <!-- If firebase-init.js itself uses ES6 module syntax, it will also need type="module" -->
   <script src="../js/firebase-init.js"></script>
   <!-- Offscreen Logic -->
   <script src="offscreen.js"></script>
