@@ -1,0 +1,49 @@
+/* Styles for the prompt details section */
+
+.prompt-meta {
+  margin-top: var(--spacing-md, 16px);
+  padding-top: var(--spacing-sm, 8px);
+  border-top: 1px solid var(--color-gray-300, #e0e0e0);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-gray-500, #999);
+}
+
+#prompt-details-section .detail-card p {
+  margin-bottom: var(--spacing-xs, 4px); /* Add some space between paragraphs */
+}
+
+#prompt-details-section .detail-card strong {
+  color: var(--color-black, #333); /* Make labels slightly more prominent */
+}
+
+/* Specific styling for elements if needed */
+#prompt-detail-description {
+  font-style: italic;
+  color: var(--color-gray-500, #999);
+  margin-bottom: var(--spacing-sm, 8px) !important;
+}
+
+#prompt-detail-tools span.tag,
+#prompt-detail-tags span.tag {
+  display: inline-block;
+  background-color: var(--color-gray-200, #f0f0f0);
+  color: var(--color-black, #333);
+  padding: var(--spacing-xxs, 2px) var(--spacing-xs, 4px);
+  border-radius: var(--border-radius-sm, 8px);
+  margin-right: var(--spacing-xs, 4px);
+  margin-bottom: var(--spacing-xs, 4px);
+  font-size: var(--font-size-xs, 0.75rem);
+}
+
+/* Ensure the detail card itself has some padding and card-like appearance if not already handled by .detail-card elsewhere */
+.detail-card {
+  background-color: var(--color-white, #fff);
+  padding: var(--spacing-md, 16px);
+  border-radius: var(--border-radius-md, 16px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* A subtle shadow */
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.detail-title-container h2 span {
+  font-weight: 600; /* Make title a bit bolder */
+}
