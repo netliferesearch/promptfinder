@@ -86,10 +86,10 @@ window.PromptFinder.PromptData = (function () {
     try {
         const docExists = await hasOffscreenDocument(path);
         if (!docExists) {
-            console.log("Creating offscreen document");
+            console.log("Creating offscreen document with IFRAME_SCRIPTING reason");
             await chrome.offscreen.createDocument({
                 url: path,
-                reasons: ['FIREBASE'], // Must match one of the reasons in the manifest
+                reasons: ['IFRAME_SCRIPTING'], // Corrected Reason
                 justification: 'Firebase Google Sign-In requires an offscreen document for its UI flow in MV3.',
             });
         } else {

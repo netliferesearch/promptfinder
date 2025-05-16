@@ -14,7 +14,7 @@
   ],
   "offscreen": {
     "pages": ["pages/offscreen.html"],
-    "reasons": ["FIREBASE"],
+    "reasons": ["IFRAME_SCRIPTING"],
     "justification": "Firebase Google Sign-In requires an offscreen document for its UI flow in MV3."
   },
   "content_security_policy": {
