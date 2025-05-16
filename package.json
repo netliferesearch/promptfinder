@@ -35,8 +35,10 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.2.5",
+    "prismjs": "^1.30.0",
     "purgecss": "^7.0.2",
-    "rollup": "^2.79.2"
+    "rollup": "^2.79.2",
+    "rollup-plugin-postcss": "^4.0.2"
   },
   "browserslist": [
     "last 2 Chrome versions"
