@@ -12,11 +12,6 @@
     "windows", 
     "offscreen" 
   ],
-  "offscreen": {
-    "pages": ["pages/offscreen.html"],
-    "reasons": ["FIREBASE"],
-    "justification": "Firebase Google Sign-In requires an offscreen document for its UI flow in MV3."
-  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
   },

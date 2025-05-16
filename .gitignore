@@ -1,16 +1,26 @@
-# Node and build artifacts
-node_modules/
-
-# CSS build output
-css-purged/
-css-min/
-css-combined/
-css-clean/
-
-# Reports and logs
+/node_modules/
+/dist/
+.DS_Store
 *.log
 coverage/
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Environment files
+.env
+.env.*
+!/.env.example
+
+# IDE specific
+.vscode/
+!.vscode/settings.json # Keep if you want to share some settings
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Optional: If you have a build directory for other things
+/build/
+
+# Optional: PurgeCSS output if not in dist
+# /css-purged/

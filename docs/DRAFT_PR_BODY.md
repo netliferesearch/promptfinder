@@ -56,7 +56,8 @@ All optimization has been tested to ensure:
 <details>
 <summary>Before/After Screenshots</summary>
 
-*The UI appearance remains identical before and after optimization*
+_The UI appearance remains identical before and after optimization_
+
 </details>
 
 ## Next Steps

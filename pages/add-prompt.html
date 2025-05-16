@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -52,15 +52,9 @@
       </section>
     </div>
 
-    <!-- Load Firebase SDK Compatibility (UMD) bundles from node_modules -->
-    <script src="../node_modules/firebase/firebase-app-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-auth-compat.js"></script>
-    <script src="../node_modules/firebase/firebase-firestore-compat.js"></script> <!-- Added Firestore SDK -->
-
-    <script src="../js/firebase-init.js"></script> <!-- Uses global firebase -->
-    <script src="../js/utils.js"></script>
-    <script src="../js/promptData.js"></script>
+    <!-- Bundled script for this page -->
+    <script src="../dist/pages/add-prompt.js"></script>
+    <!-- css-class-helper is separate, can be kept if not part of the bundle -->
     <script src="../js/css-class-helper.js"></script>
-    <script src="add-prompt.js"></script>
   </body>
 </html>
