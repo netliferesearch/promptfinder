@@ -3,9 +3,9 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
-  GoogleAuthProvider, // Will be used by launchWebAuthFlow internally for creating credential
+  GoogleAuthProvider,
   signInWithCredential,
-  updateProfile, // Import updateProfile
+  updateProfile,
 } from 'firebase/auth';
 
 import {
@@ -28,7 +28,6 @@ import * as Utils from '../js/utils.js';
 
 // --- Firebase Authentication Functions ---
 export const signupUser = async (email, password, displayName) => {
-  // Added displayName parameter
   if (!auth) {
     const err = new Error('Firebase Auth not available from firebase-init.js.');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
@@ -38,7 +37,6 @@ export const signupUser = async (email, password, displayName) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     console.log('User signed up:', userCredential.user);
 
-    // Update Firebase Auth user profile with displayName
     if (userCredential.user && displayName) {
       try {
         await updateProfile(userCredential.user, { displayName: displayName });
@@ -49,7 +47,6 @@ export const signupUser = async (email, password, displayName) => {
           userVisible: false,
           originalError: profileError,
         });
-        // Continue even if profile update fails, Firestore part is more critical for app data
       }
     }
 
@@ -58,7 +55,7 @@ export const signupUser = async (email, password, displayName) => {
         const userDocRef = doc(db, 'users', userCredential.user.uid);
         await setDoc(userDocRef, {
           email: userCredential.user.email,
-          displayName: displayName, // Use provided displayName
+          displayName: displayName,
           createdAt: serverTimestamp(),
         });
         console.log('User document created in Firestore for UID:', userCredential.user.uid);
@@ -244,14 +241,14 @@ export const addPrompt = async promptData => {
   try {
     const newPromptDocData = {
       userId: currentUser.uid,
-      authorDisplayName: currentUser.displayName || currentUser.email, // This will now use the updated displayName
+      authorDisplayName: currentUser.displayName || currentUser.email,
       title: promptData.title || '',
       text: promptData.text || '',
-      description: promptData.description || '',
+      description: promptData.description || '', // Ensure this is included
       category: promptData.category || '',
       tags: promptData.tags || [],
+      targetAiTools: promptData.targetAiTools || [], // Ensure this is included
       isPrivate: !!promptData.isPrivate,
-      targetAiTools: promptData.targetAiTools || [],
       userRating: promptData.isPrivate ? promptData.userRating || 0 : 0,
       userIsFavorite: promptData.isPrivate ? promptData.userIsFavorite || false : false,
       averageRating: 0,

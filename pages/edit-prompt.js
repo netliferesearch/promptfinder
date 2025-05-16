@@ -12,13 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const promptId = urlParams.get('id');
   const promptIdField = document.getElementById('prompt-id');
-  const errorMessageElement = document.getElementById('error-message'); // For general errors on this page
+  const errorMessageElement = document.getElementById('error-message');
 
   if (!auth) {
     console.warn(
       'Firebase Auth service not immediately available from firebase-init.js in edit-prompt.js.'
     );
-    // This could be an issue if auth state is critical before form interaction
   }
 
   if (!promptId) {
@@ -68,15 +67,19 @@ async function loadPromptData(promptId, errorElement) {
     }
 
     const titleInput = document.getElementById('prompt-title');
+    const descriptionInput = document.getElementById('prompt-description'); // Added
     const textInput = document.getElementById('prompt-text');
     const categoryInput = document.getElementById('prompt-category');
     const tagsInput = document.getElementById('prompt-tags');
+    const toolsInput = document.getElementById('prompt-tools'); // Added
     const privateCheckbox = document.getElementById('prompt-private');
 
     if (titleInput) titleInput.value = prompt.title || '';
+    if (descriptionInput) descriptionInput.value = prompt.description || ''; // Added
     if (textInput) textInput.value = prompt.text || '';
     if (categoryInput) categoryInput.value = prompt.category || '';
     if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
+    if (toolsInput) toolsInput.value = prompt.targetAiTools ? prompt.targetAiTools.join(', ') : ''; // Added
     if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
 
     console.info('[edit-prompt.js ESM] Prompt data loaded successfully into form.');
@@ -109,14 +112,17 @@ async function handleEditPromptSubmit(event) {
 
   const promptIdField = document.getElementById('prompt-id');
   const titleInput = document.getElementById('prompt-title');
+  const descriptionInput = document.getElementById('prompt-description'); // Added
   const textInput = document.getElementById('prompt-text');
   const categoryInput = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
+  const toolsInput = document.getElementById('prompt-tools'); // Added
   const privateCheckbox = document.getElementById('prompt-private');
 
   const promptId = promptIdField ? promptIdField.value : null;
   const title = titleInput ? titleInput.value.trim() : '';
   const text = textInput ? textInput.value.trim() : '';
+  const description = descriptionInput ? descriptionInput.value.trim() : ''; // Added
 
   if (!promptId) {
     handleError('Prompt ID is missing. Cannot update.', {
@@ -136,6 +142,7 @@ async function handleEditPromptSubmit(event) {
   const updates = {
     title,
     text,
+    description, // Added
     category: categoryInput ? categoryInput.value.trim() : '',
     tags: tagsInput
       ? tagsInput.value
@@ -143,6 +150,12 @@ async function handleEditPromptSubmit(event) {
           .map(tag => tag.trim())
           .filter(tag => tag)
       : [],
+    targetAiTools: toolsInput
+      ? toolsInput.value
+          .split(',')
+          .map(tool => tool.trim())
+          .filter(tool => tool)
+      : [], // Added
     isPrivate: privateCheckbox ? privateCheckbox.checked : false,
   };
 
@@ -157,15 +170,13 @@ async function handleEditPromptSubmit(event) {
     const updatedPrompt = await updatePrompt(promptId, updates);
 
     if (updatedPrompt && updatedPrompt.id) {
-      // Check for truthy updatedPrompt and its ID
       showConfirmationMessage('Prompt updated successfully!', {
         messageElement: confirmationMessageElement,
-        timeout: 1500, // Shorter timeout as window will close
+        timeout: 1500,
       });
 
       if (chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' }, _response => {
-          // Changed to _response
           if (chrome.runtime.lastError) {
             console.warn(
               'Could not send PROMPT_ADDED_OR_MODIFIED message from edit:',
@@ -178,8 +189,6 @@ async function handleEditPromptSubmit(event) {
         window.close();
       }, 2000);
     } else {
-      // Error should have been handled by updatePrompt returning null.
-      // Ensure a generic one is shown on this page if not.
       if (!errorMessageElement || errorMessageElement.classList.contains('hidden')) {
         handleError('Failed to update prompt. Please check details or try again.', {
           specificErrorElement: errorMessageElement,
@@ -188,7 +197,6 @@ async function handleEditPromptSubmit(event) {
       }
     }
   } catch (error) {
-    // This catch is for unexpected errors from updatePrompt itself, though it aims to handle its own.
     handleError(`Critical error updating prompt: ${error.message}`, {
       userVisible: true,
       originalError: error,
