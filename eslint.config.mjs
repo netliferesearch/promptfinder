@@ -43,6 +43,7 @@ export default [
       globals: {
         ...sanitizeGlobals(globals.browser),
         ...sanitizeGlobals(globals.webextensions),
+        Prism: 'readonly', // Added Prism global
       },
     },
     rules: {
@@ -60,8 +61,8 @@ export default [
       globals: {
         ...sanitizeGlobals(globals.node),
         ...sanitizeGlobals(globals.jest),
-        ...sanitizeGlobals(globals.browser), // Add browser globals for JSDOM
-        ...sanitizeGlobals(globals.webextensions), // Add extension globals for chrome.* mocks
+        ...sanitizeGlobals(globals.browser),
+        ...sanitizeGlobals(globals.webextensions),
       },
     },
     rules: {
