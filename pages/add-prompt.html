@@ -18,7 +18,6 @@
         <h1>Add New Prompt</h1>
       </header>
 
-      <!-- Confirmation & error messages with ARIA live regions -->
       <p id="confirmation-message" class="hidden" aria-live="polite"></p>
       <p id="error-message" class="hidden" aria-live="assertive"></p>
 
@@ -27,6 +26,10 @@
           <div>
             <label for="prompt-title">Title:</label>
             <input type="text" id="prompt-title" required />
+          </div>
+          <div>
+            <label for="prompt-description">Description:</label>
+            <textarea id="prompt-description"></textarea>
           </div>
           <div>
             <label for="prompt-text">Prompt Text:</label>
@@ -41,6 +44,10 @@
             <input type="text" id="prompt-tags" />
           </div>
           <div>
+            <label for="prompt-tools">Target AI Tools (comma-separated):</label>
+            <input type="text" id="prompt-tools" />
+          </div>
+          <div>
             <input type="checkbox" id="prompt-private" />
             <label for="prompt-private">Make Private</label>
           </div>
@@ -52,9 +59,7 @@
       </section>
     </div>
 
-    <!-- Bundled script for this page -->
     <script src="../dist/pages/add-prompt.js"></script>
-    <!-- css-class-helper is separate, can be kept if not part of the bundle -->
     <script src="../js/css-class-helper.js"></script>
   </body>
 </html>
