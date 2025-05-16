@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -35,7 +35,7 @@
           </div>
           <div>
             <label for="prompt-text">Prompt Text:</label>
-            <textarea id="prompt-text" required></textarea>
+            <textarea id="prompt-text" class="code-input-textarea" required></textarea>
           </div>
           <div>
             <label for="prompt-category">Category:</label>
@@ -55,15 +55,13 @@
           </div>
           <div class="form-buttons">
             <button type="submit" class="button button-primary">Save Changes</button>
-            <button type="button" id="cancel-edit-prompt" class="button button-cancel">
-              Cancel
-            </button>
+            <button type="button" id="cancel-edit-prompt" class="button button-cancel">Cancel</button>
           </div>
         </form>
       </section>
     </div>
 
     <script src="../dist/pages/edit-prompt.js"></script>
-    <script src="../js/css-class-helper.js"></script>
+    <script src="../js/css-class-helper.js"></script> 
   </body>
 </html>
