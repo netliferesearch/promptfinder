@@ -7,7 +7,8 @@ window.PromptFinder = window.PromptFinder || {};
 
 window.PromptFinder.PromptData = (function () {
   const Utils = window.PromptFinder.Utils;
-  
+  const OFFSCREEN_DOCUMENT_PATH = 'pages/offscreen.html';
+
   // --- Firebase Authentication Functions ---
   const signupUser = async (email, password) => {
     if (!window.firebaseAuth) {
@@ -54,23 +55,69 @@ window.PromptFinder.PromptData = (function () {
     }
   };
 
-  const signInWithGoogle = async () => {
-    if (!window.firebaseAuth || !window.firebase || !window.firebase.auth || !window.firebase.auth.GoogleAuthProvider) {
-      const err = new Error('Firebase Auth or GoogleAuthProvider not initialized.');
-      Utils.handleError(err.message, { userVisible: true, originalError: err });
-      return err;
+  async function hasOffscreenDocument(path) {
+    if (!chrome.runtime.getManifest().offscreen) {
+      console.warn("Offscreen permission or document path not declared in manifest.");
+      return false;
     }
+    const offscreenUrl = chrome.runtime.getURL(path);
+    if (chrome.runtime.getContexts) { // For Manifest V3
+        const contexts = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT'],
+            documentUrls: [offscreenUrl]
+        });
+        return !!contexts.length;
+    } else { // Fallback for older versions or different environments (less reliable)
+        console.warn("chrome.runtime.getContexts API not available, cannot reliably check for existing offscreen document.");
+        return false; // Assume not present to avoid issues if API is missing
+    }
+  }
+
+  const signInWithGoogle = async () => {
+    console.log("signInWithGoogle called");
+    if (typeof chrome === 'undefined' || !chrome.offscreen) {
+        const errMsg = "Offscreen API not available. Google Sign-In via popup cannot proceed.";
+        console.error(errMsg);
+        Utils.handleError(errMsg, { userVisible: true });
+        return Promise.reject(new Error(errMsg));
+    }
+
+    const path = OFFSCREEN_DOCUMENT_PATH;
     try {
-      const provider = new window.firebase.auth.GoogleAuthProvider();
-      const message = 'Google Sign-In with popup requires an Offscreen Document in Manifest V3. This feature is not fully implemented yet.';
-      alert(message);
-      console.warn(message);
-      const err = new Error(message);
-      Utils.displayAuthError(message, document.getElementById('auth-error-message'));
-      return err;
+        const docExists = await hasOffscreenDocument(path);
+        if (!docExists) {
+            console.log("Creating offscreen document");
+            await chrome.offscreen.createDocument({
+                url: path,
+                reasons: ['FIREBASE'], // Must match one of the reasons in the manifest
+                justification: 'Firebase Google Sign-In requires an offscreen document for its UI flow in MV3.',
+            });
+        } else {
+            console.log("Offscreen document already exists.");
+        }
+
+        console.log("Sending message to offscreen document to start Google Sign-In");
+        const response = await chrome.runtime.sendMessage({
+            target: 'offscreen',
+            action: 'firebase-google-signin'
+        });
+
+        if (response && response.success) {
+            console.log("Google Sign-In successful (response from offscreen):", response.user);
+            // Firebase onAuthStateChanged should pick up the new user state.
+            // The user object might be useful for immediate UI updates if needed,
+            // but typically auth state handles this.
+            return response.user; // Or a userCredential-like object if preferred
+        } else {
+            console.error("Google Sign-In failed (response from offscreen):", response?.error);
+            const errMsg = response?.error?.message || "An unknown error occurred during Google Sign-In.";
+            Utils.handleError(errMsg, { userVisible: true, originalError: response?.error });
+            return Promise.reject(response?.error || new Error(errMsg));
+        }
     } catch (error) {
-      Utils.handleError(`Google Sign-In error: ${error.message}`, { userVisible: true, originalError: error });
-      return error;
+        console.error("Error in signInWithGoogle flow:", error);
+        Utils.handleError(`Google Sign-In client-side error: ${error.message}`, { userVisible: true, originalError: error });
+        return Promise.reject(error);
     }
   };
 

@@ -300,7 +300,7 @@ window.PromptFinder.UI = (function () {
     
     if (starRatingContainerEl) {
       starRatingContainerEl.dataset.id = prompt.id;
-      starRatingContainerEl.innerHTML = '';
+      starRatingContainerEl.innerHTML = ''; // Re-enabled this line
       const currentRating = Math.round(ratingToDisplay);
       for (let i = 1; i <= 5; i++) {
         const star = document.createElement('button'); // This element needs dataset property
@@ -423,6 +423,8 @@ window.PromptFinder.UI = (function () {
     showTab,
     displayPrompts, 
     displayPromptDetails, 
-    viewPromptDetails 
+    viewPromptDetails,
+    cacheDOMElements,
+    getStarRatingContainerElementForTest: () => starRatingContainerEl // Added this for testing
   };
 })();
