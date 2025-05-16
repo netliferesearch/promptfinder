@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="../css/pages/popup.css" />
     <link rel="stylesheet" href="../css/pages/auth.css" />
     <link rel="stylesheet" href="../css/pages/prompt-details.css" />
-    <!-- Added this line -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -93,7 +92,18 @@
               </button>
             </div>
             <p><strong>Description:</strong> <span id="prompt-detail-description"></span></p>
-            <p><strong>Prompt:</strong> <span id="prompt-detail-text"></span></p>
+
+            <!-- Prompt Text Display Area -->
+            <div class="prompt-text-container">
+              <p><strong>Prompt:</strong></p>
+              <div id="prompt-text-wrapper" class="code-block-wrapper">
+                <pre><code id="prompt-detail-text"></code></pre>
+              </div>
+              <button id="prompt-text-view-more" class="button button-link button-sm hidden">
+                View More
+              </button>
+            </div>
+
             <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
             <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
             <p><strong>Target AI Tools:</strong> <span id="prompt-detail-tools"></span></p>

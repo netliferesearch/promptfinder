@@ -10,6 +10,8 @@ import { auth } from './firebase-init.js'; // Import the initialized auth servic
 let allPrompts = [];
 let activeTab = 'all';
 
+const PROMPT_TRUNCATE_LENGTH = 200;
+
 // Cached DOM Elements (module scope)
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
@@ -26,7 +28,9 @@ let promptDetailsSectionEl,
   confirmDeleteButtonEl,
   promptDetailTitleEl,
   promptDetailDescriptionEl,
-  promptDetailTextEl,
+  promptDetailTextEl, // This will be the <code> element
+  promptTextWrapperEl, // This will be the <pre> element for styling max-height
+  promptTextViewMoreEl, // The "View More" button
   promptDetailCategoryEl,
   promptDetailTagsEl,
   promptDetailToolsEl,
@@ -54,7 +58,10 @@ export const cacheDOMElements = () => {
 
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
   promptDetailDescriptionEl = document.getElementById('prompt-detail-description');
-  promptDetailTextEl = document.getElementById('prompt-detail-text');
+  promptDetailTextEl = document.getElementById('prompt-detail-text'); // The <code> element
+  promptTextWrapperEl = document.getElementById('prompt-text-wrapper')?.querySelector('pre'); // The <pre> element
+  promptTextViewMoreEl = document.getElementById('prompt-text-view-more');
+
   promptDetailCategoryEl = document.getElementById('prompt-detail-category');
   promptDetailTagsEl = document.getElementById('prompt-detail-tags');
   promptDetailToolsEl = document.getElementById('prompt-detail-tools');
@@ -296,6 +303,23 @@ const setupEventListeners = () => {
       const promptId = promptDetailsSectionEl.dataset.currentPromptId || favBtnDetail.dataset.id;
       if (promptId) handleToggleFavorite(promptId);
     });
+
+    // Event listener for the "View More" button for prompt text
+    promptTextViewMoreEl?.addEventListener('click', () => {
+      if (promptTextWrapperEl && promptDetailTextEl) {
+        const isExpanded = promptTextWrapperEl.classList.toggle('expanded');
+        promptTextViewMoreEl.textContent = isExpanded ? 'View Less' : 'View More';
+        if (isExpanded) {
+          promptDetailTextEl.textContent = promptDetailsSectionEl.dataset.fullPromptText || '';
+        } else {
+          promptDetailTextEl.textContent =
+            (promptDetailsSectionEl.dataset.fullPromptText || '').substring(
+              0,
+              PROMPT_TRUNCATE_LENGTH
+            ) + '...';
+        }
+      }
+    });
   }
   console.log('[UI_DEBUG] setupEventListeners - END (v9 modular)');
 };
@@ -422,6 +446,7 @@ export const displayPromptDetails = prompt => {
   if (!prompt || !promptDetailsSectionEl) return;
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
+  promptDetailsSectionEl.dataset.fullPromptText = prompt.text || ''; // Store full text
 
   const setText = (el, text) => {
     if (el) el.textContent = text || 'N/A';
@@ -436,14 +461,13 @@ export const displayPromptDetails = prompt => {
         day: 'numeric',
       });
     } catch {
-      // Parameter removed
       return dateString;
     }
   };
 
   setText(promptDetailTitleEl, prompt.title);
   setText(promptDetailDescriptionEl, prompt.description);
-  setText(promptDetailTextEl, prompt.text);
+  // setText(promptDetailTextEl, prompt.text); // Handled by new logic below
   setText(promptDetailCategoryEl, prompt.category);
   setText(promptDetailTagsEl, formatArray(prompt.tags));
   setText(promptDetailToolsEl, formatArray(prompt.targetAiTools));
@@ -452,6 +476,24 @@ export const displayPromptDetails = prompt => {
   setText(promptDetailUpdatedEl, formatDate(prompt.updatedAt));
   setText(promptDetailUsageEl, prompt.usageCount?.toString() || '0');
   setText(promptDetailFavoritesEl, prompt.favoritesCount?.toString() || '0');
+
+  // Handle prompt text display with truncation and "View More"
+  if (promptDetailTextEl && promptTextWrapperEl && promptTextViewMoreEl) {
+    const fullText = prompt.text || '';
+    if (fullText.length > PROMPT_TRUNCATE_LENGTH) {
+      promptDetailTextEl.textContent = fullText.substring(0, PROMPT_TRUNCATE_LENGTH) + '...';
+      promptTextViewMoreEl.classList.remove('hidden');
+      promptTextViewMoreEl.textContent = 'View More';
+      promptTextWrapperEl.classList.remove('expanded');
+    } else {
+      promptDetailTextEl.textContent = fullText;
+      promptTextViewMoreEl.classList.add('hidden');
+      promptTextWrapperEl.classList.remove('expanded'); // Ensure it's not expanded if text is short
+    }
+  } else {
+    // Fallback if new elements are not found (should not happen if HTML is correct)
+    if (promptDetailTextEl) setText(promptDetailTextEl, prompt.text);
+  }
 
   const currentUser = auth ? auth.currentUser : null;
   const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');

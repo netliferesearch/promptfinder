@@ -9,14 +9,13 @@
 }
 
 #prompt-details-section .detail-card p {
-  margin-bottom: var(--spacing-xs, 4px); /* Add some space between paragraphs */
+  margin-bottom: var(--spacing-xs, 4px);
 }
 
 #prompt-details-section .detail-card strong {
-  color: var(--color-black, #333); /* Make labels slightly more prominent */
+  color: var(--color-black, #333);
 }
 
-/* Specific styling for elements if needed */
 #prompt-detail-description {
   font-style: italic;
   color: var(--color-gray-500, #999);
@@ -35,15 +34,57 @@
   font-size: var(--font-size-xs, 0.75rem);
 }
 
-/* Ensure the detail card itself has some padding and card-like appearance if not already handled by .detail-card elsewhere */
 .detail-card {
   background-color: var(--color-white, #fff);
   padding: var(--spacing-md, 16px);
   border-radius: var(--border-radius-md, 16px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* A subtle shadow */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: var(--spacing-md, 16px);
 }
 
 .detail-title-container h2 span {
-  font-weight: 600; /* Make title a bit bolder */
+  font-weight: 600;
+}
+
+/* Styles for prompt text display */
+.prompt-text-container {
+  margin-top: var(--spacing-sm, 8px);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.code-block-wrapper pre {
+  background-color: var(--color-gray-100, #f8f9fa); /* Light background for code */
+  border: 1px solid var(--color-gray-300, #e0e0e0);
+  border-radius: var(--border-radius-sm, 8px);
+  padding: var(--spacing-sm, 8px);
+  white-space: pre-wrap; /* CSS3 */
+  white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
+  white-space: -pre-wrap; /* Opera 4-6 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  word-wrap: break-word; /* Internet Explorer 5.5+ */
+  overflow-x: auto; /* Add scroll for very long lines if pre-wrap isn't enough */
+  max-height: 150px; /* Default max height for truncated view */
+  overflow-y: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.code-block-wrapper pre.expanded {
+  max-height: 1000px; /* Allow to expand significantly */
+  overflow-y: auto;
+}
+
+.code-block-wrapper code {
+  font-family: var(--font-family-monospace, monospace);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-code-text, #333);
+}
+
+#prompt-text-view-more {
+  display: block; /* Make it a block to appear below */
+  margin-top: var(--spacing-xs, 4px);
+  font-size: var(--font-size-xs, 0.75rem);
+}
+
+#prompt-text-view-more.hidden {
+  display: none;
 }
