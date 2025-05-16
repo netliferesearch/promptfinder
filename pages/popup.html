@@ -12,6 +12,11 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
+    <!-- Prism.js CSS (Tomorrow Night theme) -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+      rel="stylesheet"
+    />
     <script src="../js/css-class-helper.js"></script>
   </head>
 
@@ -97,7 +102,8 @@
             <div class="prompt-text-container">
               <p><strong>Prompt:</strong></p>
               <div id="prompt-text-wrapper" class="code-block-wrapper">
-                <pre><code id="prompt-detail-text"></code></pre>
+                <!-- Add language-markdown class for Prism to identify Markdown -->
+                <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
               </div>
               <button id="prompt-text-view-more" class="button button-link button-sm hidden">
                 View More
@@ -210,5 +216,9 @@
     <!-- Bundled Scripts -->
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
+
+    <!-- Prism.js Core & Autoloader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
   </body>
 </html>
