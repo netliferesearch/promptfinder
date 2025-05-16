@@ -7,6 +7,11 @@ import * as Utils from './utils.js';
 import * as PromptData from './promptData.js';
 import { auth } from './firebase-init.js'; // Import the initialized auth service
 
+// Import Prism.js
+import 'prismjs'; // Core
+import 'prismjs/components/prism-markdown.min.js'; // Markdown language support
+import 'prismjs/themes/prism-tomorrow.css'; // Prism Tomorrow Night theme CSS
+
 let allPrompts = [];
 let activeTab = 'all';
 
@@ -316,7 +321,6 @@ const setupEventListeners = () => {
             fullText.substring(0, PROMPT_TRUNCATE_LENGTH) +
             (fullText.length > PROMPT_TRUNCATE_LENGTH ? '...' : '');
         }
-        // Re-highlight after changing content
         if (window.Prism && promptDetailTextEl) {
           Prism.highlightElement(promptDetailTextEl);
         }
@@ -490,7 +494,6 @@ export const displayPromptDetails = prompt => {
       promptTextViewMoreEl.classList.add('hidden');
       promptTextWrapperEl.classList.remove('expanded');
     }
-    // Highlight after setting initial content
     if (window.Prism && promptDetailTextEl) {
       Prism.highlightElement(promptDetailTextEl);
     }
