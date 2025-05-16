@@ -7,6 +7,11 @@ import * as Utils from './utils.js';
 import * as PromptData from './promptData.js';
 import { auth } from './firebase-init.js'; // Import the initialized auth service
 
+// Import Prism.js
+import 'prismjs'; // Core
+import 'prismjs/components/prism-markdown.min.js'; // Markdown language support
+import 'prismjs/themes/prism-tomorrow.css'; // Prism Tomorrow Night theme CSS
+
 let allPrompts = [];
 let activeTab = 'all';
 
@@ -28,9 +33,9 @@ let promptDetailsSectionEl,
   confirmDeleteButtonEl,
   promptDetailTitleEl,
   promptDetailDescriptionEl,
-  promptDetailTextEl, // This will be the <code> element
-  promptTextWrapperEl, // This will be the <pre> element for styling max-height
-  promptTextViewMoreEl, // The "View More" button
+  promptDetailTextEl,
+  promptTextWrapperEl,
+  promptTextViewMoreEl,
   promptDetailCategoryEl,
   promptDetailTagsEl,
   promptDetailToolsEl,
@@ -58,8 +63,8 @@ export const cacheDOMElements = () => {
 
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
   promptDetailDescriptionEl = document.getElementById('prompt-detail-description');
-  promptDetailTextEl = document.getElementById('prompt-detail-text'); // The <code> element
-  promptTextWrapperEl = document.getElementById('prompt-text-wrapper')?.querySelector('pre'); // The <pre> element
+  promptDetailTextEl = document.getElementById('prompt-detail-text');
+  promptTextWrapperEl = document.getElementById('prompt-text-wrapper')?.querySelector('pre');
   promptTextViewMoreEl = document.getElementById('prompt-text-view-more');
 
   promptDetailCategoryEl = document.getElementById('prompt-detail-category');
@@ -304,19 +309,20 @@ const setupEventListeners = () => {
       if (promptId) handleToggleFavorite(promptId);
     });
 
-    // Event listener for the "View More" button for prompt text
     promptTextViewMoreEl?.addEventListener('click', () => {
-      if (promptTextWrapperEl && promptDetailTextEl) {
+      if (promptTextWrapperEl && promptDetailTextEl && promptDetailsSectionEl) {
         const isExpanded = promptTextWrapperEl.classList.toggle('expanded');
         promptTextViewMoreEl.textContent = isExpanded ? 'View Less' : 'View More';
+        const fullText = promptDetailsSectionEl.dataset.fullPromptText || '';
         if (isExpanded) {
-          promptDetailTextEl.textContent = promptDetailsSectionEl.dataset.fullPromptText || '';
+          promptDetailTextEl.textContent = fullText;
         } else {
           promptDetailTextEl.textContent =
-            (promptDetailsSectionEl.dataset.fullPromptText || '').substring(
-              0,
-              PROMPT_TRUNCATE_LENGTH
-            ) + '...';
+            fullText.substring(0, PROMPT_TRUNCATE_LENGTH) +
+            (fullText.length > PROMPT_TRUNCATE_LENGTH ? '...' : '');
+        }
+        if (window.Prism && promptDetailTextEl) {
+          Prism.highlightElement(promptDetailTextEl);
         }
       }
     });
@@ -446,7 +452,7 @@ export const displayPromptDetails = prompt => {
   if (!prompt || !promptDetailsSectionEl) return;
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
-  promptDetailsSectionEl.dataset.fullPromptText = prompt.text || ''; // Store full text
+  promptDetailsSectionEl.dataset.fullPromptText = prompt.text || '';
 
   const setText = (el, text) => {
     if (el) el.textContent = text || 'N/A';
@@ -467,7 +473,6 @@ export const displayPromptDetails = prompt => {
 
   setText(promptDetailTitleEl, prompt.title);
   setText(promptDetailDescriptionEl, prompt.description);
-  // setText(promptDetailTextEl, prompt.text); // Handled by new logic below
   setText(promptDetailCategoryEl, prompt.category);
   setText(promptDetailTagsEl, formatArray(prompt.tags));
   setText(promptDetailToolsEl, formatArray(prompt.targetAiTools));
@@ -477,7 +482,6 @@ export const displayPromptDetails = prompt => {
   setText(promptDetailUsageEl, prompt.usageCount?.toString() || '0');
   setText(promptDetailFavoritesEl, prompt.favoritesCount?.toString() || '0');
 
-  // Handle prompt text display with truncation and "View More"
   if (promptDetailTextEl && promptTextWrapperEl && promptTextViewMoreEl) {
     const fullText = prompt.text || '';
     if (fullText.length > PROMPT_TRUNCATE_LENGTH) {
@@ -488,10 +492,12 @@ export const displayPromptDetails = prompt => {
     } else {
       promptDetailTextEl.textContent = fullText;
       promptTextViewMoreEl.classList.add('hidden');
-      promptTextWrapperEl.classList.remove('expanded'); // Ensure it's not expanded if text is short
+      promptTextWrapperEl.classList.remove('expanded');
+    }
+    if (window.Prism && promptDetailTextEl) {
+      Prism.highlightElement(promptDetailTextEl);
     }
   } else {
-    // Fallback if new elements are not found (should not happen if HTML is correct)
     if (promptDetailTextEl) setText(promptDetailTextEl, prompt.text);
   }
 
