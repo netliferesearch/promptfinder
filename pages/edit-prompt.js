@@ -67,19 +67,19 @@ async function loadPromptData(promptId, errorElement) {
     }
 
     const titleInput = document.getElementById('prompt-title');
-    const descriptionInput = document.getElementById('prompt-description'); // Added
+    const descriptionInput = document.getElementById('prompt-description');
     const textInput = document.getElementById('prompt-text');
     const categoryInput = document.getElementById('prompt-category');
     const tagsInput = document.getElementById('prompt-tags');
-    const toolsInput = document.getElementById('prompt-tools'); // Added
+    const toolsInput = document.getElementById('prompt-tools');
     const privateCheckbox = document.getElementById('prompt-private');
 
     if (titleInput) titleInput.value = prompt.title || '';
-    if (descriptionInput) descriptionInput.value = prompt.description || ''; // Added
+    if (descriptionInput) descriptionInput.value = prompt.description || '';
     if (textInput) textInput.value = prompt.text || '';
     if (categoryInput) categoryInput.value = prompt.category || '';
     if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
-    if (toolsInput) toolsInput.value = prompt.targetAiTools ? prompt.targetAiTools.join(', ') : ''; // Added
+    if (toolsInput) toolsInput.value = prompt.targetAiTools ? prompt.targetAiTools.join(', ') : '';
     if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
 
     console.info('[edit-prompt.js ESM] Prompt data loaded successfully into form.');
@@ -112,17 +112,24 @@ async function handleEditPromptSubmit(event) {
 
   const promptIdField = document.getElementById('prompt-id');
   const titleInput = document.getElementById('prompt-title');
-  const descriptionInput = document.getElementById('prompt-description'); // Added
+  const descriptionInput = document.getElementById('prompt-description');
   const textInput = document.getElementById('prompt-text');
   const categoryInput = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
-  const toolsInput = document.getElementById('prompt-tools'); // Added
+  const toolsInput = document.getElementById('prompt-tools');
   const privateCheckbox = document.getElementById('prompt-private');
 
   const promptId = promptIdField ? promptIdField.value : null;
   const title = titleInput ? titleInput.value.trim() : '';
+  const description = descriptionInput ? descriptionInput.value.trim() : '';
   const text = textInput ? textInput.value.trim() : '';
-  const description = descriptionInput ? descriptionInput.value.trim() : ''; // Added
+  const category = categoryInput ? categoryInput.value.trim() : '';
+  const targetAiToolsArray = toolsInput
+    ? toolsInput.value
+        .split(',')
+        .map(tool => tool.trim())
+        .filter(tool => tool !== '')
+    : [];
 
   if (!promptId) {
     handleError('Prompt ID is missing. Cannot update.', {
@@ -131,31 +138,29 @@ async function handleEditPromptSubmit(event) {
     });
     return;
   }
-  if (!title || !text) {
-    handleError('Please enter both a title and prompt text.', {
-      specificErrorElement: errorMessageElement,
-      userVisible: true,
-    });
+  if (!title || !description || !text || !category || targetAiToolsArray.length === 0) {
+    handleError(
+      'Please fill in all required fields: Title, Description, Prompt Text, Category, and Target AI Tools.',
+      {
+        specificErrorElement: errorMessageElement,
+        userVisible: true,
+      }
+    );
     return;
   }
 
   const updates = {
     title,
+    description,
     text,
-    description, // Added
-    category: categoryInput ? categoryInput.value.trim() : '',
+    category,
     tags: tagsInput
       ? tagsInput.value
           .split(',')
           .map(tag => tag.trim())
           .filter(tag => tag)
       : [],
-    targetAiTools: toolsInput
-      ? toolsInput.value
-          .split(',')
-          .map(tool => tool.trim())
-          .filter(tool => tool)
-      : [], // Added
+    targetAiTools: targetAiToolsArray,
     isPrivate: privateCheckbox ? privateCheckbox.checked : false,
   };
 
