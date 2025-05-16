@@ -7,7 +7,9 @@
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   margin-bottom: var(--spacing-md);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .card:hover {
@@ -72,7 +74,9 @@
   border-radius: var(--border-radius-md);
   background-color: var(--color-white);
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   cursor: pointer;
   display: flex;
   flex-direction: column;
