@@ -47,56 +47,50 @@ async function handleAddPromptSubmit(event) {
   }
 
   const titleInput = document.getElementById('prompt-title');
-  const descriptionInput = document.getElementById('prompt-description'); // Added
+  const descriptionInput = document.getElementById('prompt-description');
   const textInput = document.getElementById('prompt-text');
   const categoryInput = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
-  const toolsInput = document.getElementById('prompt-tools'); // Added
+  const toolsInput = document.getElementById('prompt-tools');
   const privateCheckbox = document.getElementById('prompt-private');
 
-  if (!titleInput || !textInput) {
-    // Basic check, can be expanded
-    handleError('Form elements missing (title or text)', {
-      specificErrorElement: errorMessageElement,
-      userVisible: true,
-    });
-    return;
-  }
-
-  const title = titleInput.value.trim();
-  const text = textInput.value.trim();
-  const description = descriptionInput ? descriptionInput.value.trim() : ''; // Added
-
-  if (!title || !text) {
-    handleError('Please enter both a title and prompt text.', {
-      specificErrorElement: errorMessageElement,
-      userVisible: true,
-    });
-    return;
-  }
-
+  const title = titleInput ? titleInput.value.trim() : '';
+  const description = descriptionInput ? descriptionInput.value.trim() : '';
+  const text = textInput ? textInput.value.trim() : '';
   const category = categoryInput ? categoryInput.value.trim() : '';
+  const targetAiToolsArray = toolsInput
+    ? toolsInput.value
+        .split(',')
+        .map(tool => tool.trim())
+        .filter(tool => tool !== '')
+    : [];
+
+  if (!title || !description || !text || !category || targetAiToolsArray.length === 0) {
+    handleError(
+      'Please fill in all required fields: Title, Description, Prompt Text, Category, and Target AI Tools.',
+      {
+        specificErrorElement: errorMessageElement,
+        userVisible: true,
+      }
+    );
+    return;
+  }
+
   const tags = tagsInput
     ? tagsInput.value
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag !== '')
     : [];
-  const targetAiTools = toolsInput // Added
-    ? toolsInput.value
-        .split(',')
-        .map(tool => tool.trim())
-        .filter(tool => tool !== '')
-    : [];
   const isPrivate = privateCheckbox ? privateCheckbox.checked : false;
 
   const promptDataPayload = {
     title,
+    description,
     text,
-    description, // Added
     category,
     tags,
-    targetAiTools, // Added
+    targetAiTools: targetAiToolsArray,
     isPrivate,
   };
 
