@@ -25,16 +25,16 @@ let promptDetailsSectionEl,
   cancelDeleteButtonEl,
   confirmDeleteButtonEl,
   promptDetailTitleEl,
-  promptDetailDescriptionEl, // Added
+  promptDetailDescriptionEl,
   promptDetailTextEl,
   promptDetailCategoryEl,
   promptDetailTagsEl,
-  promptDetailToolsEl, // Added
-  promptDetailAuthorEl, // Added
-  promptDetailCreatedEl, // Added
-  promptDetailUpdatedEl, // Added
-  promptDetailUsageEl, // Added
-  promptDetailFavoritesEl, // Added
+  promptDetailToolsEl,
+  promptDetailAuthorEl,
+  promptDetailCreatedEl,
+  promptDetailUpdatedEl,
+  promptDetailUsageEl,
+  promptDetailFavoritesEl,
   averageRatingValueEl,
   ratingCountEl,
   starRatingContainerEl;
@@ -423,13 +423,10 @@ export const displayPromptDetails = prompt => {
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
 
-  // Helper to set text content safely
   const setText = (el, text) => {
     if (el) el.textContent = text || 'N/A';
   };
-  // Helper to format array data
   const formatArray = arr => (arr && arr.length > 0 ? arr.join(', ') : 'None');
-  // Helper to format date strings (basic)
   const formatDate = dateString => {
     if (!dateString) return 'N/A';
     try {
@@ -438,9 +435,9 @@ export const displayPromptDetails = prompt => {
         month: 'short',
         day: 'numeric',
       });
-    } catch (_e) {
-      // Changed e to _e
-      return dateString; // Fallback to original string if date is invalid
+    } catch {
+      // Parameter removed
+      return dateString;
     }
   };
 
@@ -478,7 +475,6 @@ export const displayPromptDetails = prompt => {
     countToDisplay = prompt.totalRatingsCount || 0;
     ratingText = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
   } else {
-    // For private prompts not owned by the user, rating might not be applicable
     ratingText = '(N/A)';
   }
   setText(averageRatingValueEl, `(${ratingToDisplay.toFixed(1)})`);
@@ -498,8 +494,8 @@ export const displayPromptDetails = prompt => {
       star.innerHTML =
         i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
       if (i <= currentRating) star.classList.add('filled');
-      star.addEventListener('click', async _e => {
-        _e.stopPropagation();
+      star.addEventListener('click', async _event => {
+        _event.stopPropagation();
         await handleRatePrompt(prompt.id, i);
       });
       starRatingContainerEl.appendChild(star);

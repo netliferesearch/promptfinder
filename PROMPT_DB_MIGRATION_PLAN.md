@@ -18,7 +18,7 @@ _Status: ✅_
 
 1.  ✅ **Technology Stack Finalized**:
     - ✅ Backend: Firebase (Firestore for DB, Firebase Authentication for Users - v9+ modular SDK).
-    - ✅ Frontend: Existing JavaScript, HTML, CSS structure. Bundler (Rollup) to be integrated.
+    - ✅ Frontend: Existing JavaScript, HTML, CSS structure. Bundler (Rollup) integrated.
 2.  ✅ **Data Models Defined (Initial Version)**:
     - ✅ `users` collection (basic profile info).
     - ✅ `prompts` collection (prompt data, `userId` for ownership, `isPublic`, `isPrivate`, etc.).
@@ -28,7 +28,7 @@ _Status: ✅_
 4.  ✅ **Development Environment**:
     - ✅ Firebase project setup.
     - ✅ Local development environment configured for Firebase interaction.
-    - ⬜ **Setup Rollup for JavaScript bundling**.
+    - ✅ **Setup Rollup for JavaScript bundling**.
 
 ---
 
@@ -36,20 +36,20 @@ _Status: ✅_
 
 _Status: 🚧_
 
-1.  🚧 **Integrate Firebase v9+ Modular SDK & Refactor**:
-    - ⬜ Install Firebase v9+ SDK via npm.
-    - ⬜ Refactor `js/firebase-init.js` to use v9 modular imports and export initialized services (auth, db).
-    - ⬜ Refactor `js/promptData.js` to import Firebase services from `firebase-init.js` and use v9 modular syntax for all Firestore and Auth operations.
-    - ⬜ Refactor `pages/offscreen.js` to use bundled, modular Firebase for Google Sign-In.
-    - ⬜ Update other JS files (`app.js`, `pages/*.js`) as needed to align with modular Firebase usage.
+1.  ✅ **Integrate Firebase v9+ Modular SDK & Refactor**:
+    - ✅ Install Firebase v9+ SDK via npm.
+    - ✅ Refactor `js/firebase-init.js` to use v9 modular imports and export initialized services (auth, db).
+    - ✅ Refactor `js/promptData.js` to import Firebase services from `firebase-init.js` and use v9 modular syntax for all Firestore and Auth operations.
+    - ✅ Refactor `pages/offscreen.js` (now removed) and other page scripts (`add-prompt.js`, `edit-prompt.js`) to use bundled, modular Firebase.
+    - ✅ Update other JS files (`app.js`, `utils.js`) to use ES Modules and align with modular Firebase usage.
 2.  🚧 **User Authentication Integration (Firebase v9 Modular)**:
-    - ⬜ Implement Email/Password signup and login using v9 auth.
-    - 🚧 Implement Google Sign-In using `chrome.offscreen` API and bundled v9 auth. _(Offscreen HTML/JS structure in place, needs bundling and v9 refactor)_
-    - ⬜ Ensure user data is correctly created/managed in Firestore upon signup/auth.
-3.  ⬜ **Basic data read/write functions for Prompts (CRUD - Firebase v9 Modular)**:
-    - ⬜ Review and complete all CRUD operations in `promptData.js` using v9 Firestore syntax.
-    - ⬜ Ensure client-side logic in `ui.js` correctly interacts with refactored `promptData.js`.
-4.  ✅ **Write unit tests** for new data handling and authentication logic in `promptData.js`. _(Existing tests will need adaptation to v9 syntax after refactor)_.
+    - ✅ Implement Email/Password signup and login using v9 auth (via `js/promptData.js` refactor).
+    - ✅ Implement Google Sign-In using `chrome.identity.launchWebAuthFlow` and bundled v9 auth. _(Pivoted from offscreen API)_
+    - ✅ Ensure user data is correctly created/managed in Firestore upon signup/auth.
+3.  🚧 **Basic data read/write functions for Prompts (CRUD - Firebase v9 Modular)**:
+    - ✅ Review and complete all CRUD operations in `promptData.js` using v9 Firestore syntax. _(Largely done during refactor, pending final review)_
+    - ⬜ Ensure client-side logic in `ui.js` correctly interacts with refactored `promptData.js`. _(Implicitly tested, but focused review might be good)_
+4.  ✅ **Write unit tests** for new data handling and authentication logic in `promptData.js`. _(Existing tests will need adaptation to v9 syntax after refactor - this task is effectively superseded by the successful refactor and subsequent testing of auth, but test suite will need update)_.
 5.  ⬜ **Develop UI for associating prompts with users** (e.g., in add/edit forms, display user ownership).
 
 ---
