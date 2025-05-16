@@ -25,13 +25,19 @@ let promptDetailsSectionEl,
   cancelDeleteButtonEl,
   confirmDeleteButtonEl,
   promptDetailTitleEl,
+  promptDetailDescriptionEl, // Added
   promptDetailTextEl,
   promptDetailCategoryEl,
   promptDetailTagsEl,
+  promptDetailToolsEl, // Added
+  promptDetailAuthorEl, // Added
+  promptDetailCreatedEl, // Added
+  promptDetailUpdatedEl, // Added
+  promptDetailUsageEl, // Added
+  promptDetailFavoritesEl, // Added
   averageRatingValueEl,
   ratingCountEl,
   starRatingContainerEl;
-// let addPromptSectionEl; // This was cached but doesn't seem to be used within ui.js directly
 let controlsEl, tabsContainerEl, addPromptBarEl;
 
 export const cacheDOMElements = () => {
@@ -42,14 +48,22 @@ export const cacheDOMElements = () => {
   filterButtonEl = document.getElementById('filter-button');
   ratingFilterPanelEl = document.getElementById('rating-filter');
   minRatingSelectEl = document.getElementById('min-rating');
-  addPromptButtonEl = document.getElementById('add-prompt-button'); // This is the one in the main popup view
+  addPromptButtonEl = document.getElementById('add-prompt-button');
   promptsListEl = document.getElementById('prompts-list');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
-  // addPromptSectionEl = document.getElementById('add-prompt-section');
+
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
+  promptDetailDescriptionEl = document.getElementById('prompt-detail-description');
   promptDetailTextEl = document.getElementById('prompt-detail-text');
   promptDetailCategoryEl = document.getElementById('prompt-detail-category');
   promptDetailTagsEl = document.getElementById('prompt-detail-tags');
+  promptDetailToolsEl = document.getElementById('prompt-detail-tools');
+  promptDetailAuthorEl = document.getElementById('prompt-detail-author');
+  promptDetailCreatedEl = document.getElementById('prompt-detail-created');
+  promptDetailUpdatedEl = document.getElementById('prompt-detail-updated');
+  promptDetailUsageEl = document.getElementById('prompt-detail-usage');
+  promptDetailFavoritesEl = document.getElementById('prompt-detail-favorites');
+
   averageRatingValueEl = document.getElementById('average-rating-value');
   ratingCountEl = document.getElementById('rating-count');
   starRatingContainerEl = document.getElementById('star-rating');
@@ -72,7 +86,6 @@ export const cacheDOMElements = () => {
 
 const openDetachedAddPromptWindow = () => {
   try {
-    // Ensure chrome API is available (it should be in an extension context)
     if (chrome && chrome.windows && chrome.runtime) {
       chrome.windows.create(
         {
@@ -130,7 +143,6 @@ const openDetachedEditWindow = promptId => {
   }
 };
 
-// Event Handlers (to be called within setupEventListeners)
 async function handlePromptListClick(event) {
   const targetButton = event.target.closest('button');
   if (!targetButton || !targetButton.dataset.id) return;
@@ -208,8 +220,8 @@ async function handleDeletePrompt(promptId) {
     const success = await PromptData.deletePrompt(promptId);
     if (success) {
       Utils.showConfirmationMessage('Prompt deleted successfully!');
-      await loadAndDisplayData(); // Reload data
-      showPromptList(); // Switch to list view
+      await loadAndDisplayData();
+      showPromptList();
     }
   } catch (error) {
     Utils.handleError('Error during prompt deletion process', {
@@ -234,7 +246,6 @@ const setupEventListeners = () => {
   }
   minRatingSelectEl?.addEventListener('change', () => showTab(activeTab));
 
-  // This is the "Add New Prompt" button in the main popup UI (not the form itself)
   addPromptButtonEl?.addEventListener('click', () => {
     const currentUser = auth ? auth.currentUser : null;
     if (currentUser) {
@@ -361,19 +372,18 @@ export const displayPrompts = prompts => {
   const sorted = [...prompts].sort((a, b) =>
     (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
   );
-  promptsListEl.innerHTML = ''; // Clear previous prompts
+  promptsListEl.innerHTML = '';
   if (sorted.length === 0) {
     promptsListEl.innerHTML =
       '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
     return;
   }
-  const currentUser = auth ? auth.currentUser : null; // Use imported auth
+  const currentUser = auth ? auth.currentUser : null;
   sorted.forEach(prompt => {
     const div = document.createElement('div');
     div.classList.add('prompt-item');
     const isFavoriteDisplay =
       currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
-    // Use Utils.escapeHTML for safety
     div.innerHTML = `
       <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite">
         <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
@@ -413,12 +423,40 @@ export const displayPromptDetails = prompt => {
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
 
-  if (promptDetailTitleEl) promptDetailTitleEl.textContent = prompt.title || 'N/A';
-  if (promptDetailTextEl) promptDetailTextEl.textContent = prompt.text || 'N/A';
-  if (promptDetailCategoryEl) promptDetailCategoryEl.textContent = prompt.category || 'N/A';
-  if (promptDetailTagsEl) promptDetailTagsEl.textContent = (prompt.tags || []).join(', ') || 'None';
+  // Helper to set text content safely
+  const setText = (el, text) => {
+    if (el) el.textContent = text || 'N/A';
+  };
+  // Helper to format array data
+  const formatArray = arr => (arr && arr.length > 0 ? arr.join(', ') : 'None');
+  // Helper to format date strings (basic)
+  const formatDate = dateString => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (_e) {
+      // Changed e to _e
+      return dateString; // Fallback to original string if date is invalid
+    }
+  };
 
-  const currentUser = auth ? auth.currentUser : null; // Use imported auth
+  setText(promptDetailTitleEl, prompt.title);
+  setText(promptDetailDescriptionEl, prompt.description);
+  setText(promptDetailTextEl, prompt.text);
+  setText(promptDetailCategoryEl, prompt.category);
+  setText(promptDetailTagsEl, formatArray(prompt.tags));
+  setText(promptDetailToolsEl, formatArray(prompt.targetAiTools));
+  setText(promptDetailAuthorEl, prompt.authorDisplayName);
+  setText(promptDetailCreatedEl, formatDate(prompt.createdAt));
+  setText(promptDetailUpdatedEl, formatDate(prompt.updatedAt));
+  setText(promptDetailUsageEl, prompt.usageCount?.toString() || '0');
+  setText(promptDetailFavoritesEl, prompt.favoritesCount?.toString() || '0');
+
+  const currentUser = auth ? auth.currentUser : null;
   const favBtn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
   if (favBtn) {
     favBtn.dataset.id = prompt.id;
@@ -440,14 +478,15 @@ export const displayPromptDetails = prompt => {
     countToDisplay = prompt.totalRatingsCount || 0;
     ratingText = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
   } else {
+    // For private prompts not owned by the user, rating might not be applicable
     ratingText = '(N/A)';
   }
-  if (averageRatingValueEl) averageRatingValueEl.textContent = `(${ratingToDisplay.toFixed(1)})`;
-  if (ratingCountEl) ratingCountEl.textContent = ratingText;
+  setText(averageRatingValueEl, `(${ratingToDisplay.toFixed(1)})`);
+  setText(ratingCountEl, ratingText);
 
   if (starRatingContainerEl) {
     starRatingContainerEl.dataset.id = prompt.id;
-    starRatingContainerEl.innerHTML = ''; // Clear previous stars
+    starRatingContainerEl.innerHTML = '';
     const currentRating = Math.round(ratingToDisplay);
     for (let i = 1; i <= 5; i++) {
       const star = document.createElement('button');
@@ -485,10 +524,4 @@ export const viewPromptDetails = async promptId => {
   }
 };
 
-// This was part of the original IIFE but not explicitly returned/exported.
-// If it was used only internally by the old event listeners, it's fine here.
-// If it needs to be called from elsewhere, it should be exported.
-// const getStarRatingContainerElementForTest = () => starRatingContainerEl;
-
-// Ensure this is exported if tests (or other modules) need it as it was before
 export const getStarRatingContainerElementForTest = () => starRatingContainerEl;
