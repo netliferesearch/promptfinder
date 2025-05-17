@@ -46,30 +46,29 @@
   font-weight: 600;
 }
 
-/* Styles for prompt text display */
 .prompt-text-container {
   margin-top: var(--spacing-sm, 8px);
   margin-bottom: var(--spacing-sm, 8px);
 }
 
 .code-block-wrapper pre {
-  background-color: var(--color-gray-100, #f8f9fa); /* Light background for code */
+  background-color: var(--color-gray-100, #f8f9fa);
   border: 1px solid var(--color-gray-300, #e0e0e0);
   border-radius: var(--border-radius-sm, 8px);
   padding: var(--spacing-sm, 8px);
-  white-space: pre-wrap; /* CSS3 */
-  white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
-  white-space: -pre-wrap; /* Opera 4-6 */
-  white-space: -o-pre-wrap; /* Opera 7 */
-  word-wrap: break-word; /* Internet Explorer 5.5+ */
-  overflow-x: auto; /* Add scroll for very long lines if pre-wrap isn't enough */
-  max-height: 150px; /* Default max height for truncated view */
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+  max-height: 150px;
   overflow-y: hidden;
   transition: max-height 0.3s ease-in-out;
 }
 
 .code-block-wrapper pre.expanded {
-  max-height: 1000px; /* Allow to expand significantly */
+  max-height: 1000px;
   overflow-y: auto;
 }
 
@@ -80,11 +79,83 @@
 }
 
 #prompt-text-view-more {
-  display: block; /* Make it a block to appear below */
+  display: block;
   margin-top: var(--spacing-xs, 4px);
   font-size: var(--font-size-xs, 0.75rem);
 }
 
 #prompt-text-view-more.hidden {
+  display: none;
+}
+
+/* Rating Section Styles */
+.ratings-section {
+  margin-top: var(--spacing-md, 16px);
+  padding-top: var(--spacing-md, 16px);
+  border-top: 1px solid var(--color-gray-200, #eee);
+}
+
+.user-rating-section,
+.community-rating-section {
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.user-rating-section strong,
+.community-rating-section strong {
+  display: block;
+  margin-bottom: var(--spacing-xs, 4px);
+  color: var(--color-gray-700, #555);
+}
+
+.star-rating-display {
+  display: inline-flex; /* Align stars in a row */
+}
+
+.star-rating-display .star {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--color-star-empty, #ccc);
+  font-size: 1.5rem; /* Adjust star size */
+}
+
+.star-rating-display .star:hover i,
+.star-rating-display .star.filled i {
+  color: var(--color-star-filled, #ffc107);
+}
+
+.star-rating-display .star.interactive:hover ~ .star i {
+  /* Make subsequent stars also appear empty on hover for interactive rating */
+  /* This needs more complex JS or sibling combinators if pure CSS */
+}
+
+.star-rating-display .star i {
+  transition: color 0.2s ease-in-out;
+}
+
+.star-rating-display .star:disabled i {
+  color: var(--color-star-disabled, #e0e0e0);
+  cursor: default;
+}
+
+.rating-message {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-gray-500, #999);
+  margin-left: var(--spacing-sm, 8px);
+}
+
+.community-rating-section .star-rating-display .star i {
+  color: var(
+    --color-star-filled,
+    #ffc107
+  ); /* Community average stars are always filled to their value */
+}
+.community-rating-section .star-rating-display .star.far i {
+  /* if we use non-filled for partial averages */
+  color: var(--color-star-empty, #ccc);
+}
+
+.community-rating-section.hidden {
   display: none;
 }
