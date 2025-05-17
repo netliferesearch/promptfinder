@@ -33,9 +33,9 @@ let promptDetailsSectionEl,
   confirmDeleteButtonEl,
   promptDetailTitleEl,
   promptDetailDescriptionEl,
-  promptDetailTextEl,
-  promptTextWrapperEl,
-  promptTextViewMoreEl,
+  promptDetailTextEl, 
+  promptTextWrapperEl, 
+  promptTextViewMoreEl, 
   promptDetailCategoryEl,
   promptDetailTagsEl,
   promptDetailToolsEl,
@@ -63,7 +63,7 @@ export const cacheDOMElements = () => {
 
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
   promptDetailDescriptionEl = document.getElementById('prompt-detail-description');
-  promptDetailTextEl = document.getElementById('prompt-detail-text');
+  promptDetailTextEl = document.getElementById('prompt-detail-text'); 
   promptTextWrapperEl = document.getElementById('prompt-text-wrapper')?.querySelector('pre');
   promptTextViewMoreEl = document.getElementById('prompt-text-view-more');
 
@@ -198,18 +198,20 @@ async function handleToggleFavorite(promptId) {
 
 async function handleRatePrompt(promptId, rating) {
   try {
-    const updatedPrompt = await PromptData.updatePromptRating(promptId, rating);
+    // Call the new ratePrompt function instead of updatePromptRating
+    const updatedPrompt = await PromptData.ratePrompt(promptId, rating);
     if (updatedPrompt) {
       const index = allPrompts.findIndex(p => p.id === promptId);
       if (index !== -1) {
         allPrompts[index] = updatedPrompt;
       }
+      // If the currently viewed detail prompt is the one rated, refresh its display
       if (
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
         promptDetailsSectionEl.dataset.currentPromptId === promptId
       ) {
-        displayPromptDetails(allPrompts[index]);
+        displayPromptDetails(updatedPrompt); // Pass the fully updated prompt object
       }
       Utils.showConfirmationMessage(`Rated ${rating} stars!`);
     }
@@ -310,21 +312,19 @@ const setupEventListeners = () => {
     });
 
     promptTextViewMoreEl?.addEventListener('click', () => {
-      if (promptTextWrapperEl && promptDetailTextEl && promptDetailsSectionEl) {
-        const isExpanded = promptTextWrapperEl.classList.toggle('expanded');
-        promptTextViewMoreEl.textContent = isExpanded ? 'View Less' : 'View More';
-        const fullText = promptDetailsSectionEl.dataset.fullPromptText || '';
-        if (isExpanded) {
-          promptDetailTextEl.textContent = fullText;
-        } else {
-          promptDetailTextEl.textContent =
-            fullText.substring(0, PROMPT_TRUNCATE_LENGTH) +
-            (fullText.length > PROMPT_TRUNCATE_LENGTH ? '...' : '');
+        if (promptTextWrapperEl && promptDetailTextEl && promptDetailsSectionEl) {
+            const isExpanded = promptTextWrapperEl.classList.toggle('expanded');
+            promptTextViewMoreEl.textContent = isExpanded ? 'View Less' : 'View More';
+            const fullText = promptDetailsSectionEl.dataset.fullPromptText || '';
+            if (isExpanded) {
+                promptDetailTextEl.textContent = fullText;
+            } else {
+                promptDetailTextEl.textContent = fullText.substring(0, PROMPT_TRUNCATE_LENGTH) + (fullText.length > PROMPT_TRUNCATE_LENGTH ? '...' : '');
+            }
+            if (window.Prism && promptDetailTextEl) {
+              Prism.highlightElement(promptDetailTextEl);
+            }
         }
-        if (window.Prism && promptDetailTextEl) {
-          Prism.highlightElement(promptDetailTextEl);
-        }
-      }
     });
   }
   console.log('[UI_DEBUG] setupEventListeners - END (v9 modular)');
@@ -452,7 +452,7 @@ export const displayPromptDetails = prompt => {
   if (!prompt || !promptDetailsSectionEl) return;
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
-  promptDetailsSectionEl.dataset.fullPromptText = prompt.text || '';
+  promptDetailsSectionEl.dataset.fullPromptText = prompt.text || ''; 
 
   const setText = (el, text) => {
     if (el) el.textContent = text || 'N/A';
@@ -466,8 +466,8 @@ export const displayPromptDetails = prompt => {
         month: 'short',
         day: 'numeric',
       });
-    } catch {
-      return dateString;
+    } catch { 
+      return dateString; 
     }
   };
 
@@ -495,10 +495,10 @@ export const displayPromptDetails = prompt => {
       promptTextWrapperEl.classList.remove('expanded');
     }
     if (window.Prism && promptDetailTextEl) {
-      Prism.highlightElement(promptDetailTextEl);
+        Prism.highlightElement(promptDetailTextEl);
     }
   } else {
-    if (promptDetailTextEl) setText(promptDetailTextEl, prompt.text);
+    if(promptDetailTextEl) setText(promptDetailTextEl, prompt.text); 
   }
 
   const currentUser = auth ? auth.currentUser : null;
