@@ -7,15 +7,15 @@ import {
 } from './js/promptData.js';
 
 import * as Utils from './js/utils.js';
-
-// Placeholder for UI module - ui.js will need to be refactored to ES Modules
-// For now, we'll assume it will export initializeUI and loadAndDisplayData
 import * as UI from './js/ui.js';
+import * as PromptDataModule from './js/promptData.js'; // Import the whole module for debugging
+
+// TEMPORARY: Expose PromptData for console debugging
+window.DebugPromptData = PromptDataModule;
 
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
 
-  // UI Elements
   const mainContent = document.getElementById('main-content');
   const authView = document.getElementById('auth-view');
   const accountButton = document.getElementById('account-button');
@@ -25,12 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const confirmationMessageElement = document.getElementById('confirmation-message');
   const addPromptButtonMain = document.getElementById('add-prompt-button');
 
-  // Auth Forms
   const loginForm = document.getElementById('login-form');
   const signupForm = document.getElementById('signup-form');
   const loginEmailInput = document.getElementById('login-email');
   const loginPasswordInput = document.getElementById('login-password');
-  const signupDisplayNameInput = document.getElementById('signup-display-name'); // Added
+  const signupDisplayNameInput = document.getElementById('signup-display-name');
   const signupEmailInput = document.getElementById('signup-email');
   const signupPasswordInput = document.getElementById('signup-password');
   const authErrorMessage = document.getElementById('auth-error-message');
@@ -139,23 +138,21 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.addEventListener('submit', async event => {
       event.preventDefault();
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
-      const displayName = signupDisplayNameInput.value.trim(); // Get display name
+      const displayName = signupDisplayNameInput.value.trim();
       const email = signupEmailInput.value;
       const password = signupPasswordInput.value;
 
       if (!displayName) {
-        // Basic validation for display name
         Utils.displayAuthError('Please enter a display name.', authErrorMessage);
         return;
       }
-      // Add more validation for display name if needed (e.g., no email format)
       if (displayName.includes('@') || displayName.includes('.')) {
         Utils.displayAuthError('Display name cannot be an email address.', authErrorMessage);
         return;
       }
 
       try {
-        const userCredential = await signupUser(email, password, displayName); // Pass displayName
+        const userCredential = await signupUser(email, password, displayName);
         if (userCredential && userCredential.user) {
           signupForm.reset();
           Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
