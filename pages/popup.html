@@ -12,13 +12,11 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
-    <!-- Prism.js CSS CDN link removed -->
     <script src="../js/css-class-helper.js"></script>
   </head>
 
   <body>
     <div class="popup-container">
-      <!-- Header -->
       <header class="pf-header">
         <h1>PromptFinder</h1>
         <div class="header-actions">
@@ -31,9 +29,7 @@
         </div>
       </header>
 
-      <!-- Main content area (will be hidden when auth view is shown) -->
       <main id="main-content">
-        <!-- Search and filter/sort controls -->
         <section class="controls">
           <label for="search-input" class="visually-hidden">Search Prompts</label>
           <input type="text" id="search-input" placeholder="Search prompts..." class="form-input" />
@@ -108,17 +104,26 @@
             <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
             <p><strong>Target AI Tools:</strong> <span id="prompt-detail-tools"></span></p>
 
-            <div>
-              <strong id="rating-label">Rating: </strong>
-              <span id="average-rating-value">(0.0)</span>
-              <span id="rating-count">(0 ratings)</span>
-              <div class="star-rating-wrapper">
+            <!-- New Rating Section Structure -->
+            <div class="ratings-section">
+              <div class="user-rating-section">
+                <strong id="user-rating-label">Your Rating:</strong>
                 <div
-                  id="star-rating"
-                  data-id=""
+                  id="user-star-rating"
+                  class="star-rating-wrapper interactive-stars"
                   role="radiogroup"
-                  aria-labelledby="rating-label"
+                  aria-labelledby="user-rating-label"
                 ></div>
+                <span id="user-rating-message" class="rating-message"></span>
+                <!-- For messages like "Not yet rated" -->
+              </div>
+              <div id="community-rating-section" class="community-rating-section hidden">
+                <!-- Hidden by default, shown for public prompts -->
+                <strong id="community-rating-label">Community Rating:</strong>
+                <span id="community-average-rating-value">(0.0)</span>
+                <span id="community-rating-count">(0 ratings)</span>
+                <!-- Optional: display community stars (read-only) -->
+                <!-- <div id="community-star-display" class="star-rating-wrapper read-only-stars"></div> -->
               </div>
             </div>
 
@@ -164,7 +169,6 @@
         <footer class="bottom-bar hidden"></footer>
       </main>
 
-      <!-- Authentication View (initially hidden) -->
       <section id="auth-view" class="hidden auth-container">
         <h2>Login or Signup</h2>
         <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
@@ -207,10 +211,7 @@
       </section>
     </div>
 
-    <!-- Bundled Scripts -->
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
-
-    <!-- Prism.js CDN script links removed -->
   </body>
 </html>
