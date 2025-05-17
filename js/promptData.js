@@ -21,6 +21,7 @@ import {
   where,
   serverTimestamp,
   Timestamp,
+  runTransaction, // Ensure this is imported
 } from 'firebase/firestore';
 
 import { auth, db } from '../js/firebase-init.js';
@@ -244,16 +245,19 @@ export const addPrompt = async promptData => {
       authorDisplayName: currentUser.displayName || currentUser.email,
       title: promptData.title || '',
       text: promptData.text || '',
-      description: promptData.description || '', // Ensure this is included
+      description: promptData.description || '',
       category: promptData.category || '',
       tags: promptData.tags || [],
-      targetAiTools: promptData.targetAiTools || [], // Ensure this is included
+      targetAiTools: promptData.targetAiTools || [],
       isPrivate: !!promptData.isPrivate,
+      // userRating for own private prompts is stored directly on the prompt, not in subcollection yet.
+      // This will be harmonized when full rating system is in place.
       userRating: promptData.isPrivate ? promptData.userRating || 0 : 0,
       userIsFavorite: promptData.isPrivate ? promptData.userIsFavorite || false : false,
+      // Community ratings are initialized to 0, will be updated by actual ratings/Cloud Function
       averageRating: 0,
       totalRatingsCount: 0,
-      favoritesCount: 0,
+      favoritesCount: 0, // Assuming this is a separate mechanism from ratings
       usageCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -271,16 +275,102 @@ export const addPrompt = async promptData => {
   }
 };
 
-const formatLoadedPrompt = docSnapshot => {
+// New function to submit/update a rating for any prompt
+export const ratePrompt = async (promptId, ratingValue) => {
+  const currentUser = auth ? auth.currentUser : null;
+  if (!currentUser) {
+    Utils.handleError('User must be logged in to rate a prompt.', { userVisible: true });
+    return null; // Or throw error
+  }
+  if (!db) {
+    Utils.handleError('Firestore not available.', { userVisible: true });
+    return null;
+  }
+  if (typeof ratingValue !== 'number' || ratingValue < 1 || ratingValue > 5) {
+    Utils.handleError('Invalid rating value. Must be a number between 1 and 5.', {
+      userVisible: true,
+    });
+    return null;
+  }
+
+  const promptRef = doc(db, 'prompts', promptId);
+  const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
+
+  try {
+    await runTransaction(db, async transaction => {
+      const promptDoc = await transaction.get(promptRef);
+      if (!promptDoc.exists()) {
+        throw new Error('Prompt not found.');
+      }
+
+      // Write the user's individual rating
+      transaction.set(ratingDocRef, {
+        rating: ratingValue,
+        ratedAt: serverTimestamp(),
+        userId: currentUser.uid, // Store userId for potential queries/rules
+      });
+
+      // CLIENT-SIDE AGGREGATION (TEMPORARY - to be replaced by Cloud Function)
+      // This is inefficient and prone to race conditions if many users rate simultaneously.
+      const ratingsQuery = query(collection(db, 'prompts', promptId, 'ratings'));
+      const ratingsSnapshot = await getDocs(ratingsQuery); // This getDocs is outside transaction, not ideal
+
+      let totalRatingSum = 0;
+      let ratingsCount = 0;
+      ratingsSnapshot.forEach(ratingDoc => {
+        // Exclude prompt owner's rating from community average if we are calculating it here
+        // For now, let's sum all ratings to get a general average
+        // The specific logic for excluding owner for community average will be in display logic
+        totalRatingSum += ratingDoc.data().rating;
+        ratingsCount++;
+      });
+
+      const newAverageRating = ratingsCount > 0 ? totalRatingSum / ratingsCount : 0;
+      const newTotalRatingsCount = ratingsCount;
+
+      transaction.update(promptRef, {
+        averageRating: newAverageRating,
+        totalRatingsCount: newTotalRatingsCount,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    console.log(
+      `Rating ${ratingValue} submitted for prompt ${promptId} by user ${currentUser.uid}`
+    );
+    // Fetch the updated prompt to return for UI update
+    const updatedPromptSnap = await getDoc(promptRef);
+    const currentUserRatingDoc = await getDoc(ratingDocRef); // Get the user's just-submitted rating
+
+    const promptDataToReturn = formatLoadedPrompt(updatedPromptSnap);
+    if (currentUserRatingDoc.exists()) {
+      promptDataToReturn.currentUserRating = currentUserRatingDoc.data().rating;
+    }
+    return promptDataToReturn;
+  } catch (error) {
+    Utils.handleError(`Error submitting rating for prompt ${promptId}: ${error.message}`, {
+      userVisible: true,
+      originalError: error,
+    });
+    return null;
+  }
+};
+
+const formatLoadedPrompt = (docSnapshot, currentUserRating = null) => {
   const data = docSnapshot.data();
   const convertTimestamp = ts =>
     ts instanceof Timestamp ? ts.toDate().toISOString() : ts ? new Date(ts).toISOString() : null;
-  return {
+
+  const formatted = {
     id: docSnapshot.id,
     ...data,
     createdAt: convertTimestamp(data.createdAt),
     updatedAt: convertTimestamp(data.updatedAt),
   };
+  if (currentUserRating !== null) {
+    formatted.currentUserRating = currentUserRating;
+  }
+  return formatted;
 };
 
 export const loadPrompts = async () => {
@@ -289,53 +379,81 @@ export const loadPrompts = async () => {
     Utils.handleError('Firestore not available for loading prompts (v9).', { userVisible: true });
     return [];
   }
-  let allPrompts = [];
-  const fetchedPromptIds = new Set();
-  try {
-    if (currentUser) {
-      const userPromptsQuery = query(
-        collection(db, 'prompts'),
-        where('userId', '==', currentUser.uid)
-      );
-      const userPromptsSnapshot = await getDocs(userPromptsQuery);
-      userPromptsSnapshot.forEach(doc => {
-        if (!fetchedPromptIds.has(doc.id)) {
-          allPrompts.push(formatLoadedPrompt(doc));
-          fetchedPromptIds.add(doc.id);
-        }
-      });
 
-      const publicPromptsQuery = query(
-        collection(db, 'prompts'),
-        where('isPrivate', '==', false),
-        where('userId', '!=', currentUser.uid)
-      );
-      const publicPromptsSnapshot = await getDocs(publicPromptsQuery);
-      publicPromptsSnapshot.forEach(doc => {
-        if (!fetchedPromptIds.has(doc.id)) {
-          allPrompts.push(formatLoadedPrompt(doc));
-          fetchedPromptIds.add(doc.id);
-        }
-      });
-    } else {
-      const publicPromptsQuery = query(collection(db, 'prompts'), where('isPrivate', '==', false));
-      const publicPromptsSnapshot = await getDocs(publicPromptsQuery);
-      publicPromptsSnapshot.forEach(doc => {
-        allPrompts.push(formatLoadedPrompt(doc));
-      });
-    }
-    console.log('Prompts loaded from Firestore (v9):', allPrompts.length);
-    return allPrompts;
-  } catch (error) {
-    Utils.handleError(`Error loading prompts from Firestore (v9): ${error.message}`, {
-      userVisible: true,
-      originalError: error,
+  const promptsColRef = collection(db, 'prompts');
+  // For now, load all prompts and then enrich with user's rating.
+  // This can be optimized later (e.g., Cloud Function to denormalize currentUserRating for lists)
+  // Or by fetching ratings in parallel.
+
+  // Base query: public prompts OR prompts owned by the user
+  let q;
+  if (currentUser) {
+    q = query(
+      promptsColRef,
+      where(
+        'isPrivate',
+        '==',
+        false,
+        'OR', // This OR is conceptual, Firestore needs separate queries or compound on same field
+        where('userId', '==', currentUser.uid)
+      )
+    );
+    // Firestore does not support logical OR queries on different fields directly.
+    // We need to fetch user's private prompts and all public prompts separately and merge.
+    const userPromptsQuery = query(promptsColRef, where('userId', '==', currentUser.uid));
+    const publicPromptsQuery = query(
+      promptsColRef,
+      where('isPrivate', '==', false),
+      where('userId', '!=', currentUser.uid)
+    );
+
+    const [userPromptsSnapshot, publicPromptsSnapshot] = await Promise.all([
+      getDocs(userPromptsQuery),
+      getDocs(publicPromptsQuery),
+    ]);
+
+    const allPrompts = [];
+    const fetchedPromptIds = new Set();
+
+    userPromptsSnapshot.forEach(doc => {
+      if (!fetchedPromptIds.has(doc.id)) {
+        allPrompts.push(doc);
+        fetchedPromptIds.add(doc.id);
+      }
     });
-    return [];
+    publicPromptsSnapshot.forEach(doc => {
+      if (!fetchedPromptIds.has(doc.id)) {
+        allPrompts.push(doc);
+        fetchedPromptIds.add(doc.id);
+      }
+    });
+
+    const enrichedPrompts = await Promise.all(
+      allPrompts.map(async docSnap => {
+        let userRating = null;
+        if (currentUser) {
+          const ratingDocRef = doc(db, 'prompts', docSnap.id, 'ratings', currentUser.uid);
+          const ratingSnap = await getDoc(ratingDocRef);
+          if (ratingSnap.exists()) {
+            userRating = ratingSnap.data().rating;
+          }
+        }
+        return formatLoadedPrompt(docSnap, userRating);
+      })
+    );
+    console.log('Prompts loaded from Firestore (v9) for logged-in user:', enrichedPrompts.length);
+    return enrichedPrompts;
+  } else {
+    // User not logged in, only fetch public prompts
+    q = query(promptsColRef, where('isPrivate', '==', false));
+    const querySnapshot = await getDocs(q);
+    const prompts = querySnapshot.docs.map(docSnap => formatLoadedPrompt(docSnap)); // No currentUserRating
+    console.log('Public prompts loaded from Firestore (v9) for logged-out user:', prompts.length);
+    return prompts;
   }
 };
 
-export const findPromptById = async (promptId, prompts = null, options = {}) => {
+export const findPromptById = async (promptId, _promptsUnused = null, options = {}) => {
   const { throwIfNotFound = false, handleError = true } = options;
   if (!promptId) {
     console.warn('[findPromptById (v9)] No promptId provided.');
@@ -349,16 +467,20 @@ export const findPromptById = async (promptId, prompts = null, options = {}) => 
   }
 
   try {
-    if (prompts && Array.isArray(prompts) && prompts.length > 0) {
-      const promptFromList = prompts.find(p => p.id === promptId) || null;
-      if (promptFromList) return promptFromList;
-    }
-
     const docRef = doc(db, 'prompts', promptId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return formatLoadedPrompt(docSnap);
+      let currentUserRating = null;
+      const currentUser = auth ? auth.currentUser : null;
+      if (currentUser) {
+        const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
+        const ratingSnap = await getDoc(ratingDocRef);
+        if (ratingSnap.exists()) {
+          currentUserRating = ratingSnap.data().rating;
+        }
+      }
+      return formatLoadedPrompt(docSnap, currentUserRating);
     } else {
       const err = new Error(`Prompt with ID ${promptId} not found in Firestore (v9)`);
       console.warn(`[findPromptById (v9)] ${err.message}`);
@@ -425,7 +547,7 @@ export const updatePrompt = async (promptId, updates) => {
     await updateDoc(docRef, updateData);
     console.log(`Prompt with ID ${promptId} updated successfully in Firestore (v9).`);
 
-    const updatedDataFromServer = { ...docSnap.data(), ...updates, updatedAt: new Date() }; // Simulate for return
+    const updatedDataFromServer = { ...docSnap.data(), ...updates, updatedAt: new Date() };
     return formatLoadedPrompt({ id: promptId, data: () => updatedDataFromServer });
   } catch (error) {
     Utils.handleError(`Error updating prompt ${promptId} in Firestore (v9): ${error.message}`, {
@@ -514,7 +636,7 @@ export const toggleFavorite = async promptId => {
     const updates = { userIsFavorite: newFavoriteStatus, updatedAt: serverTimestamp() };
     await updateDoc(docRef, updates);
     console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus} (v9).`);
-    const updatedDataFromServer = { ...promptData, ...updates, updatedAt: new Date() }; // Simulate for return
+    const updatedDataFromServer = { ...promptData, ...updates, updatedAt: new Date() };
     return formatLoadedPrompt({ id: promptId, data: () => updatedDataFromServer });
   } catch (error) {
     Utils.handleError(`Error toggling favorite for prompt ${promptId} (v9): ${error.message}`, {
@@ -525,54 +647,8 @@ export const toggleFavorite = async promptId => {
   }
 };
 
-export const updatePromptRating = async (promptId, rating) => {
-  const currentUser = auth ? auth.currentUser : null;
-  if (!currentUser) {
-    Utils.handleError('User must be logged in to rate a prompt.', { userVisible: true });
-    return null;
-  }
-  if (!db) {
-    Utils.handleError('Firestore not available.', { userVisible: true });
-    return null;
-  }
-  if (!promptId) {
-    Utils.handleError('No prompt ID provided for rating.', { userVisible: true });
-    return null;
-  }
-  if (typeof rating !== 'number' || rating < 0 || rating > 5) {
-    Utils.handleError('Invalid rating value. Must be a number between 0 and 5.', {
-      userVisible: true,
-    });
-    return null;
-  }
-
-  try {
-    const docRef = doc(db, 'prompts', promptId);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      Utils.handleError(`Prompt with ID ${promptId} not found (v9).`, { userVisible: true });
-      return null;
-    }
-    const promptData = docSnap.data();
-    if (promptData.userId !== currentUser.uid) {
-      Utils.handleError('You can only rate your own prompts this way (v9).', { userVisible: true });
-      return null;
-    }
-
-    const updates = { userRating: rating, updatedAt: serverTimestamp() };
-    await updateDoc(docRef, updates);
-    console.log(`Prompt ${promptId} userRating updated to ${rating} (v9).`);
-    const updatedDataFromServer = { ...promptData, ...updates, updatedAt: new Date() }; // Simulate for return
-    return formatLoadedPrompt({ id: promptId, data: () => updatedDataFromServer });
-  } catch (error) {
-    Utils.handleError(`Error updating userRating for prompt ${promptId} (v9): ${error.message}`, {
-      userVisible: true,
-      originalError: error,
-    });
-    return null;
-  }
-};
+// This function is REPLACED by the new ratePrompt function.
+// export const updatePromptRating = async (promptId, rating) => { ... };
 
 export const copyPromptToClipboard = async promptId => {
   try {
@@ -613,12 +689,15 @@ export const filterPrompts = (prompts, filters) => {
   }
   if (filters.minRating > 0) {
     result = result.filter(p => {
-      if (currentUser && p.userId === currentUser.uid) {
-        return (p.userRating || 0) >= filters.minRating;
+      // For filtering, we need to decide which rating to use: user's own or community average
+      // This logic might need refinement based on UX for filtering by rating.
+      // For now, let's assume if the user has rated it, use that, otherwise use average for public.
+      if (currentUser && p.currentUserRating && p.currentUserRating > 0) {
+        return p.currentUserRating >= filters.minRating;
       } else if (!p.isPrivate) {
         return (p.averageRating || 0) >= filters.minRating;
       }
-      return false;
+      return false; // Don't include private prompts not rated by user in a minRating filter
     });
   }
   return result;
