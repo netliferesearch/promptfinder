@@ -44,9 +44,13 @@ let promptDetailsSectionEl,
   promptDetailUpdatedEl,
   promptDetailUsageEl,
   promptDetailFavoritesEl,
-  averageRatingValueEl,
-  ratingCountEl,
-  starRatingContainerEl;
+  // New rating elements
+  userStarRatingEl,
+  userRatingMessageEl,
+  communityRatingSectionEl,
+  communityAverageRatingValueEl,
+  communityRatingCountEl;
+
 let controlsEl, tabsContainerEl, addPromptBarEl;
 
 export const cacheDOMElements = () => {
@@ -76,9 +80,11 @@ export const cacheDOMElements = () => {
   promptDetailUsageEl = document.getElementById('prompt-detail-usage');
   promptDetailFavoritesEl = document.getElementById('prompt-detail-favorites');
 
-  averageRatingValueEl = document.getElementById('average-rating-value');
-  ratingCountEl = document.getElementById('rating-count');
-  starRatingContainerEl = document.getElementById('star-rating');
+  userStarRatingEl = document.getElementById('user-star-rating');
+  userRatingMessageEl = document.getElementById('user-rating-message');
+  communityRatingSectionEl = document.getElementById('community-rating-section');
+  communityAverageRatingValueEl = document.getElementById('community-average-rating-value');
+  communityRatingCountEl = document.getElementById('community-rating-count');
 
   if (promptDetailsSectionEl) {
     backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
@@ -198,22 +204,22 @@ async function handleToggleFavorite(promptId) {
 
 async function handleRatePrompt(promptId, rating) {
   try {
-    // Call the new ratePrompt function instead of updatePromptRating
-    const updatedPrompt = await PromptData.ratePrompt(promptId, rating);
-    if (updatedPrompt) {
+    const updatedPromptWithNewRating = await PromptData.ratePrompt(promptId, rating);
+    if (updatedPromptWithNewRating) {
       const index = allPrompts.findIndex(p => p.id === promptId);
       if (index !== -1) {
-        allPrompts[index] = updatedPrompt;
+        allPrompts[index] = updatedPromptWithNewRating;
       }
-      // If the currently viewed detail prompt is the one rated, refresh its display
       if (
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
         promptDetailsSectionEl.dataset.currentPromptId === promptId
       ) {
-        displayPromptDetails(updatedPrompt); // Pass the fully updated prompt object
+        displayPromptDetails(updatedPromptWithNewRating);
       }
       Utils.showConfirmationMessage(`Rated ${rating} stars!`);
+    } else {
+      Utils.handleError('Failed to submit rating. Please try again.', { userVisible: true });
     }
   } catch (error) {
     Utils.handleError('Error processing rating in UI', { userVisible: true, originalError: error });
@@ -280,13 +286,13 @@ const setupEventListeners = () => {
     copyPromptDetailButtonEl?.addEventListener('click', () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
-        (starRatingContainerEl ? starRatingContainerEl.dataset.id : null);
+        (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId) handleCopyPrompt(promptId);
     });
     editPromptButtonEl?.addEventListener('click', () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
-        (starRatingContainerEl ? starRatingContainerEl.dataset.id : null);
+        (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId) openDetachedEditWindow(promptId);
     });
     deletePromptTriggerButtonEl?.addEventListener('click', () => {
@@ -450,6 +456,38 @@ const showPromptDetailsView = () => {
   if (addPromptBarEl) addPromptBarEl.classList.add('hidden');
 };
 
+// Function to generate star elements for rating display/interaction
+const createStars = (ratingValue, promptId, isInteractive = true) => {
+  const starWrapper = document.createElement('div');
+  starWrapper.classList.add('star-rating-display');
+  if (isInteractive) {
+    starWrapper.classList.add('interactive');
+  }
+
+  for (let i = 1; i <= 5; i++) {
+    const starButton = document.createElement('button');
+    starButton.classList.add('star');
+    starButton.dataset.value = i;
+    starButton.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
+    // Ensure HTML is valid
+    starButton.innerHTML =
+      i <= ratingValue ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+    if (i <= ratingValue) {
+      starButton.classList.add('filled');
+    }
+    if (isInteractive) {
+      starButton.addEventListener('click', async event => {
+        event.stopPropagation();
+        await handleRatePrompt(promptId, i);
+      });
+    } else {
+      starButton.disabled = true;
+    }
+    starWrapper.appendChild(starButton);
+  }
+  return starWrapper;
+};
+
 export const displayPromptDetails = prompt => {
   if (!prompt || !promptDetailsSectionEl) return;
   showPromptDetailsView();
@@ -468,7 +506,9 @@ export const displayPromptDetails = prompt => {
         month: 'short',
         day: 'numeric',
       });
-    } catch {
+    } catch /* istanbul ignore next */ {
+      // If _error is truly unused and argsIgnorePattern for _ isn't working for catch,
+      // we can leave the catch empty or just return, and add an eslint-disable comment.
       return dateString;
     }
   };
@@ -513,44 +553,40 @@ export const displayPromptDetails = prompt => {
     if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
   }
 
-  let ratingToDisplay = 0;
-  let countToDisplay = 0;
-  let ratingText = '(Not rated)';
+  // --- New Rating Display Logic ---
+  if (userStarRatingEl) userStarRatingEl.innerHTML = '';
+  if (userRatingMessageEl) userRatingMessageEl.textContent = '';
+  if (communityRatingSectionEl) communityRatingSectionEl.classList.add('hidden');
 
-  if (currentUser && prompt.userId === currentUser.uid) {
-    ratingToDisplay = prompt.userRating || 0;
-    ratingText = ratingToDisplay > 0 ? '(My Rating)' : '(Not yet rated by you)';
-  } else if (!prompt.isPrivate) {
-    ratingToDisplay = prompt.averageRating || 0;
-    countToDisplay = prompt.totalRatingsCount || 0;
-    ratingText = `(${countToDisplay} ${countToDisplay === 1 ? 'rating' : 'ratings'})`;
-  } else {
-    ratingText = '(N/A)';
-  }
-  setText(averageRatingValueEl, `(${ratingToDisplay.toFixed(1)})`);
-  setText(ratingCountEl, ratingText);
-
-  if (starRatingContainerEl) {
-    starRatingContainerEl.dataset.id = prompt.id;
-    starRatingContainerEl.innerHTML = '';
-    const currentRating = Math.round(ratingToDisplay);
-    for (let i = 1; i <= 5; i++) {
-      const star = document.createElement('button');
-      star.classList.add('star');
-      star.dataset.value = i;
-      star.setAttribute('role', 'radio');
-      star.setAttribute('aria-checked', i <= currentRating ? 'true' : 'false');
-      star.setAttribute('aria-label', `${i} star${i !== 1 ? 's' : ''}`);
-      star.innerHTML =
-        i <= currentRating ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
-      if (i <= currentRating) star.classList.add('filled');
-      star.addEventListener('click', async _event => {
-        _event.stopPropagation();
-        await handleRatePrompt(prompt.id, i);
-      });
-      starRatingContainerEl.appendChild(star);
+  if (currentUser) {
+    if (prompt.currentUserRating && prompt.currentUserRating > 0) {
+      userStarRatingEl.appendChild(createStars(prompt.currentUserRating, prompt.id, true));
+      if (userRatingMessageEl) userRatingMessageEl.textContent = 'Your rating:';
+    } else {
+      userStarRatingEl.appendChild(createStars(0, prompt.id, true));
+      if (userRatingMessageEl) userRatingMessageEl.textContent = 'Rate this prompt!';
     }
+  } else {
+    if (userRatingMessageEl) userRatingMessageEl.textContent = 'Login to rate.';
+    if (userStarRatingEl) userStarRatingEl.appendChild(createStars(0, prompt.id, false));
   }
+
+  if (!prompt.isPrivate) {
+    if (communityRatingSectionEl && communityAverageRatingValueEl && communityRatingCountEl) {
+      communityRatingSectionEl.classList.remove('hidden');
+      const averageRating = prompt.averageRating || 0;
+      const totalRatingsCount = prompt.totalRatingsCount || 0;
+      setText(communityAverageRatingValueEl, `(${averageRating.toFixed(1)})`);
+      setText(
+        communityRatingCountEl,
+        `(${totalRatingsCount} ${totalRatingsCount === 1 ? 'rating' : 'ratings'})`
+      );
+    }
+  } else {
+    if (communityRatingSectionEl) communityRatingSectionEl.classList.add('hidden');
+  }
+  // --- End New Rating Display Logic ---
+
   if (deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
 };
 
@@ -570,4 +606,4 @@ export const viewPromptDetails = async promptId => {
   }
 };
 
-export const getStarRatingContainerElementForTest = () => starRatingContainerEl;
+export const getStarRatingContainerElementForTest = () => userStarRatingEl;
