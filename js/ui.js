@@ -178,6 +178,23 @@ async function handlePromptListClick(event) {
 }
 
 async function handleToggleFavorite(promptId) {
+  const currentUser = auth ? auth.currentUser : null;
+  if (!currentUser) {
+    Utils.handleError('Please login or create an account to favorite a prompt.', {
+      specificErrorElement: document.getElementById('error-message'), // Use main error display for now
+      type: 'info',
+      timeout: 4000,
+    });
+    // Attempt to call the globally exposed function from app.js to show auth view
+    if (typeof window.showAuthViewGlobally === 'function') {
+      setTimeout(window.showAuthViewGlobally, 100); // Slight delay for message visibility
+    } else {
+      console.warn(
+        'showAuthViewGlobally function not found on window. Cannot switch to auth view from UI module directly.'
+      );
+    }
+    return;
+  }
   try {
     const updatedPrompt = await PromptData.toggleFavorite(promptId);
     if (updatedPrompt) {
@@ -233,7 +250,6 @@ async function handleCopyPrompt(promptId) {
     const success = await PromptData.copyPromptToClipboard(promptId);
     if (success) {
       Utils.showConfirmationMessage('Prompt copied to clipboard!');
-      // If the current detailed prompt is the one copied, refresh its view to show updated usageCount
       if (
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
@@ -241,19 +257,12 @@ async function handleCopyPrompt(promptId) {
       ) {
         await viewPromptDetails(promptId);
       }
-      // Optionally, update the allPrompts array if usageCount is displayed in the list view
-      // For now, this is simpler and focuses on the details view.
       const index = allPrompts.findIndex(p => p.id === promptId);
       if (index !== -1 && allPrompts[index].usageCount !== undefined) {
-        // We don't get the updated prompt back from copyPromptToClipboard directly,
-        // so we can either increment locally (less accurate) or rely on next full load.
-        // For now, viewPromptDetails will handle it if details are open.
-        // If we want to update the list item: allPrompts[index].usageCount++; and re-render list.
+        // No direct update to allPrompts[index].usageCount needed here as viewPromptDetails will refresh if open
       }
     }
-    // Error handling for copy operation is done within PromptData.copyPromptToClipboard
   } catch (error) {
-    // This catch is for unexpected errors in the UI handling itself, not the copy op.
     Utils.handleError('Failed to process copy action in UI', {
       userVisible: true,
       originalError: error,
@@ -297,11 +306,16 @@ const setupEventListeners = () => {
     if (currentUser) {
       openDetachedAddPromptWindow();
     } else {
-      Utils.handleError('Please login to add a prompt.', {
-        userVisible: true,
-        specificErrorElement: document.getElementById('error-message'),
-      });
-      console.log('UI: Add prompt clicked, but user not logged in.');
+      if (window.handleAuthRequiredAction) {
+        // Check if app.js exposed this
+        window.handleAuthRequiredAction('add a new prompt');
+      } else {
+        Utils.handleError('Please login or create an account to add a new prompt.', {
+          userVisible: true,
+          specificErrorElement: document.getElementById('error-message'),
+          type: 'info',
+        });
+      }
     }
   });
 
@@ -315,14 +329,18 @@ const setupEventListeners = () => {
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId) handleCopyPrompt(promptId);
     });
+    // Edit button event listener remains, disabled state handled by displayPromptDetails
     editPromptButtonEl?.addEventListener('click', () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
-      if (promptId) openDetachedEditWindow(promptId);
+      if (promptId && !editPromptButtonEl.disabled) openDetachedEditWindow(promptId);
     });
+    // Delete button event listener remains, disabled state handled by displayPromptDetails
     deletePromptTriggerButtonEl?.addEventListener('click', () => {
-      if (deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
+      if (!deletePromptTriggerButtonEl.disabled) {
+        if (deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
+      }
     });
     cancelDeleteButtonEl?.addEventListener('click', () => {
       if (deleteConfirmationEl) deleteConfirmationEl.classList.add('hidden');
@@ -331,10 +349,6 @@ const setupEventListeners = () => {
       const currentDetailedPromptId = promptDetailsSectionEl.dataset.currentPromptId;
       if (currentDetailedPromptId) {
         handleDeletePrompt(currentDetailedPromptId);
-      } else {
-        Utils.handleError('Could not determine prompt ID for deletion from detail view.', {
-          userVisible: true,
-        });
       }
     });
     const favBtnDetail = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
@@ -574,6 +588,18 @@ export const displayPromptDetails = prompt => {
     if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
   }
 
+  // Set Edit/Delete button state based on ownership
+  const isOwner = currentUser && prompt.userId === currentUser.uid;
+  if (editPromptButtonEl) {
+    editPromptButtonEl.disabled = !isOwner;
+    editPromptButtonEl.classList.toggle('button-disabled', !isOwner);
+  }
+  if (deletePromptTriggerButtonEl) {
+    deletePromptTriggerButtonEl.disabled = !isOwner;
+    deletePromptTriggerButtonEl.classList.toggle('button-disabled', !isOwner);
+  }
+
+  // Rating Display Logic
   if (userStarRatingEl) userStarRatingEl.innerHTML = '';
   if (userRatingMessageEl) userRatingMessageEl.textContent = '';
   if (communityStarDisplayEl) communityStarDisplayEl.innerHTML = '';
