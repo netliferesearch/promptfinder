@@ -92,3 +92,19 @@
 .toggle-favorite i {
   pointer-events: none;
 }
+
+/* Disabled state styling for buttons */
+.button-disabled,
+button[disabled].button-icon, /* More specific for icon buttons that use the disabled attribute */
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-gray-300, #ccc); /* Optional: change background for disabled */
+  border-color: var(--color-gray-300, #ccc); /* Optional: change border for disabled */
+  color: var(--color-gray-500, #999); /* Optional: change text color for disabled */
+}
+
+/* Ensure disabled icon buttons don't show hover effects */
+button[disabled].button-icon:hover {
+  background-color: transparent;
+}
