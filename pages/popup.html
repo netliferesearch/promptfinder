@@ -75,12 +75,7 @@
               <button id="copy-prompt-button" aria-label="Copy prompt">
                 <i class="fa-regular fa-copy"></i>
               </button>
-              <button id="edit-prompt-button" aria-label="Edit prompt">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button id="delete-prompt-detail-trigger-button" aria-label="Delete prompt">
-                <i class="fas fa-trash"></i>
-              </button>
+              <!-- Edit and Delete buttons removed from header icons -->
             </div>
             <div class="detail-title-container">
               <h2 id="prompt-detail-title-heading"><span id="prompt-detail-title"></span></h2>
@@ -119,7 +114,6 @@
               <div id="community-rating-section" class="community-rating-section hidden">
                 <strong id="community-rating-label">Community Rating:</strong>
                 <div id="community-star-display" class="star-rating-wrapper read-only-stars"></div>
-                <!-- Added this div -->
                 <span id="community-average-rating-value">(0.0)</span>
                 <span id="community-rating-count">(0 ratings)</span>
               </div>
@@ -131,6 +125,18 @@
               <p><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></p>
               <p><strong>Created:</strong> <span id="prompt-detail-created"></span></p>
               <p><strong>Last Updated:</strong> <span id="prompt-detail-updated"></span></p>
+            </div>
+
+            <!-- New section for owner actions -->
+            <div class="prompt-owner-actions" style="display: none">
+              <!-- Initially hidden, shown by JS if owner -->
+              <hr class="section-divider" />
+              <button id="edit-prompt-button" class="button button-secondary">
+                <i class="fas fa-edit"></i> Edit Prompt
+              </button>
+              <button id="delete-prompt-detail-trigger-button" class="button button-danger">
+                <i class="fas fa-trash"></i> Delete Prompt
+              </button>
             </div>
 
             <div

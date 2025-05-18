@@ -21,13 +21,13 @@ const PROMPT_TRUNCATE_LENGTH = 200;
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
 let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
-// addPromptButtonEl removed as its primary listener is in app.js
 let promptsListEl;
 let promptDetailsSectionEl,
   backToListButtonEl,
   copyPromptDetailButtonEl,
   editPromptButtonEl,
   deletePromptTriggerButtonEl,
+  promptOwnerActionsEl, // Added for the container of owner buttons
   deleteConfirmationEl,
   cancelDeleteButtonEl,
   confirmDeleteButtonEl,
@@ -44,7 +44,6 @@ let promptDetailsSectionEl,
   promptDetailUpdatedEl,
   promptDetailUsageEl,
   promptDetailFavoritesEl,
-  // New rating elements
   userStarRatingEl,
   userRatingMessageEl,
   communityRatingSectionEl,
@@ -62,7 +61,6 @@ export const cacheDOMElements = () => {
   filterButtonEl = document.getElementById('filter-button');
   ratingFilterPanelEl = document.getElementById('rating-filter');
   minRatingSelectEl = document.getElementById('min-rating');
-  // addPromptButtonEl = document.getElementById('add-prompt-button'); // Removed
   promptsListEl = document.getElementById('prompts-list');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
 
@@ -88,20 +86,32 @@ export const cacheDOMElements = () => {
   communityAverageRatingValueEl = document.getElementById('community-average-rating-value');
   communityRatingCountEl = document.getElementById('community-rating-count');
 
+  // Get owner action buttons and their container
+  promptOwnerActionsEl = document.querySelector('.prompt-owner-actions'); // Use querySelector for class
+  if (promptOwnerActionsEl) {
+    // Check if container exists before querying within it
+    editPromptButtonEl = promptOwnerActionsEl.querySelector('#edit-prompt-button');
+    deletePromptTriggerButtonEl = promptOwnerActionsEl.querySelector(
+      '#delete-prompt-detail-trigger-button'
+    );
+  }
+
+  // Fallback if still caching globally for some reason (should be inside promptOwnerActionsEl now)
+  if (!editPromptButtonEl) editPromptButtonEl = document.getElementById('edit-prompt-button');
+  if (!deletePromptTriggerButtonEl)
+    deletePromptTriggerButtonEl = document.getElementById('delete-prompt-detail-trigger-button');
+
   if (promptDetailsSectionEl) {
     backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
     copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
-    editPromptButtonEl = promptDetailsSectionEl.querySelector('#edit-prompt-button');
-    deletePromptTriggerButtonEl = promptDetailsSectionEl.querySelector(
-      '#delete-prompt-detail-trigger-button'
-    );
+    // editPromptButtonEl and deletePromptTriggerButtonEl are now potentially inside promptOwnerActionsEl
     deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
     cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
     confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
   }
   controlsEl = document.querySelector('.controls');
   tabsContainerEl = document.querySelector('.tabs');
-  addPromptBarEl = document.querySelector('.add-prompt-bar');
+  addPromptBarEl = document.querySelector('.add-prompt-bar'); // This is the div, not the button itself
 };
 
 export const openDetachedAddPromptWindow = () => {
@@ -253,10 +263,6 @@ async function handleCopyPrompt(promptId) {
       ) {
         await viewPromptDetails(promptId);
       }
-      const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1 && allPrompts[index].usageCount !== undefined) {
-        // No direct update to allPrompts[index].usageCount needed here as viewPromptDetails will refresh if open
-      }
     }
   } catch (error) {
     Utils.handleError('Failed to process copy action in UI', {
@@ -311,10 +317,11 @@ const setupEventListeners = () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
-      if (promptId && !editPromptButtonEl.disabled) openDetachedEditWindow(promptId);
+      if (promptId && editPromptButtonEl && !editPromptButtonEl.disabled)
+        openDetachedEditWindow(promptId);
     });
     deletePromptTriggerButtonEl?.addEventListener('click', () => {
-      if (!deletePromptTriggerButtonEl.disabled) {
+      if (deletePromptTriggerButtonEl && !deletePromptTriggerButtonEl.disabled) {
         if (deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
       }
     });
@@ -565,15 +572,20 @@ export const displayPromptDetails = prompt => {
   }
 
   const isOwner = currentUser && prompt.userId === currentUser.uid;
-  if (editPromptButtonEl) {
-    editPromptButtonEl.disabled = !isOwner;
-    editPromptButtonEl.classList.toggle('button-disabled', !isOwner);
-    editPromptButtonEl.style.display = isOwner ? 'inline-flex' : 'none';
-  }
-  if (deletePromptTriggerButtonEl) {
-    deletePromptTriggerButtonEl.disabled = !isOwner;
-    deletePromptTriggerButtonEl.classList.toggle('button-disabled', !isOwner);
-    deletePromptTriggerButtonEl.style.display = isOwner ? 'inline-flex' : 'none';
+  // Show/hide the entire owner actions container
+  if (promptOwnerActionsEl) {
+    promptOwnerActionsEl.style.display = isOwner ? 'flex' : 'none'; // Use flex or block as appropriate for styling
+    if (editPromptButtonEl) {
+      editPromptButtonEl.disabled = !isOwner; // Still good to set disabled state for accessibility
+      // No need to toggle a class if the parent is hidden/shown
+    }
+    if (deletePromptTriggerButtonEl) {
+      deletePromptTriggerButtonEl.disabled = !isOwner;
+    }
+  } else {
+    // Fallback if promptOwnerActionsEl is not found, hide individual buttons
+    if (editPromptButtonEl) editPromptButtonEl.style.display = 'none';
+    if (deletePromptTriggerButtonEl) deletePromptTriggerButtonEl.style.display = 'none';
   }
 
   if (userStarRatingEl) userStarRatingEl.innerHTML = '';
@@ -634,5 +646,3 @@ export const viewPromptDetails = async promptId => {
 };
 
 export const getStarRatingContainerElementForTest = () => userStarRatingEl;
-
-// Removed redundant export of openDetachedAddPromptWindow as it's already exported with 'export const'
