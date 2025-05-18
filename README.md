@@ -1,167 +1,155 @@
-<!--
-_This is a suggested `README.md` file. You can edit it to better suit your project._
--->
-
 # PromptFinder - AI Prompt Management Chrome Extension
 
-PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, etc.) without direct integration.
+PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
 
-## Installation
+## Key Features
 
-To install PromptFinder in your Chrome browser:
+-   **Cloud Synced Prompts:** Prompts are stored in Firebase Firestore, enabling synchronization and backup.
+-   **User Accounts:** Supports Email/Password and Google Sign-In for personalized prompt management.
+-   **CRUD Operations:** Add, edit, and delete your prompts.
+-   **Comprehensive Prompt Details:** View title, description, full prompt text (with Markdown highlighting), category, tags, target AI tools, author, creation/update dates, usage count, and ratings.
+-   **Code-Formatted Display:** Prompt text is displayed in a code block with syntax highlighting for Markdown.
+-   **Truncation & "View More":** Long prompt texts are truncated by default with an option to expand.
+-   **Per-User Ratings:** Rate any prompt from 1-5 stars; you can update your rating.
+-   **Community Ratings:** View the average community rating and total number of ratings for public prompts.
+-   **Universal Favorites:** Favorite any prompt (public or your own private ones). `favoritesCount` on prompts tracks total favorites.
+-   **Usage Count:** Tracks how many times a prompt has been copied.
+-   **Search & Filtering:** Search across multiple fields. Filter by tabs (All, Favorites, Private).
+-   **Private Prompts:** Option to keep prompts private to your account.
+-   **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.
+-   **Custom Display Names:** Users set a display name upon email/password signup, avoiding email exposure.
 
-1.  **Download or Clone:** Download or clone the extension's source code to your local machine.
-2.  **Navigate to Project Directory:** Open your terminal or command prompt and navigate into the directory where you downloaded or cloned the PromptFinder source code (e.g., `cd path/to/promptfinder-main`).
-3.  **Install Dependencies:** Run the following command to install necessary dependencies (including Firebase SDKs):
+## Project Status & Roadmap
+
+**For a detailed breakdown of current development status, ongoing tasks, and future plans, please see the [PROJECT_PLAN.md](PROJECT_PLAN.md) file.**
+
+This project has recently undergone a significant migration to Firebase for backend services and a major refactoring to use modern JavaScript (ES Modules) and a Rollup build process.
+
+**Recent Highlights (Completed as part of Phase 1 & 2 of PROJECT_PLAN.md):**
+
+-   Full Firebase Integration (Auth & Firestore using v9+ SDK).
+-   Rollup bundling for all JavaScript.
+-   Refactoring of all JS to ES Modules.
+-   Email/Password and Google Sign-In (using `chrome.identity.launchWebAuthFlow`).
+-   Comprehensive CRUD for prompts with cloud storage.
+-   New Rating System: Per-user ratings and display of community average (client-side aggregation for now).
+-   New Favorites System: Per-user favoriting of any prompt and `favoritesCount`.
+-   `usageCount` for copied prompts.
+-   Enhanced prompt details display and form field requirements.
+-   Improved UX for logged-out users attempting actions.
+
+**Key Next Steps (from PROJECT_PLAN.md):**
+
+-   **Update & Fix Unit Tests:** Adapt Jest tests for ES Modules and Firebase v9 SDK.
+-   **Implement Firestore Security Rules:** Ensure robust data protection.
+-   **Cloud Functions for Aggregation:** Server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+
+## Installation & Setup
+
+1.  **Prerequisites**: Node.js and npm (or a compatible package manager) installed.
+2.  **Clone Repository:**
+    ```bash
+    git clone https://github.com/mjolne/promptfinder.git # Replace with your repo URL if different
+    cd promptfinder
+    ```
+3.  **Switch to the development branch** (if not already on it, e.g., `ratings-and-favorites` or `main` if merged):
+    ```bash
+    git checkout ratings-and-favorites # Or your active development branch
+    ```
+4.  **Install Dependencies:**
     ```bash
     npm install
     ```
-    _(This will create a `node_modules` folder in your project directory.)_
-4.  **Load in Chrome:** Open Chrome and go to `chrome://extensions/`.
-5.  Enable "Developer mode" in the top right corner.
-6.  Click "Load unpacked" and select the directory where you downloaded/cloned the PromptFinder source code (the same directory where you ran `npm install`).
-7.  The extension should now appear in your extensions list and its icon will be visible in your browser toolbar.
-
-## Usage
-
-- **Adding Prompts:** Click the PromptFinder icon in the toolbar. In the popup, navigate to the "Add New Prompt" section or use the dedicated button.
-- **Viewing Prompts:** Browse all prompts, view favorites, or see your private prompts using the tabs.
-- **Searching:** Use the search bar to find prompts by title, text, category, or tags.
-- **Filtering:** Apply filters (e.g., by minimum rating - future feature) to narrow down your search.
-- **Sorting:** Sort prompts by various criteria (e.g., recently added, most used - future feature).
-- **Editing Prompts:** Edit existing prompt details.
-- **Deleting Prompts:** Remove prompts you no longer need.
-- **Copying Prompts:** Quickly copy prompt text to your clipboard.
-- **Favorites:** Mark prompts as favorites for easy access.
-- **Ratings:** Rate prompts (future feature for community-sourced ratings).
-
-## Features
-
-- **Local Storage:** Prompts are initially stored locally using `chrome.storage.local`.
-- **Add, Edit, Delete Prompts:** Full CRUD operations for your prompts.
-- **Search Functionality:** Robust search across prompt titles, text, categories, and tags.
-- **Favorite System:** Mark and easily access your most-used prompts.
-- **Private Prompts:** Option to keep prompts private to your browser profile.
-- **Categorization & Tagging:** Organize prompts with categories and multiple tags.
-- **Clipboard Integration:** Copy prompt text with a single click.
-- **Responsive UI:** Designed to be user-friendly within the extension popup.
-
-### Planned Features (Roadmap)
-
-- **Cloud Sync & Backup:** Migrate storage to a cloud database (e.g., Firebase Firestore) to enable:
-  - Synchronization across multiple Chrome browsers/profiles.
-  - User accounts and authentication.
-  - Secure backup of prompts.
-- **Shared Prompts Community:**
-  - Option to share prompts publicly with other users.
-  - Browse and use prompts shared by the community.
-  - Community ratings and comments on shared prompts.
-- **Advanced Filtering & Sorting:** More granular control over how prompts are displayed.
-- **Import/Export:** Allow users to import and export their prompt libraries (e.g., JSON, CSV).
-- **Usage Statistics:** Track how often prompts are used.
-- **AI Tool Specific Fields:** Add fields to specify target AI tools (e.g., ChatGPT, Midjourney, Claude) and model versions.
-- **Dark Mode:** Theme option for user preference.
-- **UI Enhancements:** Continuous improvements to user interface and experience.
-- **Social Sharing:** Option to share individual prompts via social media or direct links (if cloud sync is implemented).
-
-## File Structure
-
-```
-promptfinder-main/
-├── css/                    # CSS files
-│   ├── base/
-│   │   ├── reset.css
-│   │   ├── utilities.css
-│   │   └── variables.css
-│   ├── components/
-│   │   ├── buttons.css
-│   │   ├── cards.css
-│   │   ├── forms.css
-│   │   └── tabs.css
-│   ├── layout/
-│   │   ├── containers.css
-│   │   └── header.css
-│   ├── pages/
-│   │   ├── add-prompt.css
-│   │   ├── edit-prompt.css
-│   │   └── popup.css
-│   └── global.css          # Global styles, imports other CSS
-├── docs/                   # Documentation files
-│   └── DEPENDENCY_NOTES.md # Notes on npm dependency warnings
-├── icons/                  # Extension icons
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-├── js/                     # JavaScript files
-│   ├── css-class-helper.js # Utility for CSS class manipulation
-│   ├── firebase-init.js    # Firebase SDK initialization
-│   ├── promptData.js       # Data handling logic (add, edit, delete, load)
-│   ├── ui.js               # UI interaction and DOM manipulation
-│   └── utils.js            # General utility functions
-├── lib/                    # Local libraries (e.g., Firebase SDK copies)
-│   └── firebase/
-│       ├── firebase-app.js
-│       └── firebase-auth.js
-├── node_modules/           # (Generated by npm install, typically in .gitignore)
-├── pages/                  # HTML files for different views
-│   ├── add-prompt.html
-│   ├── add-prompt.js       # JS specific to add-prompt.html
-│   ├── edit-prompt.html
-│   ├── edit-prompt.js      # JS specific to edit-prompt.html
-│   └── popup.html          # Main extension popup
-├── tests/                  # Jest test files
-│   ├── setupTests.js       # Jest setup configuration
-│   ├── promptData.test.js
-│   ├── ui.test.js
-│   └── utils.test.js
-├── .eslintignore           # Files/folders for ESLint to ignore
-├── .eslintrc.js            # ESLint configuration (if used, or eslint.config.mjs)
-├── .gitignore              # Files/folders for Git to ignore
-├── app.js                  # Main entry point for popup JavaScript logic
-├── babel.config.json       # Babel configuration for Jest transpilation
-├── eslint.config.mjs       # ESLint configuration (ESM format)
-├── manifest.json           # Chrome extension manifest file
-├── package-lock.json       # Exact versions of dependencies
-├── package.json            # Project metadata and dependencies
-└── README.md               # This file
-```
-
-## Development Setup
-
-To set up the development environment:
-
-1.  **Prerequisites**: Node.js and npm installed.
-2.  **Install dependencies**:
+    This installs Firebase, Rollup, ESLint, Prettier, Jest, and other necessary packages.
+5.  **Build the Extension:**
     ```bash
-    npm install
+    npm run build
     ```
-    Or use `npm run clean-install` for a fresh install removing `node_modules` and `package-lock.json` first.
-    > **Note**: You may see some deprecation warnings during installation. These are generally related to transitive dependencies of well-established tools and typically don't affect functionality. See `docs/DEPENDENCY_NOTES.md` for details.
-3.  **Load the extension in Chrome** (as an unpacked extension) by following the steps in the [Installation](#installation) section (steps 4-7, ensuring you've already run `npm install` from this setup section).
-4.  **Making Changes**: Edit the source code. After saving changes, you typically need to reload the extension in `chrome://extensions/` (click the refresh icon for the extension) to see the updates.
+    This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
+6.  **Load in Chrome:**
+    *   Open Chrome and navigate to `chrome://extensions/`.
+    *   Enable "Developer mode" (usually a toggle in the top right corner).
+    *   Click "Load unpacked".
+    *   Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
+7.  The PromptFinder extension icon should appear in your browser toolbar.
 
-### Linting
+## Development Workflow
 
-ESLint is set up to maintain code quality. To run the linter:
-
-```bash
-npm run lint         # Check for issues
-npm run lint:fix     # Attempt to automatically fix issues
-```
+1.  **Make Code Changes:** Edit source files in `js/`, `pages/`, `css/`, etc.
+2.  **Lint & Format (Recommended):**
+    ```bash
+    npm run lint:fix
+    # or run formatting separately
+    npm run format
+    ```
+3.  **Build JavaScript (if not using watch mode):**
+    ```bash
+    npm run build:js:dev
+    # or the full build
+    npm run build 
+    ```
+4.  **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:
+    ```bash
+    npm run watch:js
+    ```
+    You will still need to manually reload the extension in Chrome to see changes.
+5.  **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
 
 ### Testing
 
-Jest is used for unit testing JavaScript logic.
+Jest is used for unit testing. **Note: Tests currently require significant updates to work with the ES Module structure and Firebase v9 SDK.**
 
+To run tests (once updated):
 ```bash
-npm test             # Run all tests
-npm test -- --watch  # Run tests in watch mode
+npm test
+npm test -- --watch # For watch mode
+```
+
+## File Structure Overview
+
+```
+promptfinder/
+├── css/                    # Source CSS files (modular structure)
+│   ├── base/
+│   ├── components/
+│   ├── layout/
+│   └── pages/
+├── dist/                   # Build output (gitignored)
+│   ├── js/
+│   └── pages/
+│   └── css-purged/         # Purged CSS output
+├── docs/                   # Documentation
+├── icons/                  # Extension icons
+├── js/                     # Source JavaScript modules
+│   ├── firebase-init.js
+│   ├── promptData.js
+│   ├── ui.js
+│   └── utils.js
+├── node_modules/           # (Ignored by Git)
+├── pages/                  # Source HTML and page-specific JS
+│   ├── add-prompt.html
+│   ├── add-prompt.js
+│   ├── edit-prompt.html
+│   ├── edit-prompt.js
+│   └── popup.html
+├── tests/                  # Jest test files (needs update)
+├── .gitignore
+├── app.js                  # Main entry point for popup (source)
+├── babel.config.json
+├── eslint.config.mjs       # ESLint configuration
+├── manifest.json
+├── package-lock.json
+├── package.json
+├── PROJECT_PLAN.md         # Detailed project roadmap and task tracking
+├── purgecss.config.mjs
+├── README.md               # This file
+└── rollup.config.js        # Rollup bundler configuration
 ```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs, feature requests, or suggestions.
+Contributions are welcome! Please feel free to submit pull requests or open issues.
 
 ## License
 
-This project is open-sourced and available under the [MIT License](LICENSE.txt) (assuming you add one - currently no LICENSE.txt file is present).
+This project is open-sourced. (Consider adding a `LICENSE.txt` file, e.g., MIT License).
