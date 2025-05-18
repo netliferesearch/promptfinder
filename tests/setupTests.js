@@ -93,7 +93,7 @@ jest.mock('firebase/auth', () => ({
   getAuth: jest.fn(() => ({
     get currentUser() {
       return mockCurrentAuthUser;
-    }, // Use a getter here
+    },
   })),
   createUserWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
   signInWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
@@ -126,15 +126,16 @@ global.simulateLogout = () => {
 console.log('EXEC_ORDER: setupTests.js - firebase/auth mocked');
 
 const mockFirestoreData = {};
+let mockAddDocIdCounter = 0; 
 
 const getPathData = path => {
+  if (!path) return undefined;
   const parts = path.split('/');
   let current = mockFirestoreData;
-  for (let i = 0; i < parts.length; i += 2) {
-    const collectionId = parts[i];
-    const docId = parts[i + 1];
-    if (!current[collectionId] || (docId && !current[collectionId][docId])) return undefined;
-    current = docId ? current[collectionId][docId] : current[collectionId];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!current || typeof current !== 'object' || !current.hasOwnProperty(part)) return undefined;
+    current = current[part];
   }
   return current;
 };
@@ -143,53 +144,55 @@ const processFieldValue = (currentValue, newValue) => {
   if (newValue && typeof newValue === 'object' && newValue._methodName === 'increment') {
     return (currentValue || 0) + newValue.value;
   }
-  // Potentially handle other field values like serverTimestamp, arrayUnion, etc. here if needed
   return newValue;
 };
 
 const setPathData = (path, data, isMerge = false) => {
   const parts = path.split('/');
-  let currentCollection = mockFirestoreData;
-  for (let i = 0; i < parts.length - 2; i += 2) {
-    const collectionId = parts[i];
-    const docId = parts[i + 1];
-    if (!currentCollection[collectionId]) currentCollection[collectionId] = {};
-    if (!currentCollection[collectionId][docId]) currentCollection[collectionId][docId] = {};
-    currentCollection = currentCollection[collectionId][docId];
+  if (parts.length === 0) return;
+
+  let currentRef = mockFirestoreData;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const segment = parts[i];
+    if (!currentRef.hasOwnProperty(segment) || !(typeof currentRef[segment] === 'object' && currentRef[segment] !== null) ) {
+      currentRef[segment] = {}; 
+    }
+    currentRef = currentRef[segment];
   }
-  const finalCollectionId = parts[parts.length - 2];
-  const finalDocId = parts[parts.length - 1];
 
-  if (!currentCollection[finalCollectionId]) currentCollection[finalCollectionId] = {};
-
-  let existingDocData = currentCollection[finalCollectionId][finalDocId];
+  const docId = parts[parts.length - 1];
+  const collectionPath = parts.slice(0, parts.length - 1).join('/');
 
   if (isMerge) {
-    if (!existingDocData) existingDocData = {};
-    const updatedData = { ...existingDocData };
-    for (const key in data) {
-      updatedData[key] = processFieldValue(existingDocData[key], data[key]);
+    if (!currentRef.hasOwnProperty(docId) || !(typeof currentRef[docId] === 'object' && currentRef[docId] !== null) ) {
+        currentRef[docId] = {}; 
     }
-    currentCollection[finalCollectionId][finalDocId] = updatedData;
-  } else {
-    // For setDoc without merge, we replace the whole document.
-    // FieldValue processing might be needed if setDoc can create fields with FieldValues.
-    const processedData = {};
-    for (const key in data) {
-      processedData[key] = processFieldValue(undefined, data[key]);
+    const docToUpdate = currentRef[docId]; 
+    const mergedData = { ...docToUpdate }; 
+    for (const key in data) { 
+      mergedData[key] = processFieldValue(docToUpdate[key], data[key]);
     }
-    currentCollection[finalCollectionId][finalDocId] = processedData;
+    currentRef[docId] = mergedData;
+  } else { 
+    const dataToSet = {};
+    for (const keyInInputData in data) {
+      dataToSet[keyInInputData] = processFieldValue(undefined, data[keyInInputData]);
+    }
+    console.log(`[DEBUG setPathData NON-MERGE] Path to doc: ${path}, target docId: ${docId}`);
+    console.log(`[DEBUG setPathData NON-MERGE] Collection at '${collectionPath}' BEFORE assign for ${docId}: ${JSON.stringify(getPathData(collectionPath))}`);
+    currentRef[docId] = dataToSet; 
+    console.log(`[DEBUG setPathData NON-MERGE] Collection at '${collectionPath}' AFTER assign for ${docId}: ${JSON.stringify(getPathData(collectionPath))}`);
   }
 };
 
 const deletePathData = path => {
   const parts = path.split('/');
   let current = mockFirestoreData;
-  for (let i = 0; i < parts.length - 2; i += 2) {
-    current = current[parts[i]]?.[parts[i + 1]];
+  for (let i = 0; i < parts.length - 1; i++) {
+    current = current[parts[i]];
     if (!current) return;
   }
-  delete current[parts[parts.length - 2]]?.[parts[parts.length - 1]];
+  delete current[parts[parts.length - 1]];
 };
 
 jest.mock('firebase/firestore', () => {
@@ -197,34 +200,38 @@ jest.mock('firebase/firestore', () => {
   return {
     ...actualFirestore,
     getFirestore: jest.fn(() => ({ mockName: 'MockFirestoreDBInstance' })),
-    doc: jest.fn((db, collectionPath, ...documentPathParts) => {
-      const path = `${collectionPath}/${documentPathParts.join('/')}`;
+    doc: jest.fn((db, collectionPath, ...documentIdSegments) => {
+      const idPathPart = documentIdSegments.join('/');
+      const actualId = documentIdSegments[documentIdSegments.length -1];
+      const path = `${collectionPath}/${idPathPart}`;
       return {
-        id: documentPathParts[documentPathParts.length - 1] || 'mockDocId',
+        id: actualId || 'mockDocId',
         path: path,
+        type: 'docRef'
       };
     }),
-    collection: jest.fn((db, path) => ({
-      path: path,
-    })),
-    setDoc: jest.fn(async (docRef, data, options) => {
-      console.log(`[Mock Firestore] setDoc(${docRef.path}) with:`, data, options);
-      setPathData(docRef.path, data, options?.merge);
+    collection: jest.fn((db, path, ...subPaths) => {
+      const fullPath = [path, ...subPaths].join('/');
+      return {
+        path: fullPath,
+        type: 'collectionRef',
+      };
+    }),
+    setDoc: jest.fn().mockImplementation(async (docRef, data, options) => {
+      const path = docRef && docRef.path ? docRef.path : 'UNKNOWN_PATH_IN_SETDOC';
+      if (path !== 'UNKNOWN_PATH_IN_SETDOC') {
+        setPathData(path, data, options?.merge);
+      }
       return Promise.resolve();
     }),
     addDoc: jest.fn(async (collectionRef, data) => {
-      const newId = `mockId_${Date.now()}`;
+      mockAddDocIdCounter++; 
+      const newId = `mockGeneratedId_${mockAddDocIdCounter}`;
       const path = `${collectionRef.path}/${newId}`;
-      console.log(
-        `[Mock Firestore] addDoc to ${collectionRef.path} (new id: ${newId}) with:`,
-        data
-      );
-      // AddDoc is like setDoc without merge, for a new document.
       setPathData(path, data, false);
-      return Promise.resolve({ id: newId, path: path });
+      return Promise.resolve({ id: newId, path: path, type: 'docRef' });
     }),
     getDoc: jest.fn(async docRef => {
-      console.log(`[Mock Firestore] getDoc(${docRef.path})`);
       const data = getPathData(docRef.path);
       return Promise.resolve({
         id: docRef.id,
@@ -233,13 +240,10 @@ jest.mock('firebase/firestore', () => {
       });
     }),
     getDocs: jest.fn(async queryMock => {
-      console.log(
-        `[Mock Firestore] getDocs for query on path: ${queryMock.path}, constraints:`,
-        queryMock.constraints
-      );
       let collectionData = getPathData(queryMock.path);
+      console.log(`[DEBUG getDocs mock] Path: ${queryMock.path}, RAW collectionData from getPathData: ${JSON.stringify(collectionData)}`); 
       let results = [];
-      if (collectionData) {
+      if (collectionData && typeof collectionData === 'object') {
         results = Object.entries(collectionData).map(([id, data]) => ({
           id,
           data: () => data,
@@ -249,10 +253,9 @@ jest.mock('firebase/firestore', () => {
       if (queryMock.constraints) {
         queryMock.constraints.forEach(constraint => {
           results = results.filter(doc => {
-            const val = doc.data()[constraint.field];
+            const val = doc.data()?.[constraint.field];
             if (constraint.op === '==') return val === constraint.value;
             if (constraint.op === '!=') return val !== constraint.value;
-            // Add other operators here if needed by the application
             return true;
           });
         });
@@ -264,15 +267,12 @@ jest.mock('firebase/firestore', () => {
       });
     }),
     updateDoc: jest.fn(async (docRef, data) => {
-      console.log(`[Mock Firestore] updateDoc(${docRef.path}) with:`, data);
       const existingData = getPathData(docRef.path);
       if (!existingData) return Promise.reject(new Error('Mock: Document not found for update'));
-      // updateDoc implies merge: true, and processes FieldValues
-      setPathData(docRef.path, data, true);
+      setPathData(docRef.path, data, true); 
       return Promise.resolve();
     }),
     deleteDoc: jest.fn(async docRef => {
-      console.log(`[Mock Firestore] deleteDoc(${docRef.path})`);
       deletePathData(docRef.path);
       return Promise.resolve();
     }),
@@ -280,15 +280,13 @@ jest.mock('firebase/firestore', () => {
       return { path: collectionRef.path, constraints: constraints, type: 'query' };
     }),
     where: jest.fn((field, op, value) => ({ type: 'where', field, op, value })),
-    // Return a simple object that our processFieldValue function can identify.
     increment: jest.fn(value => ({ _methodName: 'increment', value: value })),
-    // serverTimestamp: jest.fn(() => ({ _methodName: 'serverTimestamp' })), // Example for serverTimestamp
     writeBatch: jest.fn(() => {
       const operations = [];
       const batch = {
         set: (docRef, data, options) => {
           operations.push({ type: 'set', ref: docRef, data, options });
-          return batch; // Return the batch for chaining
+          return batch; 
         },
         update: (docRef, data) => {
           operations.push({ type: 'update', ref: docRef, data });
@@ -299,7 +297,6 @@ jest.mock('firebase/firestore', () => {
           return batch;
         },
         commit: jest.fn(async () => {
-          console.log('[Mock Firestore Batch] Committing operations:', operations);
           for (const op of operations) {
             const existingDoc = getPathData(op.ref.path);
             if (op.type === 'set') {
@@ -309,7 +306,7 @@ jest.mock('firebase/firestore', () => {
                 return Promise.reject(
                   new Error(`Mock Batch: Doc ${op.ref.path} not found for update`)
                 );
-              setPathData(op.ref.path, op.data, true); // Updates imply merge
+              setPathData(op.ref.path, op.data, true); 
             } else if (op.type === 'delete') {
               deletePathData(op.ref.path);
             }
@@ -327,23 +324,13 @@ global.mockFirestoreDb = {
     for (const key in mockFirestoreData) {
       delete mockFirestoreData[key];
     }
+    mockAddDocIdCounter = 0; 
   },
   seedData: (path, data) => {
-    // Seed data should not process field values by default, store them as is.
-    const parts = path.split('/');
-    let currentCollection = mockFirestoreData;
-    for (let i = 0; i < parts.length - 2; i += 2) {
-      const collectionId = parts[i];
-      const docId = parts[i + 1];
-      if (!currentCollection[collectionId]) currentCollection[collectionId] = {};
-      if (!currentCollection[collectionId][docId]) currentCollection[collectionId][docId] = {};
-      currentCollection = currentCollection[collectionId][docId];
-    }
-    const finalCollectionId = parts[parts.length - 2];
-    const finalDocId = parts[parts.length - 1];
-    if (!currentCollection[finalCollectionId]) currentCollection[finalCollectionId] = {};
-    currentCollection[finalCollectionId][finalDocId] = data;
+    setPathData(path, data, false); 
   },
+  getPathData: getPathData, 
+  _getMockFirestoreDataSnapshot: () => JSON.parse(JSON.stringify(mockFirestoreData))
 };
 
 console.log('EXEC_ORDER: setupTests.js - firebase/firestore mocked');
