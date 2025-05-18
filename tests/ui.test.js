@@ -7,7 +7,7 @@ import * as UI from '../js/ui.js';
 // Mock dependencies of ui.js
 jest.mock('../js/promptData.js', () => ({
   loadPrompts: jest.fn().mockResolvedValue([]),
-  filterPrompts: jest.fn((prompts, _filters) => prompts), 
+  filterPrompts: jest.fn((prompts, _filters) => prompts),
   findPromptById: jest.fn().mockResolvedValue(null),
   toggleFavorite: jest.fn().mockResolvedValue(null),
   ratePrompt: jest.fn().mockResolvedValue(null),
@@ -18,18 +18,33 @@ jest.mock('../js/promptData.js', () => ({
 jest.mock('../js/utils.js', () => ({
   handleError: jest.fn(),
   showConfirmationMessage: jest.fn(),
-  escapeHTML: jest.fn(str => (typeof str === 'string' ? str.replace(/[&<>"'/]/g, s => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;'
-  }[s])) : str)),
-  highlightStars: jest.fn(), 
+  escapeHTML: jest.fn(str =>
+    typeof str === 'string'
+      ? str.replace(
+          /[&<>"'/]/g,
+          s =>
+            ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+              '/': '&#x2F;',
+            })[s]
+        )
+      : str
+  ),
+  highlightStars: jest.fn(),
 }));
 
 let mockAuthCurrentUser = null;
 jest.mock('../js/firebase-init.js', () => ({
   auth: {
-    get currentUser() { return mockAuthCurrentUser; }, 
+    get currentUser() {
+      return mockAuthCurrentUser;
+    },
   },
-  db: {}, 
+  db: {},
 }));
 
 import * as PromptData from '../js/promptData.js';
@@ -104,60 +119,81 @@ const setupMockDOM = () => {
     <p id="confirmation-message"></p>
   `;
 
-  const mockElementMethods = (elem) => {
+  const mockElementMethods = elem => {
     if (!elem) return null;
     if (elem.classList && !jest.isMockFunction(elem.classList.add)) {
       elem.classList.add = jest.fn(elem.classList.add?.bind(elem.classList));
       elem.classList.remove = jest.fn(elem.classList.remove?.bind(elem.classList));
       elem.classList.toggle = jest.fn(elem.classList.toggle?.bind(elem.classList));
     }
-    if (elem.appendChild && typeof elem.appendChild === 'function' && !jest.isMockFunction(elem.appendChild)) {
+    if (
+      elem.appendChild &&
+      typeof elem.appendChild === 'function' &&
+      !jest.isMockFunction(elem.appendChild)
+    ) {
       elem.appendChild = jest.fn(elem.appendChild.bind(elem));
     }
-    if (elem.addEventListener && typeof elem.addEventListener === 'function' && !jest.isMockFunction(elem.addEventListener)) {
+    if (
+      elem.addEventListener &&
+      typeof elem.addEventListener === 'function' &&
+      !jest.isMockFunction(elem.addEventListener)
+    ) {
       elem.addEventListener = jest.fn(elem.addEventListener.bind(elem));
     }
-    if (elem.setAttribute && typeof elem.setAttribute === 'function' && !jest.isMockFunction(elem.setAttribute)) {
-        elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
+    if (
+      elem.setAttribute &&
+      typeof elem.setAttribute === 'function' &&
+      !jest.isMockFunction(elem.setAttribute)
+    ) {
+      elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
     }
     // Ensure querySelector on mocked elements is also a mock that returns mockable elements
-    if (elem.querySelector && typeof elem.querySelector === 'function' && !jest.isMockFunction(elem.querySelector)){
-        const originalQS = elem.querySelector.bind(elem);
-        elem.querySelector = jest.fn(sel => mockElementMethods(originalQS(sel))); 
+    if (
+      elem.querySelector &&
+      typeof elem.querySelector === 'function' &&
+      !jest.isMockFunction(elem.querySelector)
+    ) {
+      const originalQS = elem.querySelector.bind(elem);
+      elem.querySelector = jest.fn(sel => mockElementMethods(originalQS(sel)));
     }
     if (typeof elem.dataset === 'undefined') elem.dataset = {};
-    if (typeof elem.style === 'undefined') elem.style = {}; 
+    if (typeof elem.style === 'undefined') elem.style = {};
     if (typeof elem.disabled === 'undefined') elem.disabled = false;
     return elem;
   };
 
-  document.getElementById = jest.fn(id => mockElementMethods(_originalGetElementById.call(document, id)));
-  document.createElement = jest.fn(tagName => mockElementMethods(_originalCreateElement.call(document, tagName)));
-  document.querySelector = jest.fn(selector => mockElementMethods(_originalQuerySelector.call(document, selector)));
-  
+  document.getElementById = jest.fn(id =>
+    mockElementMethods(_originalGetElementById.call(document, id))
+  );
+  document.createElement = jest.fn(tagName =>
+    mockElementMethods(_originalCreateElement.call(document, tagName))
+  );
+  document.querySelector = jest.fn(selector =>
+    mockElementMethods(_originalQuerySelector.call(document, selector))
+  );
+
   window.Prism = { highlightElement: jest.fn() };
 };
- 
 
 describe('UI Module', () => {
   beforeEach(() => {
     setupMockDOM();
-    jest.clearAllMocks(); 
+    jest.clearAllMocks();
     PromptData.loadPrompts.mockClear().mockResolvedValue([]);
     PromptData.filterPrompts.mockClear().mockImplementation((prompts, _filters) => prompts);
     PromptData.findPromptById.mockClear().mockResolvedValue(null);
     Utils.handleError.mockClear();
     Utils.showConfirmationMessage.mockClear();
-    mockAuthCurrentUser = null; 
-    if(window.Prism) window.Prism.highlightElement.mockClear();
+    mockAuthCurrentUser = null;
+    if (window.Prism) window.Prism.highlightElement.mockClear();
   });
 
   describe('initializeUI', () => {
     test('should cache DOM elements, setup event listeners, and load data', async () => {
-      const initialPrompts = [{id: 'initLoad', title: 'Initial'}];
+      const initialPrompts = [{ id: 'initLoad', title: 'Initial' }];
       PromptData.loadPrompts.mockResolvedValueOnce(initialPrompts);
       await UI.initializeUI();
-      expect(document.getElementById).toHaveBeenCalledWith('tab-all'); 
+      expect(document.getElementById).toHaveBeenCalledWith('tab-all');
       expect(PromptData.loadPrompts).toHaveBeenCalledTimes(1);
     });
 
@@ -166,7 +202,7 @@ describe('UI Module', () => {
       PromptData.loadPrompts.mockRejectedValueOnce(loadError);
       await UI.initializeUI();
       expect(Utils.handleError).toHaveBeenCalledWith(
-        'Error loading and displaying prompt data', 
+        'Error loading and displaying prompt data',
         expect.objectContaining({ originalError: loadError, userVisible: true })
       );
     });
@@ -174,69 +210,92 @@ describe('UI Module', () => {
 
   describe('loadAndDisplayData', () => {
     test('should load prompts and call displayPrompts (via showTab)', async () => {
-      UI.cacheDOMElements(); 
-      const mockPrompts = [{id: '1', title: 'Test Prompt Alpha', currentUserIsFavorite: false}]; 
+      UI.cacheDOMElements();
+      const mockPrompts = [{ id: '1', title: 'Test Prompt Alpha', currentUserIsFavorite: false }];
       PromptData.loadPrompts.mockResolvedValueOnce(mockPrompts);
-      
-      const promptsList = document.getElementById('prompts-list');
-      if (promptsList) promptsList.innerHTML = ''; 
 
-      await UI.loadAndDisplayData(); 
-      
+      const promptsList = document.getElementById('prompts-list');
+      if (promptsList) promptsList.innerHTML = '';
+
+      await UI.loadAndDisplayData();
+
       expect(PromptData.loadPrompts).toHaveBeenCalledTimes(1);
-      expect(PromptData.filterPrompts).toHaveBeenCalledWith(mockPrompts, expect.objectContaining({ tab: 'all' })); 
+      expect(PromptData.filterPrompts).toHaveBeenCalledWith(
+        mockPrompts,
+        expect.objectContaining({ tab: 'all' })
+      );
       if (promptsList) {
-        expect(promptsList.innerHTML).toContain('Test Prompt Alpha'); 
+        expect(promptsList.innerHTML).toContain('Test Prompt Alpha');
       }
     });
   });
 
   describe('displayPrompts', () => {
-    let promptsListElForTest; 
-    beforeEach(() => { 
-        UI.cacheDOMElements(); 
-        promptsListElForTest = document.getElementById('prompts-list'); 
-        if (promptsListElForTest) promptsListElForTest.innerHTML = ''; 
+    let promptsListElForTest;
+    beforeEach(() => {
+      UI.cacheDOMElements();
+      promptsListElForTest = document.getElementById('prompts-list');
+      if (promptsListElForTest) promptsListElForTest.innerHTML = '';
     });
 
     test('should display a list of prompts', () => {
-        const prompts = [{ id: '1', title: 'Test Prompt Beta', tags: [], userId: 'testUser', currentUserIsFavorite: false }];
-        UI.displayPrompts(prompts); 
-        if (promptsListElForTest) {
-            expect(promptsListElForTest.innerHTML).toContain('Test Prompt Beta');
-        }
-      });
+      const prompts = [
+        {
+          id: '1',
+          title: 'Test Prompt Beta',
+          tags: [],
+          userId: 'testUser',
+          currentUserIsFavorite: false,
+        },
+      ];
+      UI.displayPrompts(prompts);
+      if (promptsListElForTest) {
+        expect(promptsListElForTest.innerHTML).toContain('Test Prompt Beta');
+      }
+    });
   });
 
   describe('displayPromptDetails', () => {
     beforeEach(() => {
-        UI.cacheDOMElements(); 
-        mockAuthCurrentUser = { uid: 'testUser', email: 'test@example.com' }; 
+      UI.cacheDOMElements();
+      mockAuthCurrentUser = { uid: 'testUser', email: 'test@example.com' };
     });
 
-    test('should display prompt details and handle owner buttons', async () => { 
-        const prompt = { id: '1', title: 'Detail Title', text: 'Detail Text', category: 'Cat', tags: ['tag1'], userId: 'testUser', currentUserIsFavorite: false, currentUserRating: 3, averageRating: 4.5, totalRatingsCount: 10, isPrivate: false };
-        UI.displayPromptDetails(prompt);
-        
-        const titleEl = document.getElementById('prompt-detail-title');
-        expect(titleEl.textContent).toBe('Detail Title');
-        
-        const ownerActionsContainer = document.querySelector('.prompt-owner-actions');
-        const editButton = document.getElementById('edit-prompt-button');
+    test('should display prompt details and handle owner buttons', async () => {
+      const prompt = {
+        id: '1',
+        title: 'Detail Title',
+        text: 'Detail Text',
+        category: 'Cat',
+        tags: ['tag1'],
+        userId: 'testUser',
+        currentUserIsFavorite: false,
+        currentUserRating: 3,
+        averageRating: 4.5,
+        totalRatingsCount: 10,
+        isPrivate: false,
+      };
+      UI.displayPromptDetails(prompt);
 
-        // Check the container's display for owner
-        expect(ownerActionsContainer.style.display).toBe('flex'); 
-        expect(editButton.disabled).toBe(false); 
+      const titleEl = document.getElementById('prompt-detail-title');
+      expect(titleEl.textContent).toBe('Detail Title');
 
-        // Test for non-owner
-        mockAuthCurrentUser = { uid: 'anotherTestUser', email: 'another@example.com' }; 
-        // UI.displayPromptDetails(prompt); // Prompt owner is still 'testUser' from the prompt object
-        // No, we need to simulate a prompt that testUser doesn't own, or just change current user.
-        // The prompt's userId remains 'testUser'. currentUser is now 'anotherTestUser'.
-        UI.displayPromptDetails(prompt); 
+      const ownerActionsContainer = document.querySelector('.prompt-owner-actions');
+      const editButton = document.getElementById('edit-prompt-button');
 
-        expect(ownerActionsContainer.style.display).toBe('none'); 
-        expect(editButton.disabled).toBe(true);
+      // Check the container's display for owner
+      expect(ownerActionsContainer.style.display).toBe('flex');
+      expect(editButton.disabled).toBe(false);
+
+      // Test for non-owner
+      mockAuthCurrentUser = { uid: 'anotherTestUser', email: 'another@example.com' };
+      // UI.displayPromptDetails(prompt); // Prompt owner is still 'testUser' from the prompt object
+      // No, we need to simulate a prompt that testUser doesn't own, or just change current user.
+      // The prompt's userId remains 'testUser'. currentUser is now 'anotherTestUser'.
+      UI.displayPromptDetails(prompt);
+
+      expect(ownerActionsContainer.style.display).toBe('none');
+      expect(editButton.disabled).toBe(true);
     });
   });
 });
