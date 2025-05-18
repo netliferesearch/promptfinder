@@ -21,6 +21,7 @@ import {
   where,
   serverTimestamp,
   Timestamp,
+  writeBatch, // Added for toggleFavorite
 } from 'firebase/firestore';
 
 import { auth, db } from '../js/firebase-init.js';
@@ -249,11 +250,11 @@ export const addPrompt = async promptData => {
       tags: promptData.tags || [],
       targetAiTools: promptData.targetAiTools || [],
       isPrivate: !!promptData.isPrivate,
-      userRating: 0,
-      userIsFavorite: false,
+      // userRating: 0, // This is now per-user in the ratings subcollection
+      // userIsFavorite: false, // This is now per-user in the favoritedBy subcollection
       averageRating: 0,
       totalRatingsCount: 0,
-      favoritesCount: 0,
+      favoritesCount: 0, // This will be updated by toggleFavorite (or a Cloud Function)
       usageCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -261,7 +262,14 @@ export const addPrompt = async promptData => {
     const docRef = await addDoc(collection(db, 'prompts'), newPromptDocData);
     console.log('Prompt added with ID (v9): ', docRef.id);
     const locallySimulatedTimestamps = { createdAt: new Date(), updatedAt: new Date() };
-    return { ...newPromptDocData, ...locallySimulatedTimestamps, id: docRef.id };
+    // For a new prompt, currentUserRating is 0 (or null), currentUserIsFavorite is false
+    return {
+      ...newPromptDocData,
+      ...locallySimulatedTimestamps,
+      id: docRef.id,
+      currentUserRating: 0,
+      currentUserIsFavorite: false,
+    };
   } catch (error) {
     Utils.handleError(`Error adding prompt to Firestore (v9): ${error.message}`, {
       userVisible: true,
@@ -297,7 +305,6 @@ export const ratePrompt = async (promptId, ratingValue) => {
       ratedAt: serverTimestamp(),
       userId: currentUser.uid,
     });
-
     console.log(
       `User ${currentUser.uid} rating ${ratingValue} for prompt ${promptId} recorded in subcollection.`
     );
@@ -326,7 +333,13 @@ export const ratePrompt = async (promptId, ratingValue) => {
     );
 
     const updatedPromptSnap = await getDoc(promptRef);
+    // Pass the specific ratingValue as currentUserRating for the immediate return object
     const promptDataToReturn = formatLoadedPrompt(updatedPromptSnap, ratingValue);
+
+    // Also include the user's favorite status for this prompt when returning
+    const favoritedByDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
+    const favoritedBySnap = await getDoc(favoritedByDocRef);
+    promptDataToReturn.currentUserIsFavorite = favoritedBySnap.exists();
 
     return promptDataToReturn;
   } catch (error) {
@@ -338,7 +351,12 @@ export const ratePrompt = async (promptId, ratingValue) => {
   }
 };
 
-const formatLoadedPrompt = (docSnapshot, currentUserRating = null) => {
+// Helper to format prompt data, now accepts currentUserIsFavorite as well
+const formatLoadedPrompt = (
+  docSnapshot,
+  currentUserRating = null,
+  currentUserIsFavorite = false
+) => {
   const data = docSnapshot.data();
   const convertTimestamp = ts =>
     ts instanceof Timestamp ? ts.toDate().toISOString() : ts ? new Date(ts).toISOString() : null;
@@ -348,6 +366,7 @@ const formatLoadedPrompt = (docSnapshot, currentUserRating = null) => {
     ...data,
     createdAt: convertTimestamp(data.createdAt),
     updatedAt: convertTimestamp(data.updatedAt),
+    currentUserIsFavorite: currentUserIsFavorite, // Add this field
   };
   if (currentUserRating !== null && currentUserRating !== undefined) {
     formatted.currentUserRating = currentUserRating;
@@ -385,11 +404,10 @@ export const loadPrompts = async () => {
 
     publicPromptsSnapshot.forEach(doc => {
       if (!fetchedPromptIds.has(doc.id)) {
-        if (currentUser && doc.data().userId === currentUser.uid) {
-          // Already added this public prompt owned by the user, skip
-        } else {
+        // Avoid adding user's own public prompts again if already fetched by userPromptsQuery
+        if (!(currentUser && doc.data().userId === currentUser.uid)) {
           combinedPromptDocs.push(doc);
-          fetchedPromptIds.add(doc.id);
+          fetchedPromptIds.add(doc.id); // Add here to prevent re-processing if it was public & owned
         }
       }
     });
@@ -397,14 +415,18 @@ export const loadPrompts = async () => {
     const enrichedPrompts = await Promise.all(
       combinedPromptDocs.map(async docSnap => {
         let userRating = null;
+        let userIsFavorite = false;
         if (currentUser) {
           const ratingDocRef = doc(db, 'prompts', docSnap.id, 'ratings', currentUser.uid);
           const ratingSnap = await getDoc(ratingDocRef);
           if (ratingSnap.exists()) {
             userRating = ratingSnap.data().rating;
           }
+          const favoriteDocRef = doc(db, 'prompts', docSnap.id, 'favoritedBy', currentUser.uid);
+          const favoriteSnap = await getDoc(favoriteDocRef);
+          userIsFavorite = favoriteSnap.exists();
         }
-        return formatLoadedPrompt(docSnap, userRating);
+        return formatLoadedPrompt(docSnap, userRating, userIsFavorite);
       })
     );
 
@@ -438,6 +460,7 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
 
     if (docSnap.exists()) {
       let currentUserRating = null;
+      let currentUserIsFavorite = false;
       const currentUser = auth ? auth.currentUser : null;
       if (currentUser) {
         const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
@@ -445,8 +468,11 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
         if (ratingSnap.exists()) {
           currentUserRating = ratingSnap.data().rating;
         }
+        const favoriteDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
+        const favoriteSnap = await getDoc(favoriteDocRef);
+        currentUserIsFavorite = favoriteSnap.exists();
       }
-      return formatLoadedPrompt(docSnap, currentUserRating);
+      return formatLoadedPrompt(docSnap, currentUserRating, currentUserIsFavorite);
     } else {
       const err = new Error(`Prompt with ID ${promptId} not found in Firestore (v9)`);
       console.warn(`[findPromptById (v9)] ${err.message}`);
@@ -479,6 +505,16 @@ export const updatePrompt = async (promptId, updates) => {
     Utils.handleError('User must be logged in to update a prompt.', { userVisible: true });
     return null;
   }
+  // ... (rest of updatePrompt - no direct changes for favorites here, only if 'favoritesCount' was part of 'updates')
+  // Ensure fields like 'userIsFavorite' are NOT part of the direct 'updates' to the main prompt doc.
+  const allowedUpdates = { ...updates };
+  delete allowedUpdates.userIsFavorite; // Prevent direct update of this user-specific flag on main doc
+  delete allowedUpdates.currentUserRating; // Prevent direct update
+  delete allowedUpdates.currentUserIsFavorite;
+  delete allowedUpdates.favoritesCount; // This should be managed by toggleFavorite/Cloud Function
+  delete allowedUpdates.averageRating; // Managed by ratePrompt/Cloud Function
+  delete allowedUpdates.totalRatingsCount; // Managed by ratePrompt/Cloud Function
+
   if (!db) {
     Utils.handleError('Firestore not available.', { userVisible: true });
     return null;
@@ -487,9 +523,12 @@ export const updatePrompt = async (promptId, updates) => {
     Utils.handleError('No prompt ID provided for update.', { userVisible: true });
     return null;
   }
-  if (!updates || Object.keys(updates).length === 0) {
-    Utils.handleError('No updates provided for the prompt.', { userVisible: true });
-    return null;
+  if (!allowedUpdates || Object.keys(allowedUpdates).length === 0) {
+    // If only restricted fields were passed, updates might become empty.
+    // Or, if original updates object was empty.
+    console.warn('Update called with no valid fields to update or only restricted fields.');
+    // return findPromptById(promptId); // Return current prompt if no valid updates
+    // For now, let this proceed, serverTimestamp will still update 'updatedAt'
   }
 
   try {
@@ -509,12 +548,12 @@ export const updatePrompt = async (promptId, updates) => {
       return null;
     }
 
-    const updateData = { ...updates, updatedAt: serverTimestamp() };
+    const updateData = { ...allowedUpdates, updatedAt: serverTimestamp() };
     await updateDoc(docRef, updateData);
     console.log(`Prompt with ID ${promptId} updated successfully in Firestore (v9).`);
 
-    const updatedDataFromServer = { ...docSnap.data(), ...updates, updatedAt: new Date() };
-    return formatLoadedPrompt({ id: promptId, data: () => updatedDataFromServer });
+    // Return the full prompt data after update, including potentially unchanged user-specific fields
+    return findPromptById(promptId);
   } catch (error) {
     Utils.handleError(`Error updating prompt ${promptId} in Firestore (v9): ${error.message}`, {
       userVisible: true,
@@ -530,6 +569,8 @@ export const deletePrompt = async promptId => {
     Utils.handleError('User must be logged in to delete a prompt.', { userVisible: true });
     return false;
   }
+  // Note: Deleting a prompt should ideally also delete its subcollections (ratings, favoritedBy)
+  // This requires a Cloud Function for proper cleanup.
   if (!db) {
     Utils.handleError('Firestore not available.', { userVisible: true });
     return false;
@@ -582,29 +623,50 @@ export const toggleFavorite = async promptId => {
     return null;
   }
 
+  const promptRef = doc(db, 'prompts', promptId);
+  const favoritedByDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
+
   try {
-    const docRef = doc(db, 'prompts', promptId);
-    const docSnap = await getDoc(docRef);
+    let newFavoriteStatus;
+    const favoritedBySnap = await getDoc(favoritedByDocRef); // Check current favorite status
 
-    if (!docSnap.exists()) {
-      Utils.handleError(`Prompt with ID ${promptId} not found (v9).`, { userVisible: true });
-      return null;
+    const batch = writeBatch(db);
+
+    if (favoritedBySnap.exists()) {
+      // User has it favorited, so unfavorite it
+      batch.delete(favoritedByDocRef);
+      newFavoriteStatus = false;
+      console.log(`User ${currentUser.uid} unfavorited prompt ${promptId}.`);
+    } else {
+      // User has not favorited it, so favorite it
+      batch.set(favoritedByDocRef, { favoritedAt: serverTimestamp(), userId: currentUser.uid });
+      newFavoriteStatus = true;
+      console.log(`User ${currentUser.uid} favorited prompt ${promptId}.`);
     }
-    const promptData = docSnap.data();
-    if (promptData.userId !== currentUser.uid) {
-      Utils.handleError('You can only favorite/unfavorite your own prompts directly (v9).', {
-        userVisible: true,
-      });
-      return null;
+
+    // Client-side aggregation for favoritesCount (TEMPORARY)
+    const favoritedByQuery = query(collection(db, 'prompts', promptId, 'favoritedBy'));
+    const favoritedBySnapshot = await getDocs(favoritedByQuery);
+    let newFavoritesCount = 0;
+    favoritedBySnapshot.forEach(_doc => newFavoritesCount++);
+    // Adjust count based on current action *before* batch commit for optimistic update
+    if (newFavoriteStatus) {
+      if (!favoritedBySnap.exists()) newFavoritesCount++; // It wasn't in snapshot but will be added
+    } else {
+      if (favoritedBySnap.exists()) newFavoritesCount--; // It was in snapshot but will be removed
     }
+    newFavoritesCount = Math.max(0, newFavoritesCount); // Ensure it doesn't go below 0
 
-    const newFavoriteStatus = !promptData.userIsFavorite;
-    const updates = { userIsFavorite: newFavoriteStatus, updatedAt: serverTimestamp() };
-    await updateDoc(docRef, updates);
-    console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus} (v9).`);
+    batch.update(promptRef, {
+      favoritesCount: newFavoritesCount,
+      updatedAt: serverTimestamp(),
+    });
 
-    // After updating, fetch the full prompt data again to include currentUserRating
-    return findPromptById(promptId);
+    await batch.commit();
+    console.log(`Prompt ${promptId} favoritesCount updated to ${newFavoritesCount} (client-side).`);
+
+    // Fetch the full updated prompt data to return, including current user's rating and new fav status
+    return findPromptById(promptId); // findPromptById now fetches currentUserIsFavorite
   } catch (error) {
     Utils.handleError(`Error toggling favorite for prompt ${promptId} (v9): ${error.message}`, {
       userVisible: true,
@@ -635,7 +697,8 @@ export const filterPrompts = (prompts, filters) => {
 
   if (filters.tab === 'favs') {
     if (!currentUser) return [];
-    result = result.filter(p => p.userId === currentUser.uid && p.userIsFavorite === true);
+    // Filter based on the new currentUserIsFavorite flag
+    result = result.filter(p => p.currentUserIsFavorite === true);
   } else if (filters.tab === 'private') {
     if (!currentUser) return [];
     result = result.filter(p => p.isPrivate && p.userId === currentUser.uid);
