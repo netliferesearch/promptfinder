@@ -1,6 +1,6 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 17, 2025
+**Last Updated**: May 18, 2025
 
 **Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
 
@@ -43,7 +43,7 @@ _Status: ✅_
 
 ### Phase 2: Core Features & UX Enhancements (LARGELY COMPLETE)
 
-_Status: 🚧_
+_Status: ✅_
 
 1.  ✅ **User Authentication Integration (Firebase v9 Modular)**:
     - ✅ Implement Email/Password signup with Display Name.
@@ -117,13 +117,13 @@ _Status: ⬜_
 
 ---
 
-### Phase 4: Testing, UI/UX Refinement, & Optimization (PLANNED)
+### Phase 4: Testing, UI/UX Refinement, & Optimization (NOW IN PROGRESS)
 
-_Status: ⬜_
+_Status: 🚧_
 
-1.  🚧 **Unit Tests Update & Expansion**:
-    - ⬜ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
-    - ⬜ Update existing tests in `tests/` to align with ESM and v9 API mocks.
+1.  ✅ **Unit Tests Update & Expansion**:
+    - ✅ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
+    - ✅ Update existing tests in `tests/` to align with ESM and v9 API mocks (including `increment()` handling).
     - ⬜ Write new unit tests for recently added functionalities (ratings, favorites, usage count, new UI interactions).
 2.  ⬜ **Integration Testing**: Test the interaction between UI, client-side logic, and Firebase services (especially after Cloud Functions and stricter security rules are in place).
 3.  ⬜ **UI/UX Refinements**:
