@@ -44,11 +44,11 @@ let promptDetailsSectionEl,
   promptDetailUpdatedEl,
   promptDetailUsageEl,
   promptDetailFavoritesEl,
-  // Rating elements
+  // New rating elements
   userStarRatingEl,
   userRatingMessageEl,
   communityRatingSectionEl,
-  communityStarDisplayEl, // Added for community stars
+  communityStarDisplayEl,
   communityAverageRatingValueEl,
   communityRatingCountEl;
 
@@ -84,7 +84,7 @@ export const cacheDOMElements = () => {
   userStarRatingEl = document.getElementById('user-star-rating');
   userRatingMessageEl = document.getElementById('user-rating-message');
   communityRatingSectionEl = document.getElementById('community-rating-section');
-  communityStarDisplayEl = document.getElementById('community-star-display'); // Added
+  communityStarDisplayEl = document.getElementById('community-star-display');
   communityAverageRatingValueEl = document.getElementById('community-average-rating-value');
   communityRatingCountEl = document.getElementById('community-rating-count');
 
@@ -183,7 +183,7 @@ async function handleToggleFavorite(promptId) {
     if (updatedPrompt) {
       const index = allPrompts.findIndex(p => p.id === promptId);
       if (index !== -1) {
-        allPrompts[index] = updatedPrompt;
+        allPrompts[index] = updatedPrompt; // Ensure this updatedPrompt has currentUserIsFavorite
       }
       if (
         promptDetailsSectionEl &&
@@ -192,6 +192,7 @@ async function handleToggleFavorite(promptId) {
       ) {
         displayPromptDetails(updatedPrompt);
       } else {
+        // If in list view, re-render the list which will use the updated allPrompts
         showTab(activeTab);
       }
       Utils.showConfirmationMessage('Favorite status updated!');
@@ -418,12 +419,12 @@ export const displayPrompts = prompts => {
       '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
     return;
   }
-  const currentUser = auth ? auth.currentUser : null;
+  // const currentUser = auth ? auth.currentUser : null; // Not directly needed here if prompt object has currentUserIsFavorite
   sorted.forEach(prompt => {
     const div = document.createElement('div');
     div.classList.add('prompt-item');
-    const isFavoriteDisplay =
-      currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
+    // Use prompt.currentUserIsFavorite which is prepared by loadPrompts
+    const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     div.innerHTML = `
       <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite">
         <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
@@ -464,7 +465,7 @@ const createStars = (ratingValue, promptId, isInteractive = true) => {
   if (isInteractive) {
     starWrapper.classList.add('interactive');
   }
-  starWrapper.dataset.promptId = promptId; // Store promptId for potential event delegation if needed
+  starWrapper.dataset.promptId = promptId;
 
   for (let i = 1; i <= 5; i++) {
     const starButton = document.createElement('button');
@@ -548,8 +549,8 @@ export const displayPromptDetails = prompt => {
   if (favBtn) {
     favBtn.dataset.id = prompt.id;
     const icon = favBtn.querySelector('i');
-    const isFavoriteDisplay =
-      currentUser && prompt.userId === currentUser.uid && prompt.userIsFavorite;
+    // Use the new currentUserIsFavorite field from the prompt object
+    const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
   }
 
