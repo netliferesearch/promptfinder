@@ -4,20 +4,20 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 
 ## Key Features
 
--   **Cloud Synced Prompts:** Prompts are stored in Firebase Firestore, enabling synchronization and backup.
--   **User Accounts:** Supports Email/Password and Google Sign-In for personalized prompt management.
--   **CRUD Operations:** Add, edit, and delete your prompts.
--   **Comprehensive Prompt Details:** View title, description, full prompt text (with Markdown highlighting), category, tags, target AI tools, author, creation/update dates, usage count, and ratings.
--   **Code-Formatted Display:** Prompt text is displayed in a code block with syntax highlighting for Markdown.
--   **Truncation & "View More":** Long prompt texts are truncated by default with an option to expand.
--   **Per-User Ratings:** Rate any prompt from 1-5 stars; you can update your rating.
--   **Community Ratings:** View the average community rating and total number of ratings for public prompts.
--   **Universal Favorites:** Favorite any prompt (public or your own private ones). `favoritesCount` on prompts tracks total favorites.
--   **Usage Count:** Tracks how many times a prompt has been copied.
--   **Search & Filtering:** Search across multiple fields. Filter by tabs (All, Favorites, Private).
--   **Private Prompts:** Option to keep prompts private to your account.
--   **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.
--   **Custom Display Names:** Users set a display name upon email/password signup, avoiding email exposure.
+- **Cloud Synced Prompts:** Prompts are stored in Firebase Firestore, enabling synchronization and backup.
+- **User Accounts:** Supports Email/Password and Google Sign-In for personalized prompt management.
+- **CRUD Operations:** Add, edit, and delete your prompts.
+- **Comprehensive Prompt Details:** View title, description, full prompt text (with Markdown highlighting), category, tags, target AI tools, author, creation/update dates, usage count, and ratings.
+- **Code-Formatted Display:** Prompt text is displayed in a code block with syntax highlighting for Markdown.
+- **Truncation & "View More":** Long prompt texts are truncated by default with an option to expand.
+- **Per-User Ratings:** Rate any prompt from 1-5 stars; you can update your rating.
+- **Community Ratings:** View the average community rating and total number of ratings for public prompts.
+- **Universal Favorites:** Favorite any prompt (public or your own private ones). `favoritesCount` on prompts tracks total favorites.
+- **Usage Count:** Tracks how many times a prompt has been copied.
+- **Search & Filtering:** Search across multiple fields. Filter by tabs (All, Favorites, Private).
+- **Private Prompts:** Option to keep prompts private to your account.
+- **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.
+- **Custom Display Names:** Users set a display name upon email/password signup, avoiding email exposure.
 
 ## Project Status & Roadmap
 
@@ -27,22 +27,22 @@ This project has recently undergone a significant migration to Firebase for back
 
 **Recent Highlights (Completed as part of Phase 1 & 2 of PROJECT_PLAN.md):**
 
--   Full Firebase Integration (Auth & Firestore using v9+ SDK).
--   Rollup bundling for all JavaScript.
--   Refactoring of all JS to ES Modules.
--   Email/Password and Google Sign-In (using `chrome.identity.launchWebAuthFlow`).
--   Comprehensive CRUD for prompts with cloud storage.
--   New Rating System: Per-user ratings and display of community average (client-side aggregation for now).
--   New Favorites System: Per-user favoriting of any prompt and `favoritesCount`.
--   `usageCount` for copied prompts.
--   Enhanced prompt details display and form field requirements.
--   Improved UX for logged-out users attempting actions.
+- Full Firebase Integration (Auth & Firestore using v9+ SDK).
+- Rollup bundling for all JavaScript.
+- Refactoring of all JS to ES Modules.
+- Email/Password and Google Sign-In (using `chrome.identity.launchWebAuthFlow`).
+- Comprehensive CRUD for prompts with cloud storage.
+- New Rating System: Per-user ratings and display of community average (client-side aggregation for now).
+- New Favorites System: Per-user favoriting of any prompt and `favoritesCount`.
+- `usageCount` for copied prompts.
+- Enhanced prompt details display and form field requirements.
+- Improved UX for logged-out users attempting actions.
 
 **Key Next Steps (from PROJECT_PLAN.md):**
 
--   **Update & Fix Unit Tests:** Adapt Jest tests for ES Modules and Firebase v9 SDK.
--   **Implement Firestore Security Rules:** Ensure robust data protection.
--   **Cloud Functions for Aggregation:** Server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+- **Update & Fix Unit Tests:** Adapt Jest tests for ES Modules and Firebase v9 SDK.
+- **Implement Firestore Security Rules:** Ensure robust data protection.
+- **Cloud Functions for Aggregation:** Server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
 
 ## Installation & Setup
 
@@ -67,10 +67,10 @@ This project has recently undergone a significant migration to Firebase for back
     ```
     This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
 6.  **Load in Chrome:**
-    *   Open Chrome and navigate to `chrome://extensions/`.
-    *   Enable "Developer mode" (usually a toggle in the top right corner).
-    *   Click "Load unpacked".
-    *   Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
+    - Open Chrome and navigate to `chrome://extensions/`.
+    - Enable "Developer mode" (usually a toggle in the top right corner).
+    - Click "Load unpacked".
+    - Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
 7.  The PromptFinder extension icon should appear in your browser toolbar.
 
 ## Development Workflow
@@ -86,7 +86,7 @@ This project has recently undergone a significant migration to Firebase for back
     ```bash
     npm run build:js:dev
     # or the full build
-    npm run build 
+    npm run build
     ```
 4.  **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:
     ```bash
@@ -100,6 +100,7 @@ This project has recently undergone a significant migration to Firebase for back
 Jest is used for unit testing. **Note: Tests currently require significant updates to work with the ES Module structure and Firebase v9 SDK.**
 
 To run tests (once updated):
+
 ```bash
 npm test
 npm test -- --watch # For watch mode
