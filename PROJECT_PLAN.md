@@ -41,7 +41,7 @@ _Status: ✅_
 
 ---
 
-### Phase 2: Core Features & UX Enhancements (LARGELY COMPLETE)
+### Phase 2: Core Features & UX Enhancements (COMPLETED)
 
 _Status: ✅_
 
@@ -121,10 +121,14 @@ _Status: ⬜_
 
 _Status: 🚧_
 
-1.  ✅ **Unit Tests Update & Expansion**:
+1.  🚧 **Unit Tests Update & Expansion**:
     - ✅ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
     - ✅ Update existing tests in `tests/` to align with ESM and v9 API mocks (including `increment()` handling).
-    - ⬜ Write new unit tests for recently added functionalities (ratings, favorites, usage count, new UI interactions).
+    - 🚧 Write new unit tests for recently added functionalities:
+        - ✅ ratings (`promptData.js`)
+        - ✅ favorites (`promptData.js`)
+        - ✅ usage count (`promptData.js` - covered by `copyPromptToClipboard` tests)
+        - ⬜ new UI interactions (`ui.js`)
 2.  ⬜ **Integration Testing**: Test the interaction between UI, client-side logic, and Firebase services (especially after Cloud Functions and stricter security rules are in place).
 3.  ⬜ **UI/UX Refinements**:
     - ⬜ Further refine the display of prompt ownership.
