@@ -299,6 +299,8 @@ export const ratePrompt = async (promptId, ratingValue) => {
 
   const promptRef = doc(db, 'prompts', promptId);
   const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
+  // LOGGING THE DOC REF PATH HERE
+  // console.log(`[RATEPROMPT DEBUG] ratingDocRef.path: ${ratingDocRef.path}, ratingDocRef.id: ${ratingDocRef.id}`);
 
   try {
     await setDoc(ratingDocRef, {
@@ -316,6 +318,7 @@ export const ratePrompt = async (promptId, ratingValue) => {
     let totalRatingSum = 0;
     let ratingsCount = 0;
     ratingsSnapshot.forEach(ratingDoc => {
+      console.log('[SUT ratePrompt forEach] ratingDoc.id:', ratingDoc.id, 'ratingDoc.data():', JSON.stringify(ratingDoc.data()));
       totalRatingSum += ratingDoc.data().rating;
       ratingsCount++;
     });
