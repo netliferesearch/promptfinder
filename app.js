@@ -12,15 +12,41 @@ import * as PromptDataModule from './js/promptData.js';
 
 window.DebugPromptData = PromptDataModule;
 
+let mainContentElement, authViewElement, authErrorMessageElement;
+
+function showAuthView() {
+  if (mainContentElement) mainContentElement.classList.add('hidden');
+  if (authViewElement) authViewElement.classList.remove('hidden');
+  if (authErrorMessageElement) {
+    authErrorMessageElement.textContent = '';
+    authErrorMessageElement.classList.add('hidden');
+  }
+}
+window.showAuthViewGlobally = showAuthView;
+
+window.handleAuthRequiredAction = actionDescription => {
+  const generalMessageElement = document.getElementById('error-message');
+  const messageHtml = `Please <a href="#" id="auth-action-link" class="inline-link">login or create an account</a> to ${actionDescription}.`;
+  Utils.handleError(messageHtml, {
+    specificErrorElement: generalMessageElement,
+    type: 'info',
+    timeout: 5000,
+    isHtml: true,
+    linkId: 'auth-action-link',
+    onClickAction: showAuthView,
+  });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
 
-  const mainContent = document.getElementById('main-content');
-  const authView = document.getElementById('auth-view');
+  mainContentElement = document.getElementById('main-content');
+  authViewElement = document.getElementById('auth-view');
+  authErrorMessageElement = document.getElementById('auth-error-message');
+
   const accountButton = document.getElementById('account-button');
   const accountButtonIcon = accountButton ? accountButton.querySelector('i') : null;
   const cancelAuthButton = document.getElementById('cancel-auth-button');
-  const generalErrorMessageElement = document.getElementById('error-message');
   const confirmationMessageElement = document.getElementById('confirmation-message');
   const addPromptButtonMain = document.getElementById('add-prompt-button');
 
@@ -31,34 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupDisplayNameInput = document.getElementById('signup-display-name');
   const signupEmailInput = document.getElementById('signup-email');
   const signupPasswordInput = document.getElementById('signup-password');
-  const authErrorMessage = document.getElementById('auth-error-message');
   const googleSignInButton = document.getElementById('google-signin-button');
 
   let currentUser = null;
 
-  function showAuthView() {
-    if (mainContent) mainContent.classList.add('hidden');
-    if (authView) authView.classList.remove('hidden');
-    if (authErrorMessage) {
-      authErrorMessage.textContent = '';
-      authErrorMessage.classList.add('hidden');
-    }
-  }
-  window.showAuthViewGlobally = showAuthView;
-
-  // Expose a function for UI modules to call when auth is required
-  window.handleAuthRequiredAction = actionDescription => {
-    Utils.handleError(`Please login or create an account to ${actionDescription}.`, {
-      specificErrorElement: generalErrorMessageElement,
-      type: 'info',
-      timeout: 4000,
-    });
-    setTimeout(showAuthView, 100); // Give a moment for the message to be seen
-  };
-
   function showMainContentView() {
-    if (authView) authView.classList.add('hidden');
-    if (mainContent) mainContent.classList.remove('hidden');
+    if (authViewElement) authViewElement.classList.add('hidden');
+    if (mainContentElement) mainContentElement.classList.remove('hidden');
   }
 
   async function loadAndRenderPrompts() {
@@ -98,21 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addPromptButtonMain) {
     addPromptButtonMain.addEventListener('click', () => {
       if (currentUser) {
-        console.log('Add prompt button clicked by logged-in user (app.js v9).');
-        // The UI module itself handles opening the window via its own event listener for this button.
-        // This button in app.js context is primarily for enabling/disabling based on auth.
-        // If UI.addPromptButtonEl in ui.js is the same element, its listener will also fire.
+        if (UI && UI.openDetachedAddPromptWindow) {
+          UI.openDetachedAddPromptWindow();
+        } else {
+          console.error('UI.openDetachedAddPromptWindow is not available.');
+        }
       } else {
         if (window.handleAuthRequiredAction) {
           window.handleAuthRequiredAction('add a new prompt');
-        } else {
-          // Fallback, should not be needed if window.handleAuthRequiredAction is defined above
-          Utils.handleError('Please login or create an account to add a new prompt.', {
-            specificErrorElement: generalErrorMessageElement,
-            type: 'info',
-            timeout: 4000,
-          });
-          setTimeout(showAuthView, 100);
         }
       }
     });
@@ -137,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loginForm) {
     loginForm.addEventListener('submit', async event => {
       event.preventDefault();
-      if (authErrorMessage) authErrorMessage.classList.add('hidden');
+      if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
       const email = loginEmailInput.value;
       const password = loginPasswordInput.value;
       try {
@@ -148,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         Utils.displayAuthError(
           error.message || 'Login failed. Please try again.',
-          authErrorMessage
+          authErrorMessageElement
         );
       }
     });
@@ -157,17 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (signupForm) {
     signupForm.addEventListener('submit', async event => {
       event.preventDefault();
-      if (authErrorMessage) authErrorMessage.classList.add('hidden');
+      if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
       const displayName = signupDisplayNameInput.value.trim();
       const email = signupEmailInput.value;
       const password = signupPasswordInput.value;
 
       if (!displayName) {
-        Utils.displayAuthError('Please enter a display name.', authErrorMessage);
+        Utils.displayAuthError('Please enter a display name.', authErrorMessageElement);
         return;
       }
       if (displayName.includes('@') || displayName.includes('.')) {
-        Utils.displayAuthError('Display name cannot be an email address.', authErrorMessage);
+        Utils.displayAuthError('Display name cannot be an email address.', authErrorMessageElement);
         return;
       }
 
@@ -178,12 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
           Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
             specificErrorElement: confirmationMessageElement,
             timeout: 5000,
+            type: 'success',
           });
         }
       } catch (error) {
         Utils.displayAuthError(
           error.message || 'Signup failed. Please try again.',
-          authErrorMessage
+          authErrorMessageElement
         );
       }
     });
@@ -191,11 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (googleSignInButton) {
     googleSignInButton.addEventListener('click', async () => {
-      if (authErrorMessage) authErrorMessage.classList.add('hidden');
+      if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
       try {
         await signInWithGoogle();
       } catch (error) {
-        Utils.displayAuthError(error.message || 'Google Sign-In failed.', authErrorMessage);
+        Utils.displayAuthError(error.message || 'Google Sign-In failed.', authErrorMessageElement);
       }
     });
   }
