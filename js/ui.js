@@ -183,7 +183,7 @@ async function handleToggleFavorite(promptId) {
     if (updatedPrompt) {
       const index = allPrompts.findIndex(p => p.id === promptId);
       if (index !== -1) {
-        allPrompts[index] = updatedPrompt; // Ensure this updatedPrompt has currentUserIsFavorite
+        allPrompts[index] = updatedPrompt;
       }
       if (
         promptDetailsSectionEl &&
@@ -192,7 +192,6 @@ async function handleToggleFavorite(promptId) {
       ) {
         displayPromptDetails(updatedPrompt);
       } else {
-        // If in list view, re-render the list which will use the updated allPrompts
         showTab(activeTab);
       }
       Utils.showConfirmationMessage('Favorite status updated!');
@@ -232,9 +231,33 @@ async function handleRatePrompt(promptId, rating) {
 async function handleCopyPrompt(promptId) {
   try {
     const success = await PromptData.copyPromptToClipboard(promptId);
-    if (success) Utils.showConfirmationMessage('Prompt copied to clipboard!');
+    if (success) {
+      Utils.showConfirmationMessage('Prompt copied to clipboard!');
+      // If the current detailed prompt is the one copied, refresh its view to show updated usageCount
+      if (
+        promptDetailsSectionEl &&
+        !promptDetailsSectionEl.classList.contains('hidden') &&
+        promptDetailsSectionEl.dataset.currentPromptId === promptId
+      ) {
+        await viewPromptDetails(promptId);
+      }
+      // Optionally, update the allPrompts array if usageCount is displayed in the list view
+      // For now, this is simpler and focuses on the details view.
+      const index = allPrompts.findIndex(p => p.id === promptId);
+      if (index !== -1 && allPrompts[index].usageCount !== undefined) {
+        // We don't get the updated prompt back from copyPromptToClipboard directly,
+        // so we can either increment locally (less accurate) or rely on next full load.
+        // For now, viewPromptDetails will handle it if details are open.
+        // If we want to update the list item: allPrompts[index].usageCount++; and re-render list.
+      }
+    }
+    // Error handling for copy operation is done within PromptData.copyPromptToClipboard
   } catch (error) {
-    Utils.handleError('Failed to copy prompt', { userVisible: true, originalError: error });
+    // This catch is for unexpected errors in the UI handling itself, not the copy op.
+    Utils.handleError('Failed to process copy action in UI', {
+      userVisible: true,
+      originalError: error,
+    });
   }
 }
 
@@ -419,11 +442,9 @@ export const displayPrompts = prompts => {
       '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
     return;
   }
-  // const currentUser = auth ? auth.currentUser : null; // Not directly needed here if prompt object has currentUserIsFavorite
   sorted.forEach(prompt => {
     const div = document.createElement('div');
     div.classList.add('prompt-item');
-    // Use prompt.currentUserIsFavorite which is prepared by loadPrompts
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     div.innerHTML = `
       <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite">
@@ -549,12 +570,10 @@ export const displayPromptDetails = prompt => {
   if (favBtn) {
     favBtn.dataset.id = prompt.id;
     const icon = favBtn.querySelector('i');
-    // Use the new currentUserIsFavorite field from the prompt object
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
   }
 
-  // --- Rating Display Logic ---
   if (userStarRatingEl) userStarRatingEl.innerHTML = '';
   if (userRatingMessageEl) userRatingMessageEl.textContent = '';
   if (communityStarDisplayEl) communityStarDisplayEl.innerHTML = '';
