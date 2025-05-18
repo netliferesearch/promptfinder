@@ -49,7 +49,7 @@ export const chromeStorageSet = items => {
  * @param {Object} options - Configuration options
  * @param {boolean} options.userVisible - Whether to show to user (default: true)
  * @param {number} options.timeout - How long to show in ms (default: 5000 for errors, 0 for info with link)
- * @param {'error'|'warning'|'info'} options.type - Type of message (default: 'error')
+ * @param {'error'|'warning'|'info'|'success'} options.type - Type of message (default: 'error')
  * @param {Error} [options.originalError] - Original error object for logging
  * @param {HTMLElement} [options.specificErrorElement] - DOM element to show message in
  * @param {boolean} [options.isHtml] - Whether messageOrHtml is HTML (default: false)
@@ -57,7 +57,8 @@ export const chromeStorageSet = items => {
  * @param {Function} [options.onClickAction] - Function to call on link click
  */
 export const handleError = (messageOrHtml, options = {}) => {
-  const defaultTimeout = options.type === 'info' && options.linkId ? 0 : 5000; // No auto-hide for info with link
+  const defaultTimeout =
+    options.type === 'info' && options.linkId ? 0 : options.type === 'success' ? 3000 : 5000;
   const {
     userVisible = true,
     timeout = defaultTimeout,
@@ -71,12 +72,17 @@ export const handleError = (messageOrHtml, options = {}) => {
     onClickAction = null,
   } = options;
 
-  const consoleMethod = type === 'warning' ? 'warn' : type === 'info' ? 'info' : 'error';
+  let consoleMethod = console.error; // Default to error
+  if (type === 'warning') {
+    consoleMethod = console.warn;
+  } else if (type === 'info' || type === 'success') {
+    consoleMethod = console.info; // Use console.info for success and info types
+  }
 
   if (originalError) {
-    console[consoleMethod](messageOrHtml, originalError.message, originalError.stack);
+    consoleMethod(messageOrHtml, originalError.message, originalError.stack);
   } else {
-    console[consoleMethod](messageOrHtml);
+    consoleMethod(messageOrHtml);
   }
 
   const targetElement = specificErrorElement;
@@ -86,14 +92,15 @@ export const handleError = (messageOrHtml, options = {}) => {
       error: { bgColor: '#f8d7da', textColor: '#721c24', borderColor: '#f5c6cb' },
       warning: { bgColor: '#fff3cd', textColor: '#856404', borderColor: '#ffeeba' },
       info: { bgColor: '#d1ecf1', textColor: '#0c5460', borderColor: '#bee5eb' },
+      success: { bgColor: '#d4edda', textColor: '#155724', borderColor: '#c3e6cb' }, // Added success style
     };
     const style = typeStyles[type] || typeStyles.error;
     try {
       targetElement.style.backgroundColor = style.bgColor;
       targetElement.style.color = style.textColor;
       targetElement.style.borderColor = style.borderColor;
-      targetElement.style.padding = 'var(--spacing-sm, 8px)'; // Ensure padding
-      targetElement.style.marginBottom = 'var(--spacing-md, 16px)'; // Ensure margin
+      targetElement.style.padding = 'var(--spacing-sm, 8px)';
+      targetElement.style.marginBottom = 'var(--spacing-md, 16px)';
       targetElement.style.borderRadius = 'var(--border-radius-md, 16px)';
 
       if (isHtml) {
@@ -123,7 +130,6 @@ export const handleError = (messageOrHtml, options = {}) => {
       }
 
       if (timeout > 0) {
-        // Only set timeout if it's greater than 0
         targetElement.dataset.messageTimeoutId = setTimeout(() => {
           targetElement.classList.add('hidden');
           delete targetElement.dataset.messageTimeoutId;
@@ -137,11 +143,6 @@ export const handleError = (messageOrHtml, options = {}) => {
   }
 };
 
-/**
- * Displays an authentication-specific error message in a dedicated auth error element.
- * @param {string} message - The error message to display.
- * @param {HTMLElement} element - The HTML element where the error should be displayed.
- */
 export const displayAuthError = (message, element) => {
   if (element && typeof document !== 'undefined') {
     try {
@@ -152,24 +153,19 @@ export const displayAuthError = (message, element) => {
     }
   } else {
     console.error('Auth error display element not found. Message:', message);
-    // Fallback to general handleError if no specific element provided for auth error
     handleError(message, { userVisible: true, type: 'error' });
   }
 };
 
-// showConfirmationMessage might need similar enhancements if it's to contain links
-// For now, keeping it simple for text-only confirmations.
 export const showConfirmationMessage = (message, options = {}) => {
   const {
-    timeout = 3000, // Defaulted to 3s, was 2s
+    timeout = 3000,
     specificErrorElement = typeof document !== 'undefined'
       ? document.getElementById('confirmation-message')
       : null,
-    type = 'success', // Default to success styling for confirmations
+    type = 'success',
   } = options;
 
-  // Re-using handleError's logic for styling and display if specificErrorElement is used.
-  // This centralizes message display logic a bit more.
   if (specificErrorElement) {
     handleError(message, {
       specificErrorElement: specificErrorElement,
@@ -178,8 +174,7 @@ export const showConfirmationMessage = (message, options = {}) => {
       userVisible: true,
     });
   } else {
-    // Fallback or alternative display method if no specificErrorElement
-    console.log('Confirmation:', message); // Simple console log if no element
+    console.info('Confirmation:', message); // Changed to console.info for confirmations
   }
 };
 
