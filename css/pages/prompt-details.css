@@ -108,7 +108,7 @@
 }
 
 .star-rating-display {
-  display: inline-flex; /* Align stars in a row */
+  display: inline-flex;
 }
 
 .star-rating-display .star {
@@ -117,17 +117,12 @@
   padding: 2px;
   cursor: pointer;
   color: var(--color-star-empty, #ccc);
-  font-size: 1.5rem; /* Adjust star size */
+  font-size: 1.5rem;
 }
 
 .star-rating-display .star:hover i,
 .star-rating-display .star.filled i {
   color: var(--color-star-filled, #ffc107);
-}
-
-.star-rating-display .star.interactive:hover ~ .star i {
-  /* Make subsequent stars also appear empty on hover for interactive rating */
-  /* This needs more complex JS or sibling combinators if pure CSS */
 }
 
 .star-rating-display .star i {
@@ -139,23 +134,40 @@
   cursor: default;
 }
 
-.rating-message {
-  font-size: var(--font-size-sm, 0.875rem);
-  color: var(--color-gray-500, #999);
-  margin-left: var(--spacing-sm, 8px);
+.rating-message-label {
+  /* Class for the <strong> tag */
+  font-weight: 500; /* Or bold, as per your design */
+  margin-right: var(--spacing-sm, 8px);
 }
 
 .community-rating-section .star-rating-display .star i {
-  color: var(
-    --color-star-filled,
-    #ffc107
-  ); /* Community average stars are always filled to their value */
+  color: var(--color-star-filled, #ffc107);
 }
 .community-rating-section .star-rating-display .star.far i {
-  /* if we use non-filled for partial averages */
   color: var(--color-star-empty, #ccc);
 }
 
 .community-rating-section.hidden {
   display: none;
+}
+
+/* Owner Actions Section */
+.prompt-owner-actions {
+  margin-top: var(--spacing-lg, 24px);
+  padding-top: var(--spacing-md, 16px);
+  border-top: 1px solid var(--color-gray-300, #e0e0e0);
+  display: flex; /* Use flex to layout buttons */
+  gap: var(--spacing-md, 16px); /* Space between buttons */
+  justify-content: flex-start; /* Align buttons to the start */
+}
+
+.prompt-owner-actions .button i {
+  margin-right: var(--spacing-xs, 4px);
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--color-gray-200, #eee);
+  margin-top: var(--spacing-lg, 24px);
+  margin-bottom: var(--spacing-lg, 24px);
 }
