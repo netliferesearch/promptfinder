@@ -8,9 +8,8 @@ import {
 
 import * as Utils from './js/utils.js';
 import * as UI from './js/ui.js';
-import * as PromptDataModule from './js/promptData.js'; // Import the whole module for debugging
+import * as PromptDataModule from './js/promptData.js';
 
-// TEMPORARY: Expose PromptData for console debugging
 window.DebugPromptData = PromptDataModule;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,6 +44,17 @@ document.addEventListener('DOMContentLoaded', () => {
       authErrorMessage.classList.add('hidden');
     }
   }
+  window.showAuthViewGlobally = showAuthView;
+
+  // Expose a function for UI modules to call when auth is required
+  window.handleAuthRequiredAction = actionDescription => {
+    Utils.handleError(`Please login or create an account to ${actionDescription}.`, {
+      specificErrorElement: generalErrorMessageElement,
+      type: 'info',
+      timeout: 4000,
+    });
+    setTimeout(showAuthView, 100); // Give a moment for the message to be seen
+  };
 
   function showMainContentView() {
     if (authView) authView.classList.add('hidden');
@@ -89,11 +99,21 @@ document.addEventListener('DOMContentLoaded', () => {
     addPromptButtonMain.addEventListener('click', () => {
       if (currentUser) {
         console.log('Add prompt button clicked by logged-in user (app.js v9).');
+        // The UI module itself handles opening the window via its own event listener for this button.
+        // This button in app.js context is primarily for enabling/disabling based on auth.
+        // If UI.addPromptButtonEl in ui.js is the same element, its listener will also fire.
       } else {
-        Utils.showConfirmationMessage('Please login to add a prompt.', {
-          specificErrorElement: generalErrorMessageElement,
-          type: 'error',
-        });
+        if (window.handleAuthRequiredAction) {
+          window.handleAuthRequiredAction('add a new prompt');
+        } else {
+          // Fallback, should not be needed if window.handleAuthRequiredAction is defined above
+          Utils.handleError('Please login or create an account to add a new prompt.', {
+            specificErrorElement: generalErrorMessageElement,
+            type: 'info',
+            timeout: 4000,
+          });
+          setTimeout(showAuthView, 100);
+        }
       }
     });
   }
