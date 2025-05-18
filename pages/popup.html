@@ -104,26 +104,22 @@
             <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
             <p><strong>Target AI Tools:</strong> <span id="prompt-detail-tools"></span></p>
 
-            <!-- New Rating Section Structure -->
             <div class="ratings-section">
               <div class="user-rating-section">
-                <strong id="user-rating-label">Your Rating:</strong>
+                <strong id="user-rating-message" class="rating-message-label"
+                  >Rate this prompt!</strong
+                >
                 <div
                   id="user-star-rating"
                   class="star-rating-wrapper interactive-stars"
                   role="radiogroup"
-                  aria-labelledby="user-rating-label"
+                  aria-labelledby="user-rating-message"
                 ></div>
-                <span id="user-rating-message" class="rating-message"></span>
-                <!-- For messages like "Not yet rated" -->
               </div>
               <div id="community-rating-section" class="community-rating-section hidden">
-                <!-- Hidden by default, shown for public prompts -->
                 <strong id="community-rating-label">Community Rating:</strong>
                 <span id="community-average-rating-value">(0.0)</span>
                 <span id="community-rating-count">(0 ratings)</span>
-                <!-- Optional: display community stars (read-only) -->
-                <!-- <div id="community-star-display" class="star-rating-wrapper read-only-stars"></div> -->
               </div>
             </div>
 
