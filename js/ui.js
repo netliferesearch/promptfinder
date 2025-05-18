@@ -10,7 +10,7 @@ import { auth } from './firebase-init.js'; // Import the initialized auth servic
 // Import Prism.js
 import 'prismjs'; // Core
 import 'prismjs/components/prism-markdown.min.js'; // Markdown language support
-import 'prismjs/themes/prism-tomorrow.css'; // Prism Tomorrow Night theme CSS
+// import 'prismjs/themes/prism-tomorrow.css'; // Prism Tomorrow Night theme CSS - Temporarily commented out for Jest
 
 let allPrompts = [];
 let activeTab = 'all';
@@ -21,13 +21,14 @@ const PROMPT_TRUNCATE_LENGTH = 200;
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
 let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
+// addPromptButtonEl removed as its primary listener is in app.js
 let promptsListEl;
 let promptDetailsSectionEl,
   backToListButtonEl,
   copyPromptDetailButtonEl,
   editPromptButtonEl,
   deletePromptTriggerButtonEl,
-  promptOwnerActionsEl, // Added for the container of owner buttons
+  promptOwnerActionsEl,
   deleteConfirmationEl,
   cancelDeleteButtonEl,
   confirmDeleteButtonEl,
@@ -44,6 +45,7 @@ let promptDetailsSectionEl,
   promptDetailUpdatedEl,
   promptDetailUsageEl,
   promptDetailFavoritesEl,
+  // New rating elements
   userStarRatingEl,
   userRatingMessageEl,
   communityRatingSectionEl,
@@ -86,17 +88,14 @@ export const cacheDOMElements = () => {
   communityAverageRatingValueEl = document.getElementById('community-average-rating-value');
   communityRatingCountEl = document.getElementById('community-rating-count');
 
-  // Get owner action buttons and their container
-  promptOwnerActionsEl = document.querySelector('.prompt-owner-actions'); // Use querySelector for class
+  promptOwnerActionsEl = document.querySelector('.prompt-owner-actions');
   if (promptOwnerActionsEl) {
-    // Check if container exists before querying within it
     editPromptButtonEl = promptOwnerActionsEl.querySelector('#edit-prompt-button');
     deletePromptTriggerButtonEl = promptOwnerActionsEl.querySelector(
       '#delete-prompt-detail-trigger-button'
     );
   }
 
-  // Fallback if still caching globally for some reason (should be inside promptOwnerActionsEl now)
   if (!editPromptButtonEl) editPromptButtonEl = document.getElementById('edit-prompt-button');
   if (!deletePromptTriggerButtonEl)
     deletePromptTriggerButtonEl = document.getElementById('delete-prompt-detail-trigger-button');
@@ -104,14 +103,13 @@ export const cacheDOMElements = () => {
   if (promptDetailsSectionEl) {
     backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
     copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
-    // editPromptButtonEl and deletePromptTriggerButtonEl are now potentially inside promptOwnerActionsEl
     deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
     cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
     confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
   }
   controlsEl = document.querySelector('.controls');
   tabsContainerEl = document.querySelector('.tabs');
-  addPromptBarEl = document.querySelector('.add-prompt-bar'); // This is the div, not the button itself
+  addPromptBarEl = document.querySelector('.add-prompt-bar');
 };
 
 export const openDetachedAddPromptWindow = () => {
@@ -572,18 +570,17 @@ export const displayPromptDetails = prompt => {
   }
 
   const isOwner = currentUser && prompt.userId === currentUser.uid;
-  // Show/hide the entire owner actions container
   if (promptOwnerActionsEl) {
-    promptOwnerActionsEl.style.display = isOwner ? 'flex' : 'none'; // Use flex or block as appropriate for styling
+    // Check if container exists
+    promptOwnerActionsEl.style.display = isOwner ? 'flex' : 'none';
     if (editPromptButtonEl) {
-      editPromptButtonEl.disabled = !isOwner; // Still good to set disabled state for accessibility
-      // No need to toggle a class if the parent is hidden/shown
+      editPromptButtonEl.disabled = !isOwner;
     }
     if (deletePromptTriggerButtonEl) {
       deletePromptTriggerButtonEl.disabled = !isOwner;
     }
   } else {
-    // Fallback if promptOwnerActionsEl is not found, hide individual buttons
+    // Fallback if promptOwnerActionsEl somehow isn't found (should not happen)
     if (editPromptButtonEl) editPromptButtonEl.style.display = 'none';
     if (deletePromptTriggerButtonEl) deletePromptTriggerButtonEl.style.display = 'none';
   }

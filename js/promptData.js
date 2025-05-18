@@ -22,7 +22,7 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
-  increment, // Added increment
+  increment,
 } from 'firebase/firestore';
 
 import { auth, db } from '../js/firebase-init.js';
@@ -232,10 +232,12 @@ export const onAuthStateChanged = callback => {
 // --- Prompt Functions (Firestore) ---
 export const addPrompt = async promptData => {
   const currentUser = auth ? auth.currentUser : null;
+  console.log('DEBUG: addPrompt currentUser:', currentUser);
   if (!currentUser) {
     Utils.handleError('User must be logged in to add a prompt.', { userVisible: true });
     return null;
   }
+  console.log('DEBUG: db object in addPrompt:', db);
   if (!db) {
     Utils.handleError('Firestore not available from firebase-init.js.', { userVisible: true });
     return null;
@@ -258,6 +260,7 @@ export const addPrompt = async promptData => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+    console.log('DEBUG: Calling addDoc with newPromptDocData:', newPromptDocData);
     const docRef = await addDoc(collection(db, 'prompts'), newPromptDocData);
     console.log('Prompt added with ID (v9): ', docRef.id);
     const locallySimulatedTimestamps = { createdAt: new Date(), updatedAt: new Date() };
@@ -324,7 +327,6 @@ export const ratePrompt = async (promptId, ratingValue) => {
     await updateDoc(promptRef, {
       averageRating: newAverageRating,
       totalRatingsCount: newTotalRatingsCount,
-      // No 'updatedAt' here
     });
     console.log(
       `Prompt ${promptId} aggregates updated (client-side): avg=${newAverageRating}, count=${newTotalRatingsCount}`
@@ -519,8 +521,6 @@ export const updatePrompt = async (promptId, updates) => {
     console.warn(
       "Update called with no valid fields to update or only restricted fields. Only 'updatedAt' will be changed if no actual content fields are present."
     );
-    // If allowedUpdates is empty, we only update timestamp. If it has fields, we update those AND timestamp.
-    // The updateData logic below handles this.
   }
 
   try {
@@ -668,10 +668,8 @@ export const copyPromptToClipboard = async promptId => {
 
     await navigator.clipboard.writeText(prompt.text);
 
-    // Increment usageCount without changing updatedAt for the main prompt content
     await updateDoc(promptRef, {
       usageCount: increment(1),
-      // No 'updatedAt' here
     });
     console.log(`Usage count for prompt ${promptId} incremented.`);
 
