@@ -21,7 +21,6 @@ import {
   where,
   serverTimestamp,
   Timestamp,
-  // runTransaction, // Removed as it's not used in the current ratePrompt version
 } from 'firebase/firestore';
 
 import { auth, db } from '../js/firebase-init.js';
@@ -603,8 +602,9 @@ export const toggleFavorite = async promptId => {
     const updates = { userIsFavorite: newFavoriteStatus, updatedAt: serverTimestamp() };
     await updateDoc(docRef, updates);
     console.log(`Prompt ${promptId} favorite status updated to ${newFavoriteStatus} (v9).`);
-    const updatedDataFromServer = { ...promptData, ...updates, updatedAt: new Date() };
-    return formatLoadedPrompt({ id: promptId, data: () => updatedDataFromServer });
+
+    // After updating, fetch the full prompt data again to include currentUserRating
+    return findPromptById(promptId);
   } catch (error) {
     Utils.handleError(`Error toggling favorite for prompt ${promptId} (v9): ${error.message}`, {
       userVisible: true,
