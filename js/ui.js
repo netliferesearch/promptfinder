@@ -21,7 +21,7 @@ const PROMPT_TRUNCATE_LENGTH = 200;
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
 let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
-let addPromptButtonEl;
+// addPromptButtonEl removed as its primary listener is in app.js
 let promptsListEl;
 let promptDetailsSectionEl,
   backToListButtonEl,
@@ -62,7 +62,7 @@ export const cacheDOMElements = () => {
   filterButtonEl = document.getElementById('filter-button');
   ratingFilterPanelEl = document.getElementById('rating-filter');
   minRatingSelectEl = document.getElementById('min-rating');
-  addPromptButtonEl = document.getElementById('add-prompt-button');
+  // addPromptButtonEl = document.getElementById('add-prompt-button'); // Removed
   promptsListEl = document.getElementById('prompts-list');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
 
@@ -104,7 +104,7 @@ export const cacheDOMElements = () => {
   addPromptBarEl = document.querySelector('.add-prompt-bar');
 };
 
-const openDetachedAddPromptWindow = () => {
+export const openDetachedAddPromptWindow = () => {
   try {
     if (chrome && chrome.windows && chrome.runtime) {
       chrome.windows.create(
@@ -180,18 +180,14 @@ async function handlePromptListClick(event) {
 async function handleToggleFavorite(promptId) {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
-    Utils.handleError('Please login or create an account to favorite a prompt.', {
-      specificErrorElement: document.getElementById('error-message'), // Use main error display for now
-      type: 'info',
-      timeout: 4000,
-    });
-    // Attempt to call the globally exposed function from app.js to show auth view
-    if (typeof window.showAuthViewGlobally === 'function') {
-      setTimeout(window.showAuthViewGlobally, 100); // Slight delay for message visibility
+    if (window.handleAuthRequiredAction) {
+      window.handleAuthRequiredAction('favorite a prompt');
     } else {
-      console.warn(
-        'showAuthViewGlobally function not found on window. Cannot switch to auth view from UI module directly.'
-      );
+      Utils.handleError('Please login or create an account to favorite a prompt.', {
+        specificErrorElement: document.getElementById('error-message'),
+        type: 'info',
+        timeout: 5000,
+      });
     }
     return;
   }
@@ -301,24 +297,6 @@ const setupEventListeners = () => {
   }
   minRatingSelectEl?.addEventListener('change', () => showTab(activeTab));
 
-  addPromptButtonEl?.addEventListener('click', () => {
-    const currentUser = auth ? auth.currentUser : null;
-    if (currentUser) {
-      openDetachedAddPromptWindow();
-    } else {
-      if (window.handleAuthRequiredAction) {
-        // Check if app.js exposed this
-        window.handleAuthRequiredAction('add a new prompt');
-      } else {
-        Utils.handleError('Please login or create an account to add a new prompt.', {
-          userVisible: true,
-          specificErrorElement: document.getElementById('error-message'),
-          type: 'info',
-        });
-      }
-    }
-  });
-
   promptsListEl?.addEventListener('click', handlePromptListClick);
 
   if (promptDetailsSectionEl) {
@@ -329,14 +307,12 @@ const setupEventListeners = () => {
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId) handleCopyPrompt(promptId);
     });
-    // Edit button event listener remains, disabled state handled by displayPromptDetails
     editPromptButtonEl?.addEventListener('click', () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId && !editPromptButtonEl.disabled) openDetachedEditWindow(promptId);
     });
-    // Delete button event listener remains, disabled state handled by displayPromptDetails
     deletePromptTriggerButtonEl?.addEventListener('click', () => {
       if (!deletePromptTriggerButtonEl.disabled) {
         if (deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
@@ -588,18 +564,18 @@ export const displayPromptDetails = prompt => {
     if (icon) icon.className = isFavoriteDisplay ? 'fas fa-heart' : 'far fa-heart';
   }
 
-  // Set Edit/Delete button state based on ownership
   const isOwner = currentUser && prompt.userId === currentUser.uid;
   if (editPromptButtonEl) {
     editPromptButtonEl.disabled = !isOwner;
     editPromptButtonEl.classList.toggle('button-disabled', !isOwner);
+    editPromptButtonEl.style.display = isOwner ? 'inline-flex' : 'none';
   }
   if (deletePromptTriggerButtonEl) {
     deletePromptTriggerButtonEl.disabled = !isOwner;
     deletePromptTriggerButtonEl.classList.toggle('button-disabled', !isOwner);
+    deletePromptTriggerButtonEl.style.display = isOwner ? 'inline-flex' : 'none';
   }
 
-  // Rating Display Logic
   if (userStarRatingEl) userStarRatingEl.innerHTML = '';
   if (userRatingMessageEl) userRatingMessageEl.textContent = '';
   if (communityStarDisplayEl) communityStarDisplayEl.innerHTML = '';
@@ -658,3 +634,5 @@ export const viewPromptDetails = async promptId => {
 };
 
 export const getStarRatingContainerElementForTest = () => userStarRatingEl;
+
+// Removed redundant export of openDetachedAddPromptWindow as it's already exported with 'export const'
