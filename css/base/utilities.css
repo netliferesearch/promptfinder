@@ -135,3 +135,16 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+/* Interactive Link style for messages */
+.inline-link {
+  color: var(--color-primary, blue);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500; /* Make it slightly bolder than surrounding text */
+}
+
+.inline-link:hover,
+.inline-link:focus {
+  color: var(--color-primary-dark, darkblue);
+}
