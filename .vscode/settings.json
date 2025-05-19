@@ -1,5 +1,9 @@
 {
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
-  "cSpell.words": ["promptfinder"]
+  "cSpell.words": [
+    "favorited",
+    "favs",
+    "promptfinder"
+  ]
 }

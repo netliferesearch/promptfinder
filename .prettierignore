@@ -2,6 +2,7 @@ node_modules/
 dist/
 build/
 coverage/
+functions/
 package-lock.json
 *.log
 .vscode/

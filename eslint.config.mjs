@@ -23,6 +23,7 @@ export default [
       'build/',
       'coverage/',
       'scripts/',
+      'functions/',
       'purgecss.config.mjs',
       'rollup.config.js',
       'babel.config.json',

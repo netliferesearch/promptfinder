@@ -21,11 +21,11 @@ import {
   where,
   serverTimestamp,
   Timestamp,
-  writeBatch,
-  increment,
 } from 'firebase/firestore';
 
-import { auth, db } from '../js/firebase-init.js';
+import { httpsCallable } from 'firebase/functions';
+
+import { auth, db, functions } from '../js/firebase-init.js';
 import * as Utils from '../js/utils.js';
 
 // --- Firebase Authentication Functions ---
@@ -279,32 +279,19 @@ export const ratePrompt = async (promptId, ratingValue) => {
   const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
 
   try {
+    // Just set the rating document - the cloud function will handle the aggregation
     await setDoc(ratingDocRef, {
       rating: ratingValue,
       ratedAt: serverTimestamp(),
       userId: currentUser.uid,
     });
 
-    const ratingsQuery = query(collection(db, 'prompts', promptId, 'ratings'));
-    const ratingsSnapshot = await getDocs(ratingsQuery);
+    // Wait a moment for the cloud function to process
+    // In a production app, you might consider implementing a more sophisticated
+    // approach that doesn't rely on this delay
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    let totalRatingSum = 0;
-    let ratingsCount = 0;
-    ratingsSnapshot.forEach(ratingDoc => {
-      // console.log('[SUT ratePrompt forEach] ratingDoc.id:', ratingDoc.id, 'ratingDoc.data():', JSON.stringify(ratingDoc.data()));
-      totalRatingSum += ratingDoc.data().rating;
-      ratingsCount++;
-    });
-
-    const newAverageRating =
-      ratingsCount > 0 ? parseFloat((totalRatingSum / ratingsCount).toFixed(2)) : 0;
-    const newTotalRatingsCount = ratingsCount;
-
-    await updateDoc(promptRef, {
-      averageRating: newAverageRating,
-      totalRatingsCount: newTotalRatingsCount,
-    });
-
+    // Get the updated prompt data to return to the caller
     const updatedPromptSnap = await getDoc(promptRef);
     const promptDataToReturn = formatLoadedPrompt(updatedPromptSnap, ratingValue);
 
@@ -588,29 +575,25 @@ export const toggleFavorite = async promptId => {
       });
       return null;
     }
-    const currentPromptData = currentPromptSnap.data();
-    const currentFavoritesCount = currentPromptData.favoritesCount || 0;
 
-    // We don't use the favorite status value since we rely on Firestore doc existence
+    // Check if the user has already favorited this prompt
     const favoritedBySnap = await getDoc(favoritedByDocRef);
-    const batch = writeBatch(db);
-    let newCalculatedFavoritesCount;
 
+    // Simply add or remove the favorite document
+    // The cloud function will handle updating the favoritesCount
     if (favoritedBySnap.exists()) {
-      batch.delete(favoritedByDocRef);
-      // Removing prompt from favorites
-      newCalculatedFavoritesCount = Math.max(0, currentFavoritesCount - 1);
+      await deleteDoc(favoritedByDocRef);
     } else {
-      batch.set(favoritedByDocRef, { favoritedAt: serverTimestamp(), userId: currentUser.uid });
-      // Adding prompt to favorites
-      newCalculatedFavoritesCount = currentFavoritesCount + 1;
+      await setDoc(favoritedByDocRef, {
+        favoritedAt: serverTimestamp(),
+        userId: currentUser.uid,
+      });
     }
 
-    batch.update(promptRef, {
-      favoritesCount: newCalculatedFavoritesCount,
-    });
-
-    await batch.commit();
+    // Wait a moment for the cloud function to process
+    // In a production app, you might consider implementing a more sophisticated
+    // approach that doesn't rely on this delay
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     return findPromptById(promptId);
   } catch (error) {
@@ -623,16 +606,16 @@ export const toggleFavorite = async promptId => {
 };
 
 export const copyPromptToClipboard = async promptId => {
-  const promptRef = doc(db, 'prompts', promptId);
   try {
     const prompt = await findPromptById(promptId);
     if (!prompt) throw new Error(`Prompt with ID ${promptId} not found for copying (v9)`);
 
     await navigator.clipboard.writeText(prompt.text);
 
-    await updateDoc(promptRef, {
-      usageCount: increment(1),
-    });
+    // Call the cloud function to increment usage count
+    const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
+    await incrementUsageCountFn({ promptId });
+
     return true;
   } catch (error) {
     Utils.handleError(`Error copying to clipboard or updating usage count (v9): ${error.message}`, {

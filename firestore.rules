@@ -1,0 +1,174 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for validating data and permissions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    function isValidPrompt() {
+      let requiredFields = ['title', 'text', 'userId', 'authorDisplayName', 'isPrivate', 'createdAt', 'updatedAt'];
+      let hasRequiredFields = requiredFields.hasAll(request.resource.data.keys());
+      
+      let validUserId = request.resource.data.userId == request.auth.uid;
+      let validTitle = request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100;
+      let validText = request.resource.data.text is string && request.resource.data.text.size() > 0;
+      let validIsPrivate = request.resource.data.isPrivate is bool;
+      
+      // Optional fields validation
+      let validDescription = !("description" in request.resource.data) || 
+                             (request.resource.data.description is string && 
+                              request.resource.data.description.size() <= 500);
+                              
+      let validCategory = !("category" in request.resource.data) || 
+                          (request.resource.data.category is string && 
+                           request.resource.data.category.size() <= 50);
+                           
+      let validTags = !("tags" in request.resource.data) || 
+                      (request.resource.data.tags is list);
+                      
+      let validTargetAiTools = !("targetAiTools" in request.resource.data) || 
+                               (request.resource.data.targetAiTools is list);
+      
+      // Ensure stats fields are not manipulated by users
+      let validStats = (
+        (!("averageRating" in request.resource.data) || request.resource.data.averageRating == 0) && 
+        (!("totalRatingsCount" in request.resource.data) || request.resource.data.totalRatingsCount == 0) && 
+        (!("favoritesCount" in request.resource.data) || request.resource.data.favoritesCount == 0) && 
+        (!("usageCount" in request.resource.data) || request.resource.data.usageCount == 0)
+      );
+      
+      return hasRequiredFields && validUserId && validTitle && validText && validIsPrivate && 
+             validDescription && validCategory && validTags && validTargetAiTools && validStats;
+    }
+    
+    function isValidPromptUpdate() {
+      // Fields that users cannot update directly
+      let protectedFields = ['userId', 'authorDisplayName', 'averageRating', 'totalRatingsCount', 'favoritesCount', 'usageCount', 'createdAt'];
+      let noProtectedFieldsChanged = !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedFields);
+      
+      // Validate fields that can be updated
+      let validTitle = !("title" in request.resource.data) || 
+                       (request.resource.data.title is string && 
+                        request.resource.data.title.size() > 0 && 
+                        request.resource.data.title.size() <= 100);
+                        
+      let validText = !("text" in request.resource.data) || 
+                     (request.resource.data.text is string && 
+                      request.resource.data.text.size() > 0);
+                      
+      let validIsPrivate = !("isPrivate" in request.resource.data) || 
+                          (request.resource.data.isPrivate is bool);
+                          
+      let validDescription = !("description" in request.resource.data) || 
+                            (request.resource.data.description is string && 
+                             request.resource.data.description.size() <= 500);
+                             
+      let validCategory = !("category" in request.resource.data) || 
+                         (request.resource.data.category is string && 
+                          request.resource.data.category.size() <= 50);
+                          
+      let validTags = !("tags" in request.resource.data) || 
+                     (request.resource.data.tags is list);
+                     
+      let validTargetAiTools = !("targetAiTools" in request.resource.data) || 
+                              (request.resource.data.targetAiTools is list);
+      
+      return noProtectedFieldsChanged && validTitle && validText && validIsPrivate && 
+             validDescription && validCategory && validTags && validTargetAiTools;
+    }
+    
+    function isValidRating() {
+      return request.resource.data.rating is number && 
+             request.resource.data.rating >= 1 && 
+             request.resource.data.rating <= 5 &&
+             request.resource.data.userId == request.auth.uid;
+    }
+    
+    function isValidFavorite() {
+      return request.resource.data.userId == request.auth.uid;
+    }
+
+    // Default: deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // User profiles
+    match /users/{userId} {
+      // Allow users to read their own user document
+      allow read: if isOwner(userId);
+      
+      // Allow users to create/update their own profile
+      allow create: if isOwner(userId) && 
+                     request.resource.data.keys().hasAll(['email', 'displayName', 'createdAt']);
+      
+      allow update: if isOwner(userId) && 
+                     !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'createdAt']);
+    }
+    
+    // Prompts collection
+    match /prompts/{promptId} {
+      // Read access: public prompts visible to all authenticated users,
+      // private prompts only visible to their owners
+      allow read: if isAuthenticated() && 
+                   (!resource.data.isPrivate || resource.data.userId == request.auth.uid);
+      
+      // Create: user can only create prompts for themselves
+      allow create: if isAuthenticated() && isValidPrompt();
+      
+      // Update: only the owner can update their prompts
+      allow update: if isAuthenticated() && 
+                     resource.data.userId == request.auth.uid && 
+                     isValidPromptUpdate();
+      
+      // Delete: only the owner can delete their prompts
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Cloud Functions stats updates (for admin and automated functions)
+      allow update: if isAdmin() || 
+                     (request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['averageRating', 'totalRatingsCount', 'favoritesCount', 'usageCount', 'updatedAt']));
+      
+      // Ratings subcollection
+      match /ratings/{userId} {
+        // Anyone authenticated can see ratings
+        allow read: if isAuthenticated();
+        
+        // Users can only create/update their own ratings
+        allow create, update: if isAuthenticated() && 
+                               userId == request.auth.uid && 
+                               isValidRating();
+        
+        // Users can delete their own ratings
+        allow delete: if isAuthenticated() && userId == request.auth.uid;
+      }
+      
+      // Favorites subcollection
+      match /favoritedBy/{userId} {
+        // Anyone authenticated can see who favorited a prompt
+        allow read: if isAuthenticated();
+        
+        // Users can only create/delete their own favorites
+        allow create: if isAuthenticated() && 
+                       userId == request.auth.uid && 
+                       isValidFavorite();
+        
+        allow delete: if isAuthenticated() && userId == request.auth.uid;
+      }
+    }
+    
+    // Admin collection for management tasks
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

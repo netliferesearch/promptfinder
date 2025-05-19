@@ -1,0 +1,19 @@
+# Compiled JavaScript files
+lib/**/*.js
+lib/**/*.js.map
+
+# TypeScript declaration files
+node_modules
+
+# Package lock file
+package-lock.json
+
+# Log files
+ui-debug.log
+*.log
+
+# Firebase cache
+.firebase/
+
+# Build files
+lib/
