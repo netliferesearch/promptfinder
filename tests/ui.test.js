@@ -5,11 +5,39 @@ import { jest } from '@jest/globals';
 import * as UI from '../js/ui.js';
 
 // Mock dependencies of ui.js
+const mockPromptForFavoriteTests = {
+  id: 'prompt123',
+  title: 'Favorite Test',
+  text: 'Some text',
+  tags: [],
+  userId: 'ownerUserId',
+  category: 'Test',
+  description: 'Test desc',
+  currentUserIsFavorite: false, // Initial state
+  favoritesCount: 0,
+  // Add all fields expected by displayPromptDetails
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  authorDisplayName: 'Author Name',
+  averageRating: 0,
+  totalRatingsCount: 0,
+  usageCount: 0,
+  isPrivate: false,
+  currentUserRating: 0,
+};
+
 jest.mock('../js/promptData.js', () => ({
   loadPrompts: jest.fn().mockResolvedValue([]),
   filterPrompts: jest.fn((prompts, _filters) => prompts),
   findPromptById: jest.fn().mockResolvedValue(null),
-  toggleFavorite: jest.fn().mockResolvedValue(null),
+  toggleFavorite: jest.fn().mockImplementation(promptId =>
+    Promise.resolve({
+      ...mockPromptForFavoriteTests,
+      id: promptId,
+      currentUserIsFavorite: !mockPromptForFavoriteTests.currentUserIsFavorite,
+      favoritesCount: mockPromptForFavoriteTests.currentUserIsFavorite ? 0 : 1,
+    })
+  ),
   ratePrompt: jest.fn().mockResolvedValue(null),
   copyPromptToClipboard: jest.fn().mockResolvedValue(true),
   deletePrompt: jest.fn().mockResolvedValue(true),
@@ -147,7 +175,6 @@ const setupMockDOM = () => {
     ) {
       elem.setAttribute = jest.fn(elem.setAttribute.bind(elem));
     }
-    // Ensure querySelector on mocked elements is also a mock that returns mockable elements
     if (
       elem.querySelector &&
       typeof elem.querySelector === 'function' &&
@@ -173,7 +200,10 @@ const setupMockDOM = () => {
   );
 
   window.Prism = { highlightElement: jest.fn() };
+  window.handleAuthRequiredAction = jest.fn();
 };
+
+const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
 
 describe('UI Module', () => {
   beforeEach(() => {
@@ -181,20 +211,34 @@ describe('UI Module', () => {
     jest.clearAllMocks();
     PromptData.loadPrompts.mockClear().mockResolvedValue([]);
     PromptData.filterPrompts.mockClear().mockImplementation((prompts, _filters) => prompts);
-    PromptData.findPromptById.mockClear().mockResolvedValue(null);
+    PromptData.findPromptById
+      .mockClear()
+      .mockResolvedValue({ ...mockPromptForFavoriteTests, id: 'anyPromptId' });
+    PromptData.toggleFavorite.mockClear().mockImplementation(promptId =>
+      Promise.resolve({
+        ...mockPromptForFavoriteTests,
+        id: promptId,
+        currentUserIsFavorite: true,
+        favoritesCount: 1,
+      })
+    );
+    PromptData.copyPromptToClipboard.mockClear().mockResolvedValue(true);
     Utils.handleError.mockClear();
     Utils.showConfirmationMessage.mockClear();
     mockAuthCurrentUser = null;
     if (window.Prism) window.Prism.highlightElement.mockClear();
+    if (window.handleAuthRequiredAction) window.handleAuthRequiredAction.mockClear();
   });
 
   describe('initializeUI', () => {
     test('should cache DOM elements, setup event listeners, and load data', async () => {
-      const initialPrompts = [{ id: 'initLoad', title: 'Initial' }];
+      const initialPrompts = [{ ...mockPromptForFavoriteTests, id: 'initLoad', title: 'Initial' }];
       PromptData.loadPrompts.mockResolvedValueOnce(initialPrompts);
       await UI.initializeUI();
       expect(document.getElementById).toHaveBeenCalledWith('tab-all');
       expect(PromptData.loadPrompts).toHaveBeenCalledTimes(1);
+      const promptsListEl = document.getElementById('prompts-list');
+      expect(promptsListEl.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
     });
 
     test('should handle errors during initialization when loadPrompts fails', async () => {
@@ -211,7 +255,7 @@ describe('UI Module', () => {
   describe('loadAndDisplayData', () => {
     test('should load prompts and call displayPrompts (via showTab)', async () => {
       UI.cacheDOMElements();
-      const mockPrompts = [{ id: '1', title: 'Test Prompt Alpha', currentUserIsFavorite: false }];
+      const mockPrompts = [{ ...mockPromptForFavoriteTests, id: '1', title: 'Test Prompt Alpha' }];
       PromptData.loadPrompts.mockResolvedValueOnce(mockPrompts);
 
       const promptsList = document.getElementById('prompts-list');
@@ -239,15 +283,7 @@ describe('UI Module', () => {
     });
 
     test('should display a list of prompts', () => {
-      const prompts = [
-        {
-          id: '1',
-          title: 'Test Prompt Beta',
-          tags: [],
-          userId: 'testUser',
-          currentUserIsFavorite: false,
-        },
-      ];
+      const prompts = [{ ...mockPromptForFavoriteTests, id: '1', title: 'Test Prompt Beta' }];
       UI.displayPrompts(prompts);
       if (promptsListElForTest) {
         expect(promptsListElForTest.innerHTML).toContain('Test Prompt Beta');
@@ -263,17 +299,12 @@ describe('UI Module', () => {
 
     test('should display prompt details and handle owner buttons', async () => {
       const prompt = {
+        ...mockPromptForFavoriteTests,
         id: '1',
         title: 'Detail Title',
-        text: 'Detail Text',
-        category: 'Cat',
-        tags: ['tag1'],
         userId: 'testUser',
         currentUserIsFavorite: false,
         currentUserRating: 3,
-        averageRating: 4.5,
-        totalRatingsCount: 10,
-        isPrivate: false,
       };
       UI.displayPromptDetails(prompt);
 
@@ -283,19 +314,131 @@ describe('UI Module', () => {
       const ownerActionsContainer = document.querySelector('.prompt-owner-actions');
       const editButton = document.getElementById('edit-prompt-button');
 
-      // Check the container's display for owner
       expect(ownerActionsContainer.style.display).toBe('flex');
       expect(editButton.disabled).toBe(false);
 
-      // Test for non-owner
       mockAuthCurrentUser = { uid: 'anotherTestUser', email: 'another@example.com' };
-      // UI.displayPromptDetails(prompt); // Prompt owner is still 'testUser' from the prompt object
-      // No, we need to simulate a prompt that testUser doesn't own, or just change current user.
-      // The prompt's userId remains 'testUser'. currentUser is now 'anotherTestUser'.
       UI.displayPromptDetails(prompt);
 
       expect(ownerActionsContainer.style.display).toBe('none');
       expect(editButton.disabled).toBe(true);
+    });
+  });
+
+  describe('handlePromptListClick interactions', () => {
+    const mockPromptId = 'prompt123';
+    const currentMockPromptInitial = {
+      ...mockPromptForFavoriteTests,
+      id: mockPromptId,
+      currentUserIsFavorite: false,
+      favoritesCount: 0,
+    };
+    let displayDetailsSpy; // Keep spy declared if we re-enable it
+
+    beforeEach(async () => {
+      mockAuthCurrentUser = { uid: 'currentUserTestUid', email: 'current@test.com' };
+      PromptData.loadPrompts.mockResolvedValueOnce([currentMockPromptInitial]);
+      await UI.initializeUI();
+    });
+
+    // No afterEach needed if spy is created and restored within the test itself
+    // or if we are not using the spy for this specific test anymore.
+
+    test('should call toggleFavorite and update UI when favorite button is clicked', async () => {
+      PromptData.toggleFavorite.mockResolvedValueOnce({
+        ...currentMockPromptInitial,
+        currentUserIsFavorite: true,
+        favoritesCount: 1,
+      });
+
+      const promptsListEl = document.getElementById('prompts-list');
+      const favoriteButton = promptsListEl.querySelector(
+        `.toggle-favorite[data-id="${mockPromptId}"]`
+      );
+      expect(favoriteButton).not.toBeNull();
+      expect(favoriteButton.querySelector('i').classList.contains('far')).toBe(true);
+
+      favoriteButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+      await flushPromises();
+
+      expect(PromptData.toggleFavorite).toHaveBeenCalledWith(mockPromptId);
+      expect(Utils.showConfirmationMessage).toHaveBeenCalledWith('Favorite status updated!');
+      const updatedFavoriteButton = promptsListEl.querySelector(
+        `.toggle-favorite[data-id="${mockPromptId}"]`
+      );
+      expect(updatedFavoriteButton.querySelector('i').classList.contains('fas')).toBe(true);
+    });
+
+    test('should call viewPromptDetails and display details when view details button is clicked', async () => {
+      PromptData.findPromptById.mockResolvedValueOnce(currentMockPromptInitial);
+      // const displayDetailsSpy = jest.spyOn(UI, 'displayPromptDetails'); // Temporarily remove spy
+
+      const promptsListEl = document.getElementById('prompts-list');
+      const viewDetailsButton = promptsListEl.querySelector(
+        `.view-details[data-id="${mockPromptId}"]`
+      );
+      expect(viewDetailsButton).not.toBeNull();
+
+      const detailsSection = document.getElementById('prompt-details-section');
+      expect(detailsSection.classList.contains('hidden')).toBe(true); // Verify it's hidden initially
+
+      viewDetailsButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      await flushPromises();
+      await flushPromises();
+
+      expect(PromptData.findPromptById).toHaveBeenCalledWith(mockPromptId);
+      // Check side-effects of displayPromptDetails instead of spying on the call
+      expect(detailsSection.classList.contains('hidden')).toBe(false);
+      expect(detailsSection.dataset.currentPromptId).toBe(mockPromptId);
+      const titleEl = document.getElementById('prompt-detail-title');
+      expect(titleEl.textContent).toBe(currentMockPromptInitial.title);
+      // displayDetailsSpy.mockRestore(); // No spy to restore if removed
+    });
+
+    test('should call copyPromptToClipboard when copy button is clicked', async () => {
+      PromptData.copyPromptToClipboard.mockResolvedValueOnce(true);
+      PromptData.findPromptById.mockResolvedValueOnce(currentMockPromptInitial);
+
+      const promptsListEl = document.getElementById('prompts-list');
+      const copyButton = promptsListEl.querySelector(`.copy-prompt[data-id="${mockPromptId}"]`);
+      expect(copyButton).not.toBeNull();
+
+      copyButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+
+      expect(PromptData.copyPromptToClipboard).toHaveBeenCalledWith(mockPromptId);
+      expect(Utils.showConfirmationMessage).toHaveBeenCalledWith('Prompt copied to clipboard!');
+    });
+
+    test('should not call actions if a non-button part of item is clicked', async () => {
+      const promptsListEl = document.getElementById('prompts-list');
+      const promptItem = promptsListEl.querySelector('.prompt-item');
+      expect(promptItem).not.toBeNull();
+
+      promptItem.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+
+      expect(PromptData.toggleFavorite).not.toHaveBeenCalled();
+      expect(PromptData.findPromptById).not.toHaveBeenCalled();
+      expect(PromptData.copyPromptToClipboard).not.toHaveBeenCalled();
+    });
+
+    test('should call window.handleAuthRequiredAction if favorite is clicked when logged out', async () => {
+      mockAuthCurrentUser = null;
+
+      const promptsListEl = document.getElementById('prompts-list');
+      const favoriteButton = promptsListEl.querySelector(
+        `.toggle-favorite[data-id="${mockPromptId}"]`
+      );
+      expect(favoriteButton).not.toBeNull();
+
+      favoriteButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+
+      expect(window.handleAuthRequiredAction).toHaveBeenCalledWith('favorite a prompt');
+      expect(PromptData.toggleFavorite).not.toHaveBeenCalled();
     });
   });
 });

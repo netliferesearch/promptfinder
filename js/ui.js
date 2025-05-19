@@ -10,7 +10,6 @@ import { auth } from './firebase-init.js'; // Import the initialized auth servic
 // Import Prism.js
 import 'prismjs'; // Core
 import 'prismjs/components/prism-markdown.min.js'; // Markdown language support
-// import 'prismjs/themes/prism-tomorrow.css'; // Prism Tomorrow Night theme CSS - Temporarily commented out for Jest
 
 let allPrompts = [];
 let activeTab = 'all';
@@ -21,7 +20,6 @@ const PROMPT_TRUNCATE_LENGTH = 200;
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
 let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
-// addPromptButtonEl removed as its primary listener is in app.js
 let promptsListEl;
 let promptDetailsSectionEl,
   backToListButtonEl,
@@ -45,7 +43,6 @@ let promptDetailsSectionEl,
   promptDetailUpdatedEl,
   promptDetailUsageEl,
   promptDetailFavoritesEl,
-  // New rating elements
   userStarRatingEl,
   userRatingMessageEl,
   communityRatingSectionEl,
@@ -172,13 +169,22 @@ const openDetachedEditWindow = promptId => {
 };
 
 async function handlePromptListClick(event) {
+  console.log('[UI SUT LOG] handlePromptListClick triggered');
   const targetButton = event.target.closest('button');
-  if (!targetButton || !targetButton.dataset.id) return;
+  if (!targetButton || !targetButton.dataset.id) {
+    console.log('[UI SUT LOG] handlePromptListClick: No target button with data-id found.');
+    return;
+  }
   const promptId = targetButton.dataset.id;
+  console.log(
+    `[UI SUT LOG] handlePromptListClick: promptId=${promptId}, button classes=${targetButton.className}`
+  );
+
   if (targetButton.classList.contains('toggle-favorite')) {
     event.stopPropagation();
     await handleToggleFavorite(promptId);
   } else if (targetButton.classList.contains('view-details')) {
+    console.log('[UI SUT LOG] handlePromptListClick: view-details branch hit');
     await viewPromptDetails(promptId);
   } else if (targetButton.classList.contains('copy-prompt')) {
     await handleCopyPrompt(promptId);
@@ -287,7 +293,6 @@ async function handleDeletePrompt(promptId) {
 }
 
 const setupEventListeners = () => {
-  console.log('[UI_DEBUG] setupEventListeners - START (v9 modular)');
   tabAllEl?.addEventListener('click', () => showTab('all'));
   tabFavsEl?.addEventListener('click', () => showTab('favs'));
   tabPrivateEl?.addEventListener('click', () => showTab('private'));
@@ -356,20 +361,13 @@ const setupEventListeners = () => {
       }
     });
   }
-  console.log('[UI_DEBUG] setupEventListeners - END (v9 modular)');
 };
 
 export const loadAndDisplayData = async () => {
   try {
-    console.log('[UI_DEBUG] loadAndDisplayData - START (v9 modular)');
     allPrompts = await PromptData.loadPrompts();
-    console.log(
-      `[UI_DEBUG] loadAndDisplayData - after PromptData.loadPrompts, count: ${allPrompts ? allPrompts.length : 'undefined'}`
-    );
     showTab(activeTab);
-    console.log('[UI_DEBUG] loadAndDisplayData - END (v9 modular)');
   } catch (error) {
-    console.error('[UI_DEBUG] loadAndDisplayData - CAUGHT ERROR (v9):', error);
     Utils.handleError('Error loading and displaying prompt data', {
       userVisible: true,
       originalError: error,
@@ -381,21 +379,15 @@ export const loadAndDisplayData = async () => {
 
 export const initializeUI = async () => {
   try {
-    console.log('[UI_DEBUG] initializeUI - START (v9 modular)');
     cacheDOMElements();
-    console.log('[UI_DEBUG] initializeUI - after cacheDOMElements');
     setupEventListeners();
-    console.log('[UI_DEBUG] initializeUI - after setupEventListeners');
     await loadAndDisplayData();
-    console.log('[UI_DEBUG] initializeUI - after loadAndDisplayData');
   } catch (error) {
-    console.error('[UI_DEBUG] initializeUI - CAUGHT ERROR (v9):', error);
     Utils.handleError('Error initializing UI', { userVisible: true, originalError: error });
   }
 };
 
 export const showTab = which => {
-  console.log('[UI_TEST_DEBUG] showTab called with (v9):', which);
   activeTab = which;
   if (tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
   if (tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -419,11 +411,8 @@ export const showTab = which => {
     minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
   };
   const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
-  console.log('[UI_TEST_DEBUG] showTab - promptsToFilter count (v9):', promptsToFilter.length);
   const filtered = PromptData.filterPrompts(promptsToFilter, filters);
-  console.log('[UI_TEST_DEBUG] showTab - filtered prompts count (v9):', filtered.length);
   displayPrompts(filtered);
-  console.log('[UI_TEST_DEBUG] showTab - after displayPrompts call (v9)');
 };
 
 export const displayPrompts = prompts => {
@@ -571,7 +560,6 @@ export const displayPromptDetails = prompt => {
 
   const isOwner = currentUser && prompt.userId === currentUser.uid;
   if (promptOwnerActionsEl) {
-    // Check if container exists
     promptOwnerActionsEl.style.display = isOwner ? 'flex' : 'none';
     if (editPromptButtonEl) {
       editPromptButtonEl.disabled = !isOwner;
@@ -580,7 +568,6 @@ export const displayPromptDetails = prompt => {
       deletePromptTriggerButtonEl.disabled = !isOwner;
     }
   } else {
-    // Fallback if promptOwnerActionsEl somehow isn't found (should not happen)
     if (editPromptButtonEl) editPromptButtonEl.style.display = 'none';
     if (deletePromptTriggerButtonEl) deletePromptTriggerButtonEl.style.display = 'none';
   }
@@ -627,9 +614,14 @@ export const displayPromptDetails = prompt => {
 };
 
 export const viewPromptDetails = async promptId => {
+  console.log(`[UI SUT LOG] viewPromptDetails called with promptId: ${promptId}`); // Log entry
   try {
     const prompt = await PromptData.findPromptById(promptId);
+    console.log(
+      `[UI SUT LOG] viewPromptDetails: findPromptById returned: ${JSON.stringify(prompt)}`
+    ); // Log fetched prompt
     if (prompt) {
+      console.log('[UI SUT LOG] viewPromptDetails: Prompt found, calling displayPromptDetails.'); // Log before call
       displayPromptDetails(prompt);
     } else {
       throw new Error(`Prompt with ID ${promptId} not found`);
