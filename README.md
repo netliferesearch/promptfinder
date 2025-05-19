@@ -38,77 +38,153 @@ This project has recently undergone a significant migration to Firebase for back
 - Enhanced prompt details display and form field requirements.
 - Improved UX for logged-out users attempting actions.
 
+**Recent Accomplishments:**
+
+- ✅ **Unit Tests Updated:** All tests have been adapted for ES Modules and Firebase v9 SDK and are now passing.
+- ✅ **Firestore Security Rules:** Implemented robust data protection.
+- ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+
 **Key Next Steps (from PROJECT_PLAN.md):**
 
-- **Update & Fix Unit Tests:** Adapt Jest tests for ES Modules and Firebase v9 SDK.
-- **Implement Firestore Security Rules:** Ensure robust data protection.
-- **Cloud Functions for Aggregation:** Server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+- UI/UX Refinements: Improve popup layout, user flows, and prompt display.
+- Performance Testing & Optimization: Ensure smooth operation with larger datasets.
+- End-to-end testing with real Firebase services in a test environment.
 
 ## Installation & Setup
 
-1.  **Prerequisites**: Node.js and npm (or a compatible package manager) installed.
-2.  **Clone Repository:**
-    ```bash
-    git clone https://github.com/mjolne/promptfinder.git # Replace with your repo URL if different
-    cd promptfinder
-    ```
-3.  **Switch to the development branch** (if not already on it, e.g., `ratings-and-favorites` or `main` if merged):
-    ```bash
-    git checkout ratings-and-favorites # Or your active development branch
-    ```
-4.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-    This installs Firebase, Rollup, ESLint, Prettier, Jest, and other necessary packages.
-5.  **Build the Extension:**
-    ```bash
-    npm run build
-    ```
-    This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
-6.  **Load in Chrome:**
-    - Open Chrome and navigate to `chrome://extensions/`.
-    - Enable "Developer mode" (usually a toggle in the top right corner).
-    - Click "Load unpacked".
-    - Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
-7.  The PromptFinder extension icon should appear in your browser toolbar.
+1. **Prerequisites**: Node.js and npm (or a compatible package manager) installed.
+2. **Clone Repository:**
+
+   ```bash
+   git clone https://github.com/mjolne/promptfinder.git # Replace with your repo URL if different
+   cd promptfinder
+   ```
+
+3. **Switch to the development branch** (if not already on it, e.g., `ratings-and-favorites` or `main` if merged):
+
+   ```bash
+   git checkout ratings-and-favorites # Or your active development branch
+   ```
+
+4. **Install Dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+   This installs Firebase, Rollup, ESLint, Prettier, Jest, and other necessary packages.
+
+5. **Build the Extension:**
+
+   ```bash
+   npm run build
+   ```
+
+   This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
+
+6. **Load in Chrome:**
+   - Open Chrome and navigate to `chrome://extensions/`.
+   - Enable "Developer mode" (usually a toggle in the top right corner).
+   - Click "Load unpacked".
+   - Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
+7. The PromptFinder extension icon should appear in your browser toolbar.
 
 ## Development Workflow
 
-1.  **Make Code Changes:** Edit source files in `js/`, `pages/`, `css/`, etc.
-2.  **Lint & Format (Recommended):**
-    ```bash
-    npm run lint:fix
-    # or run formatting separately
-    npm run format
-    ```
-3.  **Build JavaScript (if not using watch mode):**
-    ```bash
-    npm run build:js:dev
-    # or the full build
-    npm run build
-    ```
-4.  **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:
-    ```bash
-    npm run watch:js
-    ```
-    You will still need to manually reload the extension in Chrome to see changes.
-5.  **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
+1. **Make Code Changes:** Edit source files in `js/`, `pages/`, `css/`, etc.
+2. **Lint & Format (Recommended):**
+
+   ```bash
+   npm run lint:fix
+   # or run formatting separately
+   npm run format
+   ```
+
+3. **Build JavaScript (if not using watch mode):**
+
+   ```bash
+   npm run build:js:dev
+   # or the full build
+   npm run build
+   ```
+
+4. **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:
+
+   ```bash
+   npm run watch:js
+   ```
+
+   You will still need to manually reload the extension in Chrome to see changes.
+
+5. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
 
 ### Testing
 
-Jest is used for unit testing. **Note: Tests currently require significant updates to work with the ES Module structure and Firebase v9 SDK.**
+Jest is used for unit testing. The test suite has been fully updated to work with the ES Module structure and Firebase v9 SDK.
 
-To run tests (once updated):
+To run tests:
 
 ```bash
 npm test
 npm test -- --watch # For watch mode
 ```
 
+All tests are now passing (61 tests across 7 test suites). The test coverage includes:
+
+- Core data operations (CRUD, auth, favorites, ratings)
+- Firebase integration (Firestore operations, security rules)
+- Cloud Functions (recalculate ratings, update favorites count, usage tracking)
+- UI interactions (event handling, rendering, state management)
+
+The testing implementation includes:
+
+- Mocks for Firebase services (Auth, Firestore, Functions)
+- Simulated user interactions
+- Error condition testing
+- Integration tests for Cloud Functions
+
+For detailed test status and future test expansion plans, see the testing section in [PROJECT_PLAN.md](PROJECT_PLAN.md).
+
+## Firebase Cloud Functions
+
+The project uses Firebase Cloud Functions for server-side operations, particularly data aggregation:
+
+- `/functions` directory contains its own `package.json` and dependencies (this is by Firebase design)
+- Functions are written in TypeScript in the `/functions/src` directory
+- ESLint and Prettier configurations in the functions directory are specifically for TypeScript
+
+To work with Cloud Functions:
+
+```bash
+# Install functions dependencies
+cd functions
+npm install
+
+# Build functions
+npm run build
+
+# Deploy functions
+npm run deploy
+
+# Run functions locally with the Firebase emulator
+npm run serve
+```
+
+The main implemented functions are:
+
+- `recalculateRating`: Updates average ratings when a rating changes
+- `updateFavoritesCount`: Maintains accurate favorites counts
+- `incrementUsageCount`: Tracks usage counts when prompts are copied
+- `recalculateAllStats`: Admin function to recalculate all stats
+
+For details on deployment and testing, see:
+
+- [FIREBASE_CLOUD_FUNCTIONS_DEPLOYMENT.md](/docs/FIREBASE_CLOUD_FUNCTIONS_DEPLOYMENT.md)
+- [TESTING_CLOUD_FUNCTIONS.md](/docs/TESTING_CLOUD_FUNCTIONS.md)
+
 ## File Structure Overview
 
-```
+```plaintext
 promptfinder/
 ├── css/                    # Source CSS files (modular structure)
 │   ├── base/
@@ -120,6 +196,12 @@ promptfinder/
 │   └── pages/
 │   └── css-purged/         # Purged CSS output
 ├── docs/                   # Documentation
+├── functions/               # Firebase Cloud Functions
+│   ├── src/                 # TypeScript source code for Cloud Functions
+│   ├── lib/                 # Compiled JavaScript (generated from TypeScript)
+│   ├── node_modules/        # Functions-specific dependencies
+│   ├── package.json         # Functions-specific package config
+│   └── tsconfig.json        # TypeScript configuration for Functions
 ├── icons/                  # Extension icons
 ├── js/                     # Source JavaScript modules
 │   ├── firebase-init.js
@@ -133,7 +215,7 @@ promptfinder/
 │   ├── edit-prompt.html
 │   ├── edit-prompt.js
 │   └── popup.html
-├── tests/                  # Jest test files (needs update)
+├── tests/                  # Jest test files
 ├── .gitignore
 ├── app.js                  # Main entry point for popup (source)
 ├── babel.config.json
