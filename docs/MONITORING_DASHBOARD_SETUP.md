@@ -59,6 +59,7 @@ This guide outlines how to set up monitoring for your Firebase Cloud Functions t
 
 1. Click "Add Widget" > "Logs Panel"
 2. Configure the widget:
+
    - Title: "Critical Function Errors"
    - Log query:
 

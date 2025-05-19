@@ -38,7 +38,7 @@ const entryPoints = [
     output: {
       file: 'dist/js/firebase-init.js',
       format: 'iife',
-      sourcemap: !isProduction,
+      sourcemap: false,
     },
   },
   {
@@ -46,7 +46,7 @@ const entryPoints = [
     output: {
       file: 'dist/js/app.js',
       format: 'iife',
-      sourcemap: !isProduction,
+      sourcemap: false,
     },
   },
   {
@@ -54,7 +54,7 @@ const entryPoints = [
     output: {
       file: 'dist/pages/add-prompt.js',
       format: 'iife',
-      sourcemap: !isProduction,
+      sourcemap: false,
     },
   },
   {
@@ -62,7 +62,7 @@ const entryPoints = [
     output: {
       file: 'dist/pages/edit-prompt.js',
       format: 'iife',
-      sourcemap: !isProduction,
+      sourcemap: false,
     },
   },
 ];

@@ -11,12 +11,16 @@
     "build:js:dev": "rollup -c --environment NODE_ENV:development",
     "build:js:prod": "rollup -c --environment NODE_ENV:production",
     "watch:js": "rollup -c --watch --environment NODE_ENV:development",
-    "css:purge": "mkdir -p dist/css-purged/base dist/css-purged/components dist/css-purged/layout dist/css-purged/pages && purgecss --css css/**/*.css --config ./purgecss.config.mjs --output dist/css-purged",
+    "css:purge": "mkdir -p dist/css-purged && purgecss --css css/global.css css/pages/*.css --config ./purgecss.config.mjs --output dist/css-purged",
     "css:switch": "bash ./scripts/switch-css-env.sh",
+    "css:update-html": "bash ./scripts/update-html-css.sh",
     "build": "npm run lint && npm run format && npm run build:js:dev && npm run css:purge && echo \"Development build complete (JS bundled, CSS purged)\"",
     "build:prod": "npm run lint && npm run format && npm run build:js:prod && npm run css:purge && echo \"Production build complete (JS bundled & minified, CSS purged)\"",
     "clean-install": "rm -rf node_modules package-lock.json dist && npm install",
-    "dev": "npm run css:switch -- dev && npm run watch:js"
+    "dev": "npm run css:switch -- dev && npm run watch:js",
+    "package": "bash ./scripts/build-extension.sh",
+    "analyze-size": "bash ./scripts/analyze-size.sh",
+    "clean": "rm -rf dist package *.zip"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

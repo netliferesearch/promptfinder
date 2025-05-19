@@ -1,6 +1,9 @@
 /node_modules/
 functions/node_modules/
 /dist/
+/package/
+*.zip
+*.crx
 .DS_Store
 *.log
 coverage/

@@ -1,4 +1,4 @@
-// filepath: /Users/tor-andershansen/Desktop/Projects/promptfinder/tests/firestoreRules.test.js
+// This test suite is designed to test Firestore security rules for the PromptFinder application.
 const firebaseTestUtils = require('./firebase-test-utils');
 
 // Simple mocks instead of trying to mimic the full firebase rules testing API

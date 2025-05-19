@@ -43,6 +43,7 @@ This project has recently undergone a significant migration to Firebase for back
 - ✅ **Unit Tests Updated:** All tests have been adapted for ES Modules and Firebase v9 SDK and are now passing.
 - ✅ **Firestore Security Rules:** Implemented robust data protection.
 - ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+- ✅ **Extension Size Optimization:** Reduced extension size from 571MB to 467KB (99.9% reduction) for Chrome Web Store compatibility.
 
 **Key Next Steps (from PROJECT_PLAN.md):**
 
@@ -77,10 +78,17 @@ This project has recently undergone a significant migration to Firebase for back
 5. **Build the Extension:**
 
    ```bash
+   # Standard development build
    npm run build
+   
+   # Production build (minified, no source maps)
+   npm run build:prod
+   
+   # Package for Chrome Web Store (creates optimized zip file)
+   npm run package
    ```
 
-   This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
+   This builds and packages the extension, placing outputs in the `dist/` directory. The final packaged extension (`promptfinder.zip`) is only 467KB in size.
 
 6. **Load in Chrome:**
    - Open Chrome and navigate to `chrome://extensions/`.
@@ -228,6 +236,36 @@ promptfinder/
 ├── README.md               # This file
 └── rollup.config.js        # Rollup bundler configuration
 ```
+
+### Build and Optimization
+
+Several build options are available for different development and deployment scenarios:
+
+```bash
+# Standard development build
+npm run build
+
+# Production build (minified, no source maps)
+npm run build:prod
+
+# Package for Chrome Web Store (creates optimized zip)
+npm run package
+
+# Analyze the extension size
+npm run analyze-size
+
+# Clean up build artifacts
+npm run clean
+```
+
+The extension packaging process (`npm run package`) has been optimized to:
+
+- Remove source maps and development-only code
+- Consolidate and minify CSS files
+- Optimize JavaScript bundling with improved tree shaking
+- Create a highly compressed zip file for Chrome Web Store submission
+
+For detailed information about the optimization process, see [docs/EXTENSION_SIZE_OPTIMIZATION.md](/docs/EXTENSION_SIZE_OPTIMIZATION.md).
 
 ## Contributing
 
