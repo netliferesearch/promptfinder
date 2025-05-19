@@ -1,8 +1,15 @@
 /node_modules/
+functions/node_modules/
 /dist/
 .DS_Store
 *.log
 coverage/
+
+# Firebase
+.firebase/
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
 
 # Environment files
 .env
