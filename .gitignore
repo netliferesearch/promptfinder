@@ -24,3 +24,4 @@ coverage/
 
 # Optional: PurgeCSS output if not in dist
 # /css-purged/
+.DS_Store

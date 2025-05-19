@@ -591,18 +591,18 @@ export const toggleFavorite = async promptId => {
     const currentPromptData = currentPromptSnap.data();
     const currentFavoritesCount = currentPromptData.favoritesCount || 0;
 
-    let newFavoriteStatus;
+    // We don't use the favorite status value since we rely on Firestore doc existence
     const favoritedBySnap = await getDoc(favoritedByDocRef);
     const batch = writeBatch(db);
     let newCalculatedFavoritesCount;
 
     if (favoritedBySnap.exists()) {
       batch.delete(favoritedByDocRef);
-      newFavoriteStatus = false;
+      // Removing prompt from favorites
       newCalculatedFavoritesCount = Math.max(0, currentFavoritesCount - 1);
     } else {
       batch.set(favoritedByDocRef, { favoritedAt: serverTimestamp(), userId: currentUser.uid });
-      newFavoriteStatus = true;
+      // Adding prompt to favorites
       newCalculatedFavoritesCount = currentFavoritesCount + 1;
     }
 

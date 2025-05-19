@@ -333,7 +333,7 @@ describe('UI Module', () => {
       currentUserIsFavorite: false,
       favoritesCount: 0,
     };
-    let displayDetailsSpy; // Keep spy declared if we re-enable it
+    // Removed unused displayDetailsSpy declaration
 
     beforeEach(async () => {
       mockAuthCurrentUser = { uid: 'currentUserTestUid', email: 'current@test.com' };
