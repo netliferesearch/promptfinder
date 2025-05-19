@@ -37,12 +37,11 @@ export const signupUser = async (email, password, displayName) => {
   }
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    console.log('User signed up:', userCredential.user);
+    // console.log('User signed up:', userCredential.user);
 
     if (userCredential.user && displayName) {
       try {
         await updateProfile(userCredential.user, { displayName: displayName });
-        console.log('Firebase Auth profile updated with displayName.');
       } catch (profileError) {
         console.error('Error updating Firebase Auth profile:', profileError);
         Utils.handleError('Could not set display name in auth profile.', {
@@ -60,7 +59,6 @@ export const signupUser = async (email, password, displayName) => {
           displayName: displayName,
           createdAt: serverTimestamp(),
         });
-        console.log('User document created in Firestore for UID:', userCredential.user.uid);
       } catch (dbError) {
         console.error('Error creating user document in Firestore:', dbError);
         Utils.handleError('Could not save user details after signup.', {
@@ -87,7 +85,6 @@ export const loginUser = async (email, password) => {
   }
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log('User logged in:', userCredential.user);
     return userCredential;
   } catch (error) {
     Utils.handleError(`Login error: ${error.message}`, { userVisible: true, originalError: error });
@@ -96,7 +93,6 @@ export const loginUser = async (email, password) => {
 };
 
 export const signInWithGoogle = async () => {
-  console.log('signInWithGoogle (v9 - chrome.identity.launchWebAuthFlow) called');
   if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.launchWebAuthFlow) {
     const errMsg =
       'chrome.identity.launchWebAuthFlow API not available. Google Sign-In cannot proceed.';
@@ -132,8 +128,6 @@ export const signInWithGoogle = async () => {
     authUrl += `&scope=${encodeURIComponent(scopes.join(' '))}`;
     authUrl += `&nonce=${nonce}`;
 
-    console.log('Launching Google Web Auth Flow with URL:', authUrl);
-
     const callbackUrl = await new Promise((resolve, reject) => {
       chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, responseUrl => {
         if (chrome.runtime.lastError) {
@@ -146,8 +140,6 @@ export const signInWithGoogle = async () => {
       });
     });
 
-    console.log('Callback URL from launchWebAuthFlow:', callbackUrl);
-
     const params = new URLSearchParams(callbackUrl.substring(callbackUrl.indexOf('#') + 1));
     const idToken = params.get('id_token');
 
@@ -158,18 +150,13 @@ export const signInWithGoogle = async () => {
       return Promise.reject(new Error(errMsg));
     }
 
-    console.log('Google ID token extracted, creating Firebase credential...');
     const credential = GoogleAuthProvider.credential(idToken);
-
-    console.log('Signing into Firebase with Google ID token credential...');
     const userCredential = await signInWithCredential(auth, credential);
-    console.log('Firebase Sign-In with Google ID token successful:', userCredential.user);
 
     if (db && userCredential.user) {
       const userDocRef = doc(db, 'users', userCredential.user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (!userDocSnap.exists()) {
-        console.log('New Google Sign-In user (launchWebAuthFlow), creating user document...');
         try {
           await setDoc(userDocRef, {
             email: userCredential.user.email,
@@ -177,10 +164,6 @@ export const signInWithGoogle = async () => {
             createdAt: serverTimestamp(),
             photoURL: userCredential.user.photoURL || null,
           });
-          console.log(
-            'User document created for Google user (launchWebAuthFlow):',
-            userCredential.user.uid
-          );
         } catch (dbError) {
           console.error(
             'Error creating user document for Google user (launchWebAuthFlow):',
@@ -209,7 +192,6 @@ export const logoutUser = async () => {
   }
   try {
     await firebaseSignOut(auth);
-    console.log('User logged out (v9)');
     return true;
   } catch (error) {
     Utils.handleError(`Logout error (v9): ${error.message}`, {
@@ -232,12 +214,10 @@ export const onAuthStateChanged = callback => {
 // --- Prompt Functions (Firestore) ---
 export const addPrompt = async promptData => {
   const currentUser = auth ? auth.currentUser : null;
-  console.log('DEBUG: addPrompt currentUser:', currentUser);
   if (!currentUser) {
     Utils.handleError('User must be logged in to add a prompt.', { userVisible: true });
     return null;
   }
-  console.log('DEBUG: db object in addPrompt:', db);
   if (!db) {
     Utils.handleError('Firestore not available from firebase-init.js.', { userVisible: true });
     return null;
@@ -260,9 +240,7 @@ export const addPrompt = async promptData => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    console.log('DEBUG: Calling addDoc with newPromptDocData:', newPromptDocData);
     const docRef = await addDoc(collection(db, 'prompts'), newPromptDocData);
-    console.log('Prompt added with ID (v9): ', docRef.id);
     const locallySimulatedTimestamps = { createdAt: new Date(), updatedAt: new Date() };
     return {
       ...newPromptDocData,
@@ -299,8 +277,6 @@ export const ratePrompt = async (promptId, ratingValue) => {
 
   const promptRef = doc(db, 'prompts', promptId);
   const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
-  // LOGGING THE DOC REF PATH HERE
-  // console.log(`[RATEPROMPT DEBUG] ratingDocRef.path: ${ratingDocRef.path}, ratingDocRef.id: ${ratingDocRef.id}`);
 
   try {
     await setDoc(ratingDocRef, {
@@ -308,9 +284,6 @@ export const ratePrompt = async (promptId, ratingValue) => {
       ratedAt: serverTimestamp(),
       userId: currentUser.uid,
     });
-    console.log(
-      `User ${currentUser.uid} rating ${ratingValue} for prompt ${promptId} recorded in subcollection.`
-    );
 
     const ratingsQuery = query(collection(db, 'prompts', promptId, 'ratings'));
     const ratingsSnapshot = await getDocs(ratingsQuery);
@@ -318,7 +291,7 @@ export const ratePrompt = async (promptId, ratingValue) => {
     let totalRatingSum = 0;
     let ratingsCount = 0;
     ratingsSnapshot.forEach(ratingDoc => {
-      console.log('[SUT ratePrompt forEach] ratingDoc.id:', ratingDoc.id, 'ratingDoc.data():', JSON.stringify(ratingDoc.data()));
+      // console.log('[SUT ratePrompt forEach] ratingDoc.id:', ratingDoc.id, 'ratingDoc.data():', JSON.stringify(ratingDoc.data()));
       totalRatingSum += ratingDoc.data().rating;
       ratingsCount++;
     });
@@ -331,9 +304,6 @@ export const ratePrompt = async (promptId, ratingValue) => {
       averageRating: newAverageRating,
       totalRatingsCount: newTotalRatingsCount,
     });
-    console.log(
-      `Prompt ${promptId} aggregates updated (client-side): avg=${newAverageRating}, count=${newTotalRatingsCount}`
-    );
 
     const updatedPromptSnap = await getDoc(promptRef);
     const promptDataToReturn = formatLoadedPrompt(updatedPromptSnap, ratingValue);
@@ -428,8 +398,6 @@ export const loadPrompts = async () => {
         return formatLoadedPrompt(docSnap, userRating, userIsFavorite);
       })
     );
-
-    console.log('Prompts loaded and enriched (v9):', enrichedPrompts.length);
     return enrichedPrompts;
   } catch (error) {
     Utils.handleError(`Error loading prompts from Firestore (v9): ${error.message}`, {
@@ -443,7 +411,6 @@ export const loadPrompts = async () => {
 export const findPromptById = async (promptId, _promptsUnused = null, options = {}) => {
   const { throwIfNotFound = false, handleError = true } = options;
   if (!promptId) {
-    console.warn('[findPromptById (v9)] No promptId provided.');
     return null;
   }
   if (!db) {
@@ -474,7 +441,6 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
       return formatLoadedPrompt(docSnap, currentUserRating, currentUserIsFavorite);
     } else {
       const err = new Error(`Prompt with ID ${promptId} not found in Firestore (v9)`);
-      console.warn(`[findPromptById (v9)] ${err.message}`);
       if (handleError && Utils && Utils.handleError) {
         Utils.handleError(err.message, { userVisible: true, originalError: err });
       }
@@ -484,7 +450,6 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
       return null;
     }
   } catch (error) {
-    console.error(`[findPromptById (v9)] Error for ${promptId}:`, error.message);
     if (handleError && Utils && Utils.handleError) {
       if (!(error.message.includes('not found in Firestore') && throwIfNotFound)) {
         Utils.handleError(`Error retrieving prompt ${promptId} (v9): ${error.message}`, {
@@ -507,7 +472,7 @@ export const updatePrompt = async (promptId, updates) => {
   const allowedUpdates = { ...updates };
   delete allowedUpdates.userIsFavorite;
   delete allowedUpdates.currentUserRating;
-  delete allowedUpdates.currentUserIsFavorite;
+  // delete allowedUpdates.currentUserIsFavorite; // This was a duplicate
   delete allowedUpdates.favoritesCount;
   delete allowedUpdates.averageRating;
   delete allowedUpdates.totalRatingsCount;
@@ -521,9 +486,8 @@ export const updatePrompt = async (promptId, updates) => {
     return null;
   }
   if (!allowedUpdates || Object.keys(allowedUpdates).length === 0) {
-    console.warn(
-      "Update called with no valid fields to update or only restricted fields. Only 'updatedAt' will be changed if no actual content fields are present."
-    );
+    // No actual content fields to update, only internal ones were passed or empty object.
+    // This might still proceed to update 'updatedAt' if desired.
   }
 
   try {
@@ -545,7 +509,6 @@ export const updatePrompt = async (promptId, updates) => {
 
     const updateData = { ...allowedUpdates, updatedAt: serverTimestamp() };
     await updateDoc(docRef, updateData);
-    console.log(`Prompt with ID ${promptId} updated successfully in Firestore (v9).`);
 
     return findPromptById(promptId);
   } catch (error) {
@@ -589,7 +552,6 @@ export const deletePrompt = async promptId => {
       return false;
     }
     await deleteDoc(docRef);
-    console.log(`Prompt with ID ${promptId} deleted successfully from Firestore (v9).`);
     return true;
   } catch (error) {
     Utils.handleError(`Error deleting prompt ${promptId} (v9): ${error.message}`, {
@@ -619,39 +581,36 @@ export const toggleFavorite = async promptId => {
   const favoritedByDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
 
   try {
+    const currentPromptSnap = await getDoc(promptRef);
+    if (!currentPromptSnap.exists()) {
+      Utils.handleError(`Prompt ${promptId} not found for toggling favorite.`, {
+        userVisible: true,
+      });
+      return null;
+    }
+    const currentPromptData = currentPromptSnap.data();
+    const currentFavoritesCount = currentPromptData.favoritesCount || 0;
+
     let newFavoriteStatus;
     const favoritedBySnap = await getDoc(favoritedByDocRef);
-
     const batch = writeBatch(db);
+    let newCalculatedFavoritesCount;
 
     if (favoritedBySnap.exists()) {
       batch.delete(favoritedByDocRef);
       newFavoriteStatus = false;
-      console.log(`User ${currentUser.uid} unfavorited prompt ${promptId}.`);
+      newCalculatedFavoritesCount = Math.max(0, currentFavoritesCount - 1);
     } else {
       batch.set(favoritedByDocRef, { favoritedAt: serverTimestamp(), userId: currentUser.uid });
       newFavoriteStatus = true;
-      console.log(`User ${currentUser.uid} favorited prompt ${promptId}.`);
+      newCalculatedFavoritesCount = currentFavoritesCount + 1;
     }
-
-    const favoritedByQuery = query(collection(db, 'prompts', promptId, 'favoritedBy'));
-    const favoritedBySnapshot = await getDocs(favoritedByQuery);
-    let newFavoritesCount = 0;
-    favoritedBySnapshot.forEach(_doc => newFavoritesCount++);
-    if (newFavoriteStatus) {
-      if (!favoritedBySnap.exists()) newFavoritesCount++;
-    } else {
-      if (favoritedBySnap.exists()) newFavoritesCount--;
-    }
-    newFavoritesCount = Math.max(0, newFavoritesCount);
 
     batch.update(promptRef, {
-      favoritesCount: newFavoritesCount,
-      // No 'updatedAt' here
+      favoritesCount: newCalculatedFavoritesCount,
     });
 
     await batch.commit();
-    console.log(`Prompt ${promptId} favoritesCount updated to ${newFavoritesCount} (client-side).`);
 
     return findPromptById(promptId);
   } catch (error) {
@@ -674,8 +633,6 @@ export const copyPromptToClipboard = async promptId => {
     await updateDoc(promptRef, {
       usageCount: increment(1),
     });
-    console.log(`Usage count for prompt ${promptId} incremented.`);
-
     return true;
   } catch (error) {
     Utils.handleError(`Error copying to clipboard or updating usage count (v9): ${error.message}`, {
