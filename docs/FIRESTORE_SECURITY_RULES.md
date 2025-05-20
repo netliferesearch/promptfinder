@@ -24,11 +24,11 @@ The rules use several helper functions to improve readability and maintainabilit
 function isAuthenticated() {
   return request.auth != null;
 }
-    
+
 function isOwner(userId) {
   return isAuthenticated() && request.auth.uid == userId;
 }
-    
+
 function isAdmin() {
   return isAuthenticated() && request.auth.token.admin == true;
 }
@@ -37,10 +37,18 @@ function isAdmin() {
 #### Data Validation
 
 ```js
-function isValidPrompt() { /* ... */ }
-function isValidPromptUpdate() { /* ... */ }
-function isValidRating() { /* ... */ }
-function isValidFavorite() { /* ... */ }
+function isValidPrompt() {
+  /* ... */
+}
+function isValidPromptUpdate() {
+  /* ... */
+}
+function isValidRating() {
+  /* ... */
+}
+function isValidFavorite() {
+  /* ... */
+}
 ```
 
 ### Collection-Specific Rules
@@ -71,12 +79,12 @@ match /{document=**} {
 match /users/{userId} {
   // Allow users to read their own user document
   allow read: if isOwner(userId);
-  
+
   // Allow users to create/update their own profile
-  allow create: if isOwner(userId) && 
+  allow create: if isOwner(userId) &&
                  request.resource.data.keys().hasAll(['email', 'displayName', 'createdAt']);
-  
-  allow update: if isOwner(userId) && 
+
+  allow update: if isOwner(userId) &&
                  !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'createdAt']);
 }
 ```
@@ -90,21 +98,21 @@ match /users/{userId} {
 ```js
 match /prompts/{promptId} {
   // Read access rules
-  allow read: if isAuthenticated() && 
+  allow read: if isAuthenticated() &&
                (!resource.data.isPrivate || resource.data.userId == request.auth.uid);
-  
+
   // Create, update, delete rules
   allow create: if isAuthenticated() && isValidPrompt();
-  allow update: if isAuthenticated() && 
-                 resource.data.userId == request.auth.uid && 
+  allow update: if isAuthenticated() &&
+                 resource.data.userId == request.auth.uid &&
                  isValidPromptUpdate();
   allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-  
+
   // Special rule for Cloud Functions and stats updates
-  allow update: if isAdmin() || 
+  allow update: if isAdmin() ||
                  (request.resource.data.diff(resource.data).affectedKeys()
                    .hasOnly(['averageRating', 'totalRatingsCount', 'favoritesCount', 'usageCount', 'updatedAt']));
-  
+
   // Subcollection rules
   match /ratings/{userId} { /* ... */ }
   match /favoritedBy/{userId} { /* ... */ }
@@ -114,13 +122,12 @@ match /prompts/{promptId} {
 - **Read Access**:
   - Public prompts: All authenticated users
   - Private prompts: Only the owner
-  
 - **Create Access**:
   - All authenticated users can create prompts
   - Validates prompt data structure and required fields
   - Prevents users from creating prompts on behalf of others
-  
 - **Update Access**:
+
   - Only the owner can update their prompts
   - Validates that protected fields (stats, userId) aren't changed
   - Special rule for Cloud Functions to update stats fields
@@ -132,11 +139,11 @@ match /prompts/{promptId} {
 ```js
 match /ratings/{userId} {
   allow read: if isAuthenticated();
-  
-  allow create, update: if isAuthenticated() && 
-                         userId == request.auth.uid && 
+
+  allow create, update: if isAuthenticated() &&
+                         userId == request.auth.uid &&
                          isValidRating();
-  
+
   allow delete: if isAuthenticated() && userId == request.auth.uid;
 }
 ```
@@ -150,11 +157,11 @@ match /ratings/{userId} {
 ```js
 match /favoritedBy/{userId} {
   allow read: if isAuthenticated();
-  
-  allow create: if isAuthenticated() && 
-                 userId == request.auth.uid && 
+
+  allow create: if isAuthenticated() &&
+                 userId == request.auth.uid &&
                  isValidFavorite();
-  
+
   allow delete: if isAuthenticated() && userId == request.auth.uid;
 }
 ```

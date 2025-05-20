@@ -23,26 +23,26 @@ export enum ErrorType {
   // Authentication/Authorization errors
   UNAUTHENTICATED = 'unauthenticated',
   PERMISSION_DENIED = 'permission-denied',
-  
+
   // Request/input validation errors
   INVALID_ARGUMENT = 'invalid-argument',
   MISSING_REQUIRED_FIELD = 'missing-required-field',
   INVALID_FORMAT = 'invalid-format',
-  
+
   // Data errors
   NOT_FOUND = 'not-found',
   ALREADY_EXISTS = 'already-exists',
-  
+
   // Operational errors
   OPERATION_ABORTED = 'operation-aborted',
   DEADLINE_EXCEEDED = 'deadline-exceeded',
   RESOURCE_EXHAUSTED = 'resource-exhausted',
-  
+
   // System errors
   INTERNAL = 'internal',
   UNAVAILABLE = 'unavailable',
   UNIMPLEMENTED = 'unimplemented',
-  DATABASE_ERROR = 'database-error'
+  DATABASE_ERROR = 'database-error',
 }
 ```
 
@@ -71,7 +71,7 @@ The `withErrorHandling` function wraps Cloud Functions to provide consistent err
 export function withErrorHandling<T, R>(
   fn: (data: T, context: functions.https.CallableContext) => Promise<R>,
   fnName: string
-): (data: T, context: functions.https.CallableContext) => Promise<R>
+): (data: T, context: functions.https.CallableContext) => Promise<R>;
 ```
 
 This wrapper:
@@ -86,11 +86,11 @@ This wrapper:
 ### Callable Functions
 
 ```typescript
-export const incrementUsageCount = functions
-  .region('europe-west1')
-  .https.onCall(withErrorHandling(async (data, context) => {
+export const incrementUsageCount = functions.region('europe-west1').https.onCall(
+  withErrorHandling(async (data, context) => {
     // Function implementation
-  }, 'incrementUsageCount'));
+  }, 'incrementUsageCount')
+);
 ```
 
 ### Firestore Triggers
@@ -98,18 +98,18 @@ export const incrementUsageCount = functions
 ```typescript
 try {
   logInfo('Starting operation', { contextDetails });
-  
+
   // Function implementation
-  
-  logInfo('Operation completed', { 
+
+  logInfo('Operation completed', {
     results,
-    executionTimeMs: Date.now() - startTime 
+    executionTimeMs: Date.now() - startTime,
   });
 } catch (error) {
   logError('Operation failed', ErrorType.DATABASE_ERROR, {
     contextDetails,
     executionTimeMs: Date.now() - startTime,
-    originalError: error
+    originalError: error,
   });
 }
 ```
@@ -137,7 +137,7 @@ To monitor function performance and errors:
      logError('Clear message', ErrorType.APPROPRIATE_TYPE, {
        contextualDetails,
        executionTimeMs: Date.now() - startTime,
-       originalError: error
+       originalError: error,
      });
    }
    ```

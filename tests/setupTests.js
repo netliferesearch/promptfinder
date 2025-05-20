@@ -1,3 +1,31 @@
+// --- Global mock for firebase-init.js for all tests ---
+// Remove duplicate declaration of mockCurrentAuthUser (already declared at the top for global mock)
+jest.mock('../js/firebase-init.js', () => ({
+  app: {},
+  get auth() {
+    return {
+      get currentUser() {
+        return mockCurrentAuthUser;
+      },
+    };
+  },
+  db: {},
+  functions: {},
+}));
+
+global.simulateLogin = (
+  user = {
+    uid: 'testUserId',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    photoURL: null,
+  }
+) => {
+  mockCurrentAuthUser = user;
+};
+global.simulateLogout = () => {
+  mockCurrentAuthUser = null;
+};
 import { jest } from '@jest/globals';
 
 // Mock Firebase Functions (must be at the top to be available for other mocks)
@@ -157,14 +185,7 @@ jest.mock('firebase/auth', () => ({
   updateProfile: jest.fn().mockResolvedValue(undefined),
 }));
 
-global.simulateLogin = (user = mockUser) => {
-  mockCurrentAuthUser = user;
-  if (mockAuthStateChangedCallback) mockAuthStateChangedCallback(user);
-};
-global.simulateLogout = () => {
-  mockCurrentAuthUser = null;
-  if (mockAuthStateChangedCallback) mockAuthStateChangedCallback(null);
-};
+// simulateLogin and simulateLogout are already defined globally at the top for the global mock
 
 const mockFirestoreData = {};
 let mockAddDocIdCounter = 0;
