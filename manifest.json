@@ -12,7 +12,7 @@
   },
   "permissions": ["storage", "clipboardWrite", "windows", "identity", "identity.email"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://europe-west1-promptfinder-2a095.cloudfunctions.net;"
   },
   "icons": {
     "16": "icons/icon16.png",

@@ -625,13 +625,17 @@ export const copyPromptToClipboard = async promptId => {
 
     await navigator.clipboard.writeText(prompt.text);
 
-    // Call the cloud function to increment usage count
-    const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
-    await incrementUsageCountFn({ promptId });
+    // Try to increment usage count, but ignore errors (allow copy for all users)
+    try {
+      const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
+      await incrementUsageCountFn({ promptId });
+    } catch {
+      // Silently ignore usage count errors (e.g., not logged in)
+    }
 
     return true;
   } catch (error) {
-    Utils.handleError(`Error copying to clipboard or updating usage count (v9): ${error.message}`, {
+    Utils.handleError(`Error copying to clipboard: ${error.message}`, {
       userVisible: true,
       originalError: error,
     });
@@ -643,6 +647,7 @@ export const filterPrompts = (prompts, filters) => {
   let result = [...prompts];
   const currentUser = auth ? auth.currentUser : null;
 
+  // Tab filtering
   if (filters.tab === 'favs') {
     if (!currentUser) return [];
     result = result.filter(p => p.currentUserIsFavorite === true);
@@ -650,6 +655,64 @@ export const filterPrompts = (prompts, filters) => {
     if (!currentUser) return [];
     result = result.filter(p => p.isPrivate && p.userId === currentUser.uid);
   }
+
+  // "Your prompts only" filter
+
+  if (filters.yourPromptsOnly && currentUser) {
+    result = result.filter(p => p.userId === currentUser.uid);
+  }
+
+  // "Used by you" filter (usageCount > 0 for this user, or a usedByYou flag)
+  if (filters.usedByYou && currentUser) {
+    result = result.filter(
+      p => p.usedByYou === true || (Array.isArray(p.usedBy) && p.usedBy.includes(currentUser.uid))
+    );
+  }
+
+  // Category filter
+  if (filters.category && filters.category !== 'all') {
+    result = result.filter(p => p.category === filters.category);
+  }
+
+  // Tag filter (single or multi-select)
+  if (filters.tag && filters.tag !== 'all') {
+    if (Array.isArray(filters.tag)) {
+      result = result.filter(
+        p => Array.isArray(p.tags) && filters.tag.every(tag => p.tags.includes(tag))
+      );
+    } else {
+      result = result.filter(p => Array.isArray(p.tags) && p.tags.includes(filters.tag));
+    }
+  }
+
+  // AI Tool filter
+  if (filters.aiTool && filters.aiTool !== 'all') {
+    result = result.filter(
+      p => Array.isArray(p.targetAiTools) && p.targetAiTools.includes(filters.aiTool)
+    );
+  }
+
+  // Date range filters (createdAt)
+  if (filters.dateFrom) {
+    const from = new Date(filters.dateFrom);
+    result = result.filter(p => p.createdAt && new Date(p.createdAt) >= from);
+  }
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo);
+    result = result.filter(p => p.createdAt && new Date(p.createdAt) <= to);
+  }
+
+  // Date range filters (updatedAt)
+  if (filters.updatedFrom) {
+    const from = new Date(filters.updatedFrom);
+    result = result.filter(p => p.updatedAt && new Date(p.updatedAt) >= from);
+  }
+  if (filters.updatedTo) {
+    const to = new Date(filters.updatedTo);
+    result = result.filter(p => p.updatedAt && new Date(p.updatedAt) <= to);
+  }
+
+  // Search
   if (filters.searchTerm) {
     const term = filters.searchTerm.toLowerCase();
     result = result.filter(
@@ -661,15 +724,48 @@ export const filterPrompts = (prompts, filters) => {
         (p.targetAiTools && p.targetAiTools.some(tool => tool.toLowerCase().includes(term)))
     );
   }
+
+  // Min public/community rating (averageRating)
   if (filters.minRating > 0) {
     result = result.filter(p => {
-      if (currentUser && p.currentUserRating && p.currentUserRating > 0) {
-        return p.currentUserRating >= filters.minRating;
-      } else if (!p.isPrivate) {
+      if (!p.isPrivate) {
         return (p.averageRating || 0) >= filters.minRating;
       }
       return false;
     });
   }
+
+  // Min user rating (currentUserRating)
+  if (filters.minUserRating > 0 && currentUser) {
+    result = result.filter(p => (p.currentUserRating || 0) >= filters.minUserRating);
+  }
+
+  // Sorting
+  if (filters.sortBy) {
+    const dir = filters.sortDir === 'desc' ? -1 : 1;
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'createdAt':
+          return (new Date(a.createdAt) - new Date(b.createdAt)) * dir;
+        case 'updatedAt':
+          return (new Date(a.updatedAt) - new Date(b.updatedAt)) * dir;
+        case 'averageRating':
+          return ((a.averageRating || 0) - (b.averageRating || 0)) * dir;
+        case 'currentUserRating':
+          return ((a.currentUserRating || 0) - (b.currentUserRating || 0)) * dir;
+        case 'usageCount':
+          return ((a.usageCount || 0) - (b.usageCount || 0)) * dir;
+        case 'favoritesCount':
+          return ((a.favoritesCount || 0) - (b.favoritesCount || 0)) * dir;
+        case 'title':
+          return (
+            (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }) * dir
+          );
+        default:
+          return 0;
+      }
+    });
+  }
+
   return result;
 };

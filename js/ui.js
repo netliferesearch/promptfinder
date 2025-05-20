@@ -19,7 +19,19 @@ const PROMPT_TRUNCATE_LENGTH = 200;
 // Cached DOM Elements (module scope)
 let tabAllEl, tabFavsEl, tabPrivateEl;
 let searchInputEl;
-let filterButtonEl, ratingFilterPanelEl, minRatingSelectEl;
+let filterButtonEl,
+  ratingFilterPanelEl,
+  minRatingSelectEl,
+  minUserRatingSelectEl,
+  yourPromptsOnlyEl,
+  usedByYouEl,
+  categoryFilterEl,
+  tagFilterEl,
+  aiToolFilterEl,
+  dateFromEl,
+  dateToEl,
+  updatedFromEl,
+  updatedToEl;
 let promptsListEl;
 let promptDetailsSectionEl,
   backToListButtonEl,
@@ -51,8 +63,19 @@ let promptDetailsSectionEl,
   communityRatingCountEl;
 
 let controlsEl, tabsContainerEl, addPromptBarEl;
+let resetFiltersButtonEl;
+
+// Sort panel DOM elements and state
+let sortPanelEl, sortBySelectEl, sortDirToggleEl, sortDirIconEl;
+let currentSortBy = 'createdAt';
+let currentSortDir = 'desc';
 
 export const cacheDOMElements = () => {
+  resetFiltersButtonEl = document.getElementById('reset-filters-button');
+  sortPanelEl = document.getElementById('sort-panel');
+  sortBySelectEl = document.getElementById('sort-by');
+  sortDirToggleEl = document.getElementById('sort-dir-toggle');
+  sortDirIconEl = document.getElementById('sort-dir-icon');
   tabAllEl = document.getElementById('tab-all');
   tabFavsEl = document.getElementById('tab-favs');
   tabPrivateEl = document.getElementById('tab-private');
@@ -60,6 +83,16 @@ export const cacheDOMElements = () => {
   filterButtonEl = document.getElementById('filter-button');
   ratingFilterPanelEl = document.getElementById('rating-filter');
   minRatingSelectEl = document.getElementById('min-rating');
+  minUserRatingSelectEl = document.getElementById('min-user-rating');
+  yourPromptsOnlyEl = document.getElementById('your-prompts-only');
+  usedByYouEl = document.getElementById('used-by-you');
+  categoryFilterEl = document.getElementById('category-filter');
+  tagFilterEl = document.getElementById('tag-filter');
+  aiToolFilterEl = document.getElementById('ai-tool-filter');
+  dateFromEl = document.getElementById('date-from');
+  dateToEl = document.getElementById('date-to');
+  updatedFromEl = document.getElementById('updated-from');
+  updatedToEl = document.getElementById('updated-to');
   promptsListEl = document.getElementById('prompts-list');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
 
@@ -267,6 +300,12 @@ async function handleCopyPrompt(promptId) {
       ) {
         await viewPromptDetails(promptId);
       }
+    } else {
+      // Only show an error if clipboard write failed or prompt not found
+      Utils.handleError('Failed to copy prompt. Please try again.', {
+        userVisible: true,
+        type: 'error',
+      });
     }
   } catch (error) {
     Utils.handleError('Failed to process copy action in UI', {
@@ -292,7 +331,72 @@ async function handleDeletePrompt(promptId) {
   }
 }
 
+function updateResetFiltersButtonVisibility() {
+  if (!resetFiltersButtonEl) return;
+  const filtersActive =
+    (minRatingSelectEl && minRatingSelectEl.value !== '0') ||
+    (minUserRatingSelectEl && minUserRatingSelectEl.value !== '0') ||
+    (yourPromptsOnlyEl && yourPromptsOnlyEl.checked) ||
+    (usedByYouEl && usedByYouEl.checked) ||
+    (categoryFilterEl && categoryFilterEl.value) ||
+    (tagFilterEl && tagFilterEl.value) ||
+    (aiToolFilterEl && aiToolFilterEl.value) ||
+    (dateFromEl && dateFromEl.value) ||
+    (dateToEl && dateToEl.value) ||
+    (updatedFromEl && updatedFromEl.value) ||
+    (updatedToEl && updatedToEl.value);
+  if (filtersActive) {
+    resetFiltersButtonEl.classList.remove('hidden');
+  } else {
+    resetFiltersButtonEl.classList.add('hidden');
+  }
+}
+
 const setupEventListeners = () => {
+  // Reset Filters button logic
+  if (resetFiltersButtonEl) {
+    resetFiltersButtonEl.addEventListener('click', () => {
+      // Reset all filter controls to default
+      if (minRatingSelectEl) minRatingSelectEl.value = '0';
+      if (minUserRatingSelectEl) minUserRatingSelectEl.value = '0';
+      if (yourPromptsOnlyEl) yourPromptsOnlyEl.checked = false;
+      if (usedByYouEl) usedByYouEl.checked = false;
+      if (categoryFilterEl) categoryFilterEl.value = '';
+      if (tagFilterEl) tagFilterEl.value = '';
+      if (aiToolFilterEl) aiToolFilterEl.value = '';
+      if (dateFromEl) dateFromEl.value = '';
+      if (dateToEl) dateToEl.value = '';
+      if (updatedFromEl) updatedFromEl.value = '';
+      if (updatedToEl) updatedToEl.value = '';
+      showTab(activeTab);
+      updateResetFiltersButtonVisibility();
+    });
+  }
+  // Sort panel show/hide
+  const sortButtonEl = document.getElementById('sort-button');
+  if (sortButtonEl && sortPanelEl) {
+    sortButtonEl.addEventListener('click', () => {
+      sortPanelEl.classList.toggle('hidden');
+      sortButtonEl.classList.toggle('active');
+    });
+  }
+
+  // Sort select and direction toggle
+  if (sortBySelectEl) {
+    sortBySelectEl.addEventListener('change', () => {
+      currentSortBy = sortBySelectEl.value;
+      showTab(activeTab);
+    });
+  }
+  if (sortDirToggleEl && sortDirIconEl) {
+    sortDirToggleEl.addEventListener('click', () => {
+      currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+      // Update icon
+      sortDirIconEl.className =
+        currentSortDir === 'asc' ? 'fas fa-arrow-up-wide-short' : 'fas fa-arrow-down-wide-short';
+      showTab(activeTab);
+    });
+  }
   tabAllEl?.addEventListener('click', () => showTab('all'));
   tabFavsEl?.addEventListener('click', () => showTab('favs'));
   tabPrivateEl?.addEventListener('click', () => showTab('private'));
@@ -304,7 +408,50 @@ const setupEventListeners = () => {
       filterButtonEl.classList.toggle('active');
     });
   }
-  minRatingSelectEl?.addEventListener('change', () => showTab(activeTab));
+  minRatingSelectEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  minUserRatingSelectEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  yourPromptsOnlyEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  usedByYouEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  categoryFilterEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  tagFilterEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  aiToolFilterEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  dateFromEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  dateToEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  updatedFromEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
+  updatedToEl?.addEventListener('change', () => {
+    showTab(activeTab);
+    updateResetFiltersButtonVisibility();
+  });
 
   promptsListEl?.addEventListener('click', handlePromptListClick);
 
@@ -366,6 +513,35 @@ const setupEventListeners = () => {
 export const loadAndDisplayData = async () => {
   try {
     allPrompts = await PromptData.loadPrompts();
+
+    // Populate filter dropdowns (category, tag, ai tool)
+    const categories = new Set();
+    const tags = new Set();
+    const aiTools = new Set();
+    allPrompts.forEach(p => {
+      if (p.category) categories.add(p.category);
+      if (Array.isArray(p.tags)) p.tags.forEach(t => tags.add(t));
+      if (Array.isArray(p.targetAiTools)) p.targetAiTools.forEach(t => aiTools.add(t));
+    });
+    // Helper to populate a select
+    function populateSelect(selectEl, values) {
+      if (!selectEl) return;
+      const current = selectEl.value;
+      selectEl.innerHTML =
+        '<option value="">Any</option>' +
+        Array.from(values)
+          .sort()
+          .map(v => `<option value="${Utils.escapeHTML(v)}">${Utils.escapeHTML(v)}</option>`)
+          .join('');
+      // Restore selection if possible
+      if (current && selectEl.querySelector(`[value="${Utils.escapeHTML(current)}"]`)) {
+        selectEl.value = current;
+      }
+    }
+    populateSelect(categoryFilterEl, categories);
+    populateSelect(tagFilterEl, tags);
+    populateSelect(aiToolFilterEl, aiTools);
+
     showTab(activeTab);
   } catch (error) {
     Utils.handleError('Error loading and displaying prompt data', {
@@ -409,24 +585,34 @@ export const showTab = which => {
     tab: which,
     searchTerm: searchInputEl ? searchInputEl.value : '',
     minRating: minRatingSelectEl ? parseInt(minRatingSelectEl.value) : 0,
+    minUserRating: minUserRatingSelectEl ? parseInt(minUserRatingSelectEl.value) : 0,
+    yourPromptsOnly: yourPromptsOnlyEl ? yourPromptsOnlyEl.checked : false,
+    usedByYou: usedByYouEl ? usedByYouEl.checked : false,
+    category: categoryFilterEl ? categoryFilterEl.value : '',
+    tag: tagFilterEl ? tagFilterEl.value : '',
+    aiTool: aiToolFilterEl ? aiToolFilterEl.value : '',
+    dateFrom: dateFromEl ? dateFromEl.value : '',
+    dateTo: dateToEl ? dateToEl.value : '',
+    updatedFrom: updatedFromEl ? updatedFromEl.value : '',
+    updatedTo: updatedToEl ? updatedToEl.value : '',
+    sortBy: currentSortBy,
+    sortDir: currentSortDir,
   };
   const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
   const filtered = PromptData.filterPrompts(promptsToFilter, filters);
   displayPrompts(filtered);
+  updateResetFiltersButtonVisibility();
 };
 
 export const displayPrompts = prompts => {
   if (!promptsListEl) return;
-  const sorted = [...prompts].sort((a, b) =>
-    (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
-  );
   promptsListEl.innerHTML = '';
-  if (sorted.length === 0) {
+  if (prompts.length === 0) {
     promptsListEl.innerHTML =
       '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
     return;
   }
-  sorted.forEach(prompt => {
+  prompts.forEach(prompt => {
     const div = document.createElement('div');
     div.classList.add('prompt-item');
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;

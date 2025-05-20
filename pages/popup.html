@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../css/pages/prompt-details.css" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <script src="../js/css-class-helper.js"></script>
   </head>
@@ -37,19 +37,90 @@
             <button id="filter-button" class="button button-secondary button-sm">
               <i class="fas fa-filter" aria-hidden="true"></i> Filters
             </button>
+            <button
+              id="reset-filters-button"
+              class="button button-tertiary button-icon hidden"
+              aria-label="Reset filters"
+              title="Reset filters"
+            >
+              <i class="fas fa-rotate-left"></i>
+            </button>
             <button id="sort-button" class="button button-secondary button-sm">
               <i class="fas fa-clock" aria-hidden="true"></i> Sort
             </button>
           </div>
+          <!-- Sort panel, modeled after filter panel -->
+          <div id="sort-panel" class="sort-panel hidden">
+            <label for="sort-by" class="form-label">Sort by:</label>
+            <div class="sort-row">
+              <select id="sort-by" class="form-input">
+                <option value="createdAt">Newest to Oldest</option>
+                <option value="updatedAt">Recently Edited</option>
+                <option value="averageRating">Community Rating</option>
+                <option value="currentUserRating">Your Rating</option>
+                <option value="usageCount">Most Used</option>
+                <option value="favoritesCount">Most Favorited</option>
+                <option value="title">Title (A-Z)</option>
+              </select>
+              <button
+                id="sort-dir-toggle"
+                class="button button-tertiary"
+                aria-label="Toggle sort direction"
+                title="Toggle sort direction"
+              >
+                <i id="sort-dir-icon" class="fas fa-arrow-down-wide-short"></i>
+              </button>
+            </div>
+          </div>
           <div id="rating-filter" class="filter-panel hidden">
-            <label for="min-rating" class="form-label">Minimum Rating:</label>
-            <select id="min-rating" class="form-input">
-              <option value="0">Any</option>
-              <option value="1">★</option>
-              <option value="2">★★</option>
-              <option value="3">★★★</option>
-              <option value="4">★★★★</option>
-            </select>
+            <div class="filter-grid">
+              <div class="filter-cell">
+                <label for="min-rating" class="form-label">Minimum Stars (public):</label>
+                <select id="min-rating" class="form-input">
+                  <option value="0">Any</option>
+                  <option value="1">★</option>
+                  <option value="2">★★</option>
+                  <option value="3">★★★</option>
+                  <option value="4">★★★★</option>
+                </select>
+              </div>
+              <div class="filter-cell">
+                <label for="min-user-rating" class="form-label">Minimum Stars (your rating):</label>
+                <select id="min-user-rating" class="form-input">
+                  <option value="0">Any</option>
+                  <option value="1">★</option>
+                  <option value="2">★★</option>
+                  <option value="3">★★★</option>
+                  <option value="4">★★★★</option>
+                </select>
+              </div>
+              <div class="filter-cell">
+                <label class="form-label" for="your-prompts-only">
+                  <span>Your prompts only</span>
+                  <input type="checkbox" id="your-prompts-only" />
+                </label>
+              </div>
+              <div class="filter-cell">
+                <label class="form-label" for="used-by-you">
+                  <span>Used by you</span>
+                  <input type="checkbox" id="used-by-you" />
+                </label>
+              </div>
+              <div class="filter-cell">
+                <label for="category-filter" class="form-label">Category:</label>
+                <select id="category-filter" class="form-input">
+                  <option value="">Any</option>
+                  <!-- Categories dynamically populated -->
+                </select>
+              </div>
+              <div class="filter-cell">
+                <label for="ai-tool-filter" class="form-label">AI Tool:</label>
+                <select id="ai-tool-filter" class="form-input">
+                  <option value="">Any</option>
+                  <!-- AI tools dynamically populated -->
+                </select>
+              </div>
+            </div>
           </div>
         </section>
         <p id="confirmation-message" class="hidden" aria-live="polite"></p>
@@ -128,7 +199,7 @@
             </div>
 
             <!-- New section for owner actions -->
-            <div class="prompt-owner-actions" style="display: none">
+            <div class="prompt-owner-actions hidden">
               <!-- Initially hidden, shown by JS if owner -->
               <hr class="section-divider" />
               <button id="edit-prompt-button" class="button button-secondary">

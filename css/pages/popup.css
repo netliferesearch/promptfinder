@@ -1,3 +1,165 @@
+/* Reset Filters Button */
+.button-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-text-secondary, #666);
+  font-size: 1.2em;
+  border: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+.button-icon:hover,
+.button-icon:focus {
+  background-color: var(--color-gray-200, #f0f0f0);
+  color: var(--color-primary, #007bff);
+  outline: 2px solid var(--color-accent, #007bff);
+}
+.button-icon.hidden {
+  display: none !important;
+}
+/* Filter grid for vertical stacking in pairs */
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.filter-cell {
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+@media (max-width: 480px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+    gap: 8px 0;
+  }
+}
+.filter-panel .form-input,
+.filter-panel select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Inline label for date range (removes inline style) */
+.label-inline {
+  margin-left: 8px;
+}
+/* Filter panel: layout for new filter rows */
+#rating-filter .filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#rating-filter .form-label {
+  min-width: 120px;
+}
+#rating-filter .form-input[type='date'] {
+  min-width: 120px;
+}
+#rating-filter input[type='checkbox'] {
+  margin-left: 0.5em;
+  margin-right: 0;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  accent-color: var(--color-primary, #007bff);
+  vertical-align: middle;
+  cursor: pointer;
+}
+/* Sort panel layout: label above, dropdown and icon in a row */
+#sort-panel .form-label {
+  display: block;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  gap: 0.5em;
+}
+#sort-panel .sort-row {
+  display: flex;
+  align-items: center;
+}
+#sort-by.form-input {
+  flex: 1 1 auto;
+}
+#sort-dir-toggle {
+  margin-left: 4px;
+}
+/* Sort panel: align direction icon to the right of the dropdown */
+#sort-panel .sort-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+#sort-by.form-input {
+  margin-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+#sort-dir-toggle {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}
+/* Sort panel: visually matches filter-panel, but with its own class for clarity */
+.sort-panel {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background-color: var(--color-gray-100);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.sort-panel label {
+  font-weight: 500;
+}
+.sort-panel select {
+  padding: 4px var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-white);
+}
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#sort-dir-toggle {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 18px;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  border-radius: var(--border-radius-sm);
+  transition: background 0.2s;
+}
+#sort-dir-toggle:hover {
+  background: var(--color-gray-200);
+}
+#sort-dir-icon {
+  font-size: 18px;
+}
 /* Page-specific styles for PromptFinder popup */
 
 /* Prompt list styles specific to popup */
@@ -11,9 +173,53 @@
   color: var(--color-gray-500);
 }
 
-/* Tab content */
-.popup-tab-content {
-  min-height: 300px;
+/* Navigation Tabs Accessibility & Layout Fixes */
+.tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 4px 4px 4px;
+  scrollbar-width: thin;
+}
+.tabs button {
+  min-width: 90px;
+  max-width: 120px;
+  flex: 1 1 90px;
+  padding: 6px 8px;
+  font-size: 0.98rem;
+  background: var(--color-gray-100, #f7f7f7);
+  color: var(--color-primary, #007bff);
+  border: none;
+  border-radius: 6px 6px 0 0;
+  transition:
+    background 0.2s,
+    color 0.2s;
+  outline: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tabs button.active {
+  background: var(--color-primary, #007bff);
+  color: #fff;
+  font-weight: 600;
+}
+.tabs button:hover:not(.active),
+.tabs button:focus-visible:not(.active) {
+  background: var(--color-primary-light, #e6f0ff);
+  color: var(--color-primary, #007bff);
+}
+
+/* Hide horizontal scrollbar but allow scroll */
+.tabs::-webkit-scrollbar {
+  height: 4px;
+}
+.tabs::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300, #d0d0d0);
+  border-radius: 2px;
+}
+.tabs::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Search results styling */

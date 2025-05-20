@@ -114,7 +114,14 @@ _Status: 🚧_
 - ✅ Automated testing of Cloud Functions with Firebase emulators
 - ⬜ End-to-end testing with real Firebase services in a test environment
 
-3. ⬜ **UI/UX Refinements**:
+3. 🚧 **UI/UX Refinements**:
+   - ✅ Navigation tabs now have improved accessibility, color contrast, and responsive widths (no more horizontal scroll for tabs).
+   - ✅ Reset filters button logic and visibility is now robust and accessible.
+   - ✅ Filter and sort controls are visually consistent, accessible, and mobile-friendly.
+   - ✅ Font Awesome updated for full icon support.
+   - ✅ Filter checkboxes are properly aligned and sized for better UX.
+   - ✅ Copy-to-clipboard works for all users, regardless of login state.
+   - ✅ CSP updated to allow Cloud Functions endpoint for all users.
    - ⬜ Further refine the display of prompt ownership.
    - ⬜ Review and improve overall popup layout, detached window forms, and user flows based on testing and feedback.
    - ⬜ Consider UI for managing `targetAiTools` if it needs to be more than a text input.

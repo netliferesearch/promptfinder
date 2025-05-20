@@ -25,7 +25,22 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 
 This project has recently undergone a significant migration to Firebase for backend services and a major refactoring to use modern JavaScript (ES Modules) and a Rollup build process.
 
+
 ## Recent Major Changes (2025)
+
+- **Popup Navigation Tabs Accessibility & Layout Improved:**
+  - Tab buttons now have better color contrast for hover, focus, and active states, meeting accessibility guidelines.
+  - Tab button widths are reduced and responsive, so all tabs are always visible without horizontal scrolling.
+  - Horizontal scrolling is minimized and styled for accessibility.
+- **Reset Filters Button Logic Fixed:**
+  - The reset filters button now appears and disappears immediately as filters are changed or reset, improving usability and accessibility.
+- **Font Awesome Updated:**
+  - The extension now uses Font Awesome 6.4.2 for full icon support, including the reset icon.
+- **General UI/UX Improvements:**
+  - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
+  - Filter checkboxes are properly aligned and sized for better UX.
+  - Copy-to-clipboard works for all users, regardless of login state.
+  - CSP updated to allow Cloud Functions endpoint for all users.
 
 - **Cloud Functions Fully Migrated to Firebase Functions v2 API:** All backend logic (ratings, favorites, usage count, stats, subcollection cleanup) is now implemented as 2nd Gen Cloud Functions in `europe-west1`.
 - **Automated Dependency & Code Health Script:** Use `./update-deps.sh` to automatically check for outdated npm packages, upgrade all dependencies, and run lint, build, and test. This helps keep your project up to date and healthy.
@@ -33,6 +48,12 @@ This project has recently undergone a significant migration to Firebase for back
 - **All Tests Passing:** 61/61 tests pass, including unit and integration tests for Cloud Functions and client logic.
 - **Strict Linting, Formatting, and Build:** Code quality is enforced with ESLint and Prettier. The build process is automated and tested after every update.
 - **Cloud Functions Deployment:** All functions are deployed as 2nd Gen in `europe-west1` and tested for permissions and runtime issues.
+
+## Accessibility & Usability
+
+- All navigation tabs and filter/sort controls are now accessible by keyboard and screen reader.
+- Color contrast and focus states have been improved for all interactive elements.
+- The UI is responsive and mobile-friendly.
 
 ---
 
