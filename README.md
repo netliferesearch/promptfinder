@@ -60,13 +60,7 @@ This project has recently undergone a significant migration to Firebase for back
    cd promptfinder
    ```
 
-3. **Switch to the development branch** (if not already on it, e.g., `ratings-and-favorites` or `main` if merged):
-
-   ```bash
-   git checkout ratings-and-favorites # Or your active development branch
-   ```
-
-4. **Install Dependencies:**
+3. **Install Dependencies:**
 
    ```bash
    npm install
@@ -74,7 +68,7 @@ This project has recently undergone a significant migration to Firebase for back
 
    This installs Firebase, Rollup, ESLint, Prettier, Jest, and other necessary packages.
 
-5. **Build the Extension:**
+4. **Build the Extension:**
 
    ```bash
    npm run build
@@ -82,12 +76,12 @@ This project has recently undergone a significant migration to Firebase for back
 
    This command will lint, format, and bundle the JavaScript using Rollup, placing the output in the `dist/` directory. It also processes CSS.
 
-6. **Load in Chrome:**
+5. **Load in Chrome:**
    - Open Chrome and navigate to `chrome://extensions/`.
    - Enable "Developer mode" (usually a toggle in the top right corner).
    - Click "Load unpacked".
    - Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
-7. The PromptFinder extension icon should appear in your browser toolbar.
+6. The PromptFinder extension icon should appear in your browser toolbar.
 
 ## Development Workflow
 
