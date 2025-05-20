@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions/v2';
 
 /**
  * Error types for PromptFinder Cloud Functions
@@ -8,26 +8,26 @@ export enum ErrorType {
   // Authentication/Authorization errors
   UNAUTHENTICATED = 'unauthenticated',
   PERMISSION_DENIED = 'permission-denied',
-  
+
   // Request/input validation errors
   INVALID_ARGUMENT = 'invalid-argument',
   MISSING_REQUIRED_FIELD = 'missing-required-field',
   INVALID_FORMAT = 'invalid-format',
-  
+
   // Data errors
   NOT_FOUND = 'not-found',
   ALREADY_EXISTS = 'already-exists',
-  
+
   // Operational errors
   OPERATION_ABORTED = 'operation-aborted',
   DEADLINE_EXCEEDED = 'deadline-exceeded',
   RESOURCE_EXHAUSTED = 'resource-exhausted',
-  
+
   // System errors
   INTERNAL = 'internal',
   UNAVAILABLE = 'unavailable',
   UNIMPLEMENTED = 'unimplemented',
-  DATABASE_ERROR = 'database-error'
+  DATABASE_ERROR = 'database-error',
 }
 
 /**
@@ -69,16 +69,12 @@ interface LogEntry {
 
 /**
  * Standardized logging function for errors
- * 
+ *
  * @param message Main error message
  * @param errorType Category of error from ErrorType enum
  * @param details Additional structured data for error context
  */
-export function logError(
-  message: string, 
-  errorType: ErrorType, 
-  details?: ErrorDetails
-): void {
+export function logError(message: string, errorType: ErrorType, details?: ErrorDetails): void {
   // Create structured log entry that will be easier to query and analyze
   const logEntry: LogEntry = {
     severity: 'ERROR',
@@ -87,32 +83,29 @@ export function logError(
     timestamp: new Date().toISOString(),
     function: getCallerFunctionName(),
   };
-  
+
   // Add all details to the log entry
   if (details) {
     Object.assign(logEntry, details);
   }
-  
+
   // If there's an original error, add its message and stack trace
   if (details?.originalError) {
     logEntry.errorMessage = details.originalError.message;
     logEntry.stackTrace = details.originalError.stack;
   }
-  
+
   // Log as structured JSON for better querying in Cloud Logging
   console.error(JSON.stringify(logEntry));
 }
 
 /**
  * Standardized logging function for information
- * 
+ *
  * @param message Informational message
  * @param details Additional structured data for context
  */
-export function logInfo(
-  message: string, 
-  details?: Record<string, any>
-): void {
+export function logInfo(message: string, details?: Record<string, any>): void {
   // Create structured log entry
   const logEntry: LogEntry = {
     severity: 'INFO',
@@ -120,26 +113,23 @@ export function logInfo(
     timestamp: new Date().toISOString(),
     function: getCallerFunctionName(),
   };
-  
+
   // Add all details to the log entry
   if (details) {
     Object.assign(logEntry, details);
   }
-  
+
   // Log as structured JSON for better querying in Cloud Logging
   console.log(JSON.stringify(logEntry));
 }
 
 /**
  * Standardized logging function for warnings
- * 
+ *
  * @param message Warning message
  * @param details Additional structured data for context
  */
-export function logWarning(
-  message: string, 
-  details?: Record<string, any>
-): void {
+export function logWarning(message: string, details?: Record<string, any>): void {
   // Create structured log entry
   const logEntry: LogEntry = {
     severity: 'WARNING',
@@ -147,12 +137,12 @@ export function logWarning(
     timestamp: new Date().toISOString(),
     function: getCallerFunctionName(),
   };
-  
+
   // Add all details to the log entry
   if (details) {
     Object.assign(logEntry, details);
   }
-  
+
   // Log as structured JSON for better querying in Cloud Logging
   console.warn(JSON.stringify(logEntry));
 }
@@ -165,7 +155,7 @@ function getCallerFunctionName(): string {
   const stackLines = new Error().stack?.split('\n') || [];
   // Skip first two lines (Error and this function) to get caller
   const callerLine = stackLines[3] || '';
-  
+
   // Extract function name - basic implementation
   const functionNameMatch = callerLine.match(/at\s+([\w.<>]+)\s+/);
   return functionNameMatch ? functionNameMatch[1] : 'unknown';
@@ -173,49 +163,48 @@ function getCallerFunctionName(): string {
 
 /**
  * Wraps a Cloud Function execution with timing metrics, logging, and error handling
- * 
+ *
  * @param fn The function implementation to wrap
  * @param fnName The name of the function (for logging)
  * @returns The wrapped function
  */
 export function withErrorHandling<T, R>(
-  fn: (data: T, context: functions.https.CallableContext) => Promise<R>,
+  fn: (request: functions.https.CallableRequest<T>) => Promise<R>,
   fnName: string
-): (data: T, context: functions.https.CallableContext) => Promise<R> {
-  return async (data: T, context: functions.https.CallableContext): Promise<R> => {
+): (request: functions.https.CallableRequest<T>) => Promise<R> {
+  return async (request: functions.https.CallableRequest<T>): Promise<R> => {
     const startTime = Date.now();
-    
+
     try {
       // Log the function invocation with user ID if available
       logInfo(`${fnName} started`, {
-        userId: context.auth?.uid || 'unauthenticated',
+        userId: request.auth?.uid || 'unauthenticated',
         functionName: fnName,
       });
-      
+
       // Execute the original function
-      const result = await fn(data, context);
-      
+      const result = await fn(request);
+
       // Calculate execution time for performance monitoring
       const executionTime = Date.now() - startTime;
-      
+
       // Log successful completion with timing
       logInfo(`${fnName} completed successfully`, {
-        userId: context.auth?.uid || 'unauthenticated',
+        userId: request.auth?.uid || 'unauthenticated',
         functionName: fnName,
         executionTimeMs: executionTime,
       });
-      
+
       return result;
     } catch (error) {
       // Calculate execution time even for failures
       const executionTime = Date.now() - startTime;
-      
+
       // Handle different types of errors
       if (error instanceof functions.https.HttpsError) {
         // Already a properly formatted error, just log it
-        logError(`${fnName} failed with HttpsError`, 
-          error.code as ErrorType, {
-          userId: context.auth?.uid || 'unauthenticated',
+        logError(`${fnName} failed with HttpsError`, error.code as ErrorType, {
+          userId: request.auth?.uid || 'unauthenticated',
           functionName: fnName,
           executionTimeMs: executionTime,
           originalError: error,
@@ -228,15 +217,14 @@ export function withErrorHandling<T, R>(
           `Unexpected error in ${fnName}`,
           error instanceof Error ? error.message : String(error)
         );
-        
-        logError(`${fnName} failed with unexpected error`,
-          ErrorType.INTERNAL, {
-          userId: context.auth?.uid || 'unauthenticated',
+
+        logError(`${fnName} failed with unexpected error`, ErrorType.INTERNAL, {
+          userId: request.auth?.uid || 'unauthenticated',
           functionName: fnName,
           executionTimeMs: executionTime,
           originalError: error instanceof Error ? error : new Error(String(error)),
         });
-        
+
         throw wrappedError;
       }
     }
@@ -245,7 +233,7 @@ export function withErrorHandling<T, R>(
 
 /**
  * Creates a Firebase HttpsError with standardized formatting
- * 
+ *
  * @param code The error code
  * @param message User-facing error message
  * @param details Additional details (only visible in logs)

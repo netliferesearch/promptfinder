@@ -72,8 +72,8 @@ _Status: 🚧_
 
 ---
 
-
 ### Phase 4: Testing, UI/UX Refinement, Automation & Optimization (NOW IN PROGRESS)
+
 2. ✅ **Automation & Maintenance:**
    - ✅ Added `update-deps.sh` script to automate dependency upgrades, linting, building, and testing.
    - ✅ All dependencies (including `firebase`, `rollup`, etc.) are now kept up to date.

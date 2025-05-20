@@ -25,7 +25,6 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 
 This project has recently undergone a significant migration to Firebase for backend services and a major refactoring to use modern JavaScript (ES Modules) and a Rollup build process.
 
-
 ## Recent Major Changes (2025)
 
 - **Cloud Functions Fully Migrated to Firebase Functions v2 API:** All backend logic (ratings, favorites, usage count, stats, subcollection cleanup) is now implemented as 2nd Gen Cloud Functions in `europe-west1`.
