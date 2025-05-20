@@ -1,12 +1,13 @@
 # PromptFinder - AI Prompt Management Chrome Extension
 
-PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
+PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you\'re signed in.
 
 ## Key Features
 
 - **Cloud Synced Prompts:** Prompts are stored in Firebase Firestore, enabling synchronization and backup.
 - **User Accounts:** Supports Email/Password and Google Sign-In for personalized prompt management.
 - **CRUD Operations:** Add, edit, and delete your prompts.
+- **Comprehensive Prompt Deletion:** When a prompt is deleted, its associated subcollections (ratings, favoritedBy) are also removed via a Cloud Function.
 - **Comprehensive Prompt Details:** View title, description, full prompt text (with Markdown highlighting), category, tags, target AI tools, author, creation/update dates, usage count, and ratings.
 - **Code-Formatted Display:** Prompt text is displayed in a code block with syntax highlighting for Markdown.
 - **Truncation & "View More":** Long prompt texts are truncated by default with an option to expand.
@@ -42,8 +43,11 @@ This project has recently undergone a significant migration to Firebase for back
 
 - ✅ **Unit Tests Updated:** All tests have been adapted for ES Modules and Firebase v9 SDK and are now passing.
 - ✅ **Firestore Security Rules:** Implemented robust data protection.
-- ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
+- ✅ **Cloud Functions for Aggregation & Maintenance:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, `favoritesCount`, and `onPromptDeleted` for thorough cleanup.
 - ✅ **Extension Size Optimization:** Reduced extension size from 571MB to 467KB (99.9% reduction) for Chrome Web Store compatibility.
+- ✅ **Secure Firebase Credentials:** Firebase configuration is no longer hardcoded. It is now loaded from environment variables (`.env` file, which is gitignored) during the build process using Rollup and `@rollup/plugin-replace`.
+- ✅ **Cleaned Git History:** The `js/firebase-init.js` file, which previously contained Firebase credentials, has been removed from all historical commits using `git filter-repo`.
+- ✅ **ESLint Configuration Fixed:** Resolved issues with ESLint hanging by migrating to a flat `eslint.config.mjs` and removing the old `.eslintrc.js`. Linting and fixing scripts (`npm run lint`, `npm run lint:fix`) are fully functional.
 
 **Key Next Steps (from PROJECT_PLAN.md):**
 
@@ -61,11 +65,24 @@ This project has recently undergone a significant migration to Firebase for back
    cd promptfinder
    ```
 
-3. **Switch to the development branch** (if not already on it, e.g., `ratings-and-favorites` or `main` if merged):
+3. **Set up Firebase Configuration:**
+   - Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/).
+   - Add a Web App to your Firebase project.
+   - Copy the Firebase configuration object provided.
+   - In the root of the `promptfinder` directory, create a file named `.env`.
+   - Add your Firebase configuration to the `.env` file in the following format:
 
-   ```bash
-   git checkout ratings-and-favorites # Or your active development branch
-   ```
+     ```env
+     FIREBASE_API_KEY="YOUR_API_KEY"
+     FIREBASE_AUTH_DOMAIN="YOUR_AUTH_DOMAIN"
+     FIREBASE_PROJECT_ID="YOUR_PROJECT_ID"
+     FIREBASE_STORAGE_BUCKET="YOUR_STORAGE_BUCKET"
+     FIREBASE_MESSAGING_SENDER_ID="YOUR_MESSAGING_SENDER_ID"
+     FIREBASE_APP_ID="YOUR_APP_ID"
+     FIREBASE_MEASUREMENT_ID="YOUR_MEASUREMENT_ID" # Optional
+     ```
+
+     **Important:** The `.env` file is included in `.gitignore` and should never be committed to the repository.
 
 4. **Install Dependencies:**
 
@@ -184,6 +201,7 @@ The main implemented functions are:
 - `updateFavoritesCount`: Maintains accurate favorites counts
 - `incrementUsageCount`: Tracks usage counts when prompts are copied
 - `recalculateAllStats`: Admin function to recalculate all stats
+- `onPromptDeleted`: Ensures all subcollections related to a prompt are deleted when the prompt itself is deleted.
 
 For details on deployment and testing, see:
 

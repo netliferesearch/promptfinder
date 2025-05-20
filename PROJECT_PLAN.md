@@ -1,6 +1,6 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 20, 2025 (Size optimization complete - reduced from 571MB to 467KB)
+**Last Updated**: May 21, 2025
 
 **Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
 
@@ -47,6 +47,7 @@ _Status: 🚧_
    - ✅ Implement `updateFavoritesCount` function to maintain accurate favorites counts
    - ✅ Implement `incrementUsageCount` function to track usage counts when prompts are copied
    - ✅ Implement `recalculateAllStats` admin function to recalculate all statistics
+   - ✅ Implement `onPromptDeleted` function to ensure subcollections (ratings, favoritedBy) are removed when a prompt is deleted.
    - ✅ Configure Firebase Functions with correct region (europe-west1)
    - ✅ Update client code to use cloud functions instead of client-side calculations
    - ✅ Create documentation for cloud functions (deployment and testing guides)
@@ -74,7 +75,7 @@ _Status: 🚧_
 
 ### Phase 4: Testing, UI/UX Refinement, & Optimization (NOW IN PROGRESS)
 
-_Status: 🚧_
+_Status: ✅_
 
 1. 🚧 **Unit Tests Update & Expansion**:
    - ✅ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
@@ -96,12 +97,13 @@ _Status: 🚧_
    - 🚧 Test the interaction between UI, client-side logic, and Firebase services
    - **Firebase Cloud Functions:**
 
-- ✅ `recalculateRating`: Unit tests for client-side integration implemented
-- ✅ `updateFavoritesCount`: Unit tests for client-side integration implemented
-- ✅ `incrementUsageCount`: Unit tests for client-side integration implemented
-- ✅ `recalculateAllStats`: Admin function testing implemented
-- ✅ Automated testing of Cloud Functions with Firebase emulators
-- ⬜ End-to-end testing with real Firebase services in a test environment
+     - ✅ `recalculateRating`: Unit tests for client-side integration implemented
+     - ✅ `updateFavoritesCount`: Unit tests for client-side integration implemented
+     - ✅ `incrementUsageCount`: Unit tests for client-side integration implemented
+     - ✅ `recalculateAllStats`: Admin function testing implemented
+     - ✅ `onPromptDeleted`: Tested via emulator and manual deletion.
+     - ✅ Automated testing of Cloud Functions with Firebase emulators
+     - ⬜ End-to-end testing with real Firebase services in a test environment
 
 3. ⬜ **UI/UX Refinements**:
    - ⬜ Further refine the display of prompt ownership.
@@ -116,6 +118,10 @@ _Status: 🚧_
    - ✅ Created documentation for optimization techniques in `docs/EXTENSION_SIZE_OPTIMIZATION.md`
    - ✅ Created detailed size analysis tool in `scripts/analyze-size.sh`
    - ⬜ Further performance optimization for data loading and UI responsiveness
+5. ✅ **Repository Security & Preparation for Public Release**
+   - ✅ Secure Firebase Credentials: Moved Firebase config to environment variables, loaded at build time via `.env` and Rollup.
+   - ✅ Clean Git History: Removed sensitive Firebase configuration (specifically `js/firebase-init.js`) from historical commits using `git filter-repo`.
+   - ✅ ESLint Configuration: Resolved linting issues by deleting legacy `.eslintrc.js` and correcting the flat config `eslint.config.mjs` (ignore patterns, file paths, `sanitizeGlobals`). Ensured `npm run lint` and `npm run lint:fix` work correctly.
 
 ---
 
@@ -146,6 +152,7 @@ This section provides a snapshot of current unit test coverage and areas for fut
   - ✅ `updateFavoritesCount`: Unit tests implemented
   - ✅ `incrementUsageCount`: Unit tests implemented
   - ✅ `recalculateAllStats`: Unit tests implemented
+  - ✅ `onPromptDeleted`: (Covered by integration testing and manual verification)
 
 **To Be Tested (`⬜`) / Areas for Expansion (`🚧`):**
 
@@ -206,12 +213,13 @@ This section provides a snapshot of current unit test coverage and areas for fut
 
 ### Phase 5: Deployment & Monitoring (PLANNED)
 
-_Status: ⬜_
+_Status: 🚧_
 
 1. ⬜ **Prepare for "Release"**:
-   - ⬜ Finalize documentation
+   - ✅ Finalize documentation (README, Project Plan)
    - ⬜ Conduct final cross-browser testing
    - ⬜ Create release notes
+   - ✅ Make repository public on GitHub.
 2. ⬜ **Monitor**:
    - ⬜ Set up Firebase usage monitoring dashboard
    - ⬜ Configure Cloud Function performance and error logging
