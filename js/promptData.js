@@ -279,22 +279,35 @@ export const ratePrompt = async (promptId, ratingValue) => {
   const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
 
   try {
-    // Just set the rating document - the cloud function will handle the aggregation
+    // Set the rating document - the cloud function will handle the aggregation
     await setDoc(ratingDocRef, {
       rating: ratingValue,
       ratedAt: serverTimestamp(),
       userId: currentUser.uid,
     });
 
-    // Wait a moment for the cloud function to process
-    // In a production app, you might consider implementing a more sophisticated
-    // approach that doesn't rely on this delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Poll for updated averageRating (max 2s, check every 250ms)
+    let updatedPromptSnap;
+    let promptDataToReturn;
+    let attempts = 0;
+    const maxAttempts = 8; // 8 * 250ms = 2s
+    let lastAverageRating = null;
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 250));
+      updatedPromptSnap = await getDoc(promptRef);
+      promptDataToReturn = formatLoadedPrompt(updatedPromptSnap, ratingValue);
+      // If averageRating is present and changed, break early
+      if (
+        typeof promptDataToReturn.averageRating === 'number' &&
+        (lastAverageRating === null || promptDataToReturn.averageRating !== lastAverageRating)
+      ) {
+        break;
+      }
+      lastAverageRating = promptDataToReturn.averageRating;
+      attempts++;
+    }
 
-    // Get the updated prompt data to return to the caller
-    const updatedPromptSnap = await getDoc(promptRef);
-    const promptDataToReturn = formatLoadedPrompt(updatedPromptSnap, ratingValue);
-
+    // Also update currentUserIsFavorite
     const favoritedByDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
     const favoritedBySnap = await getDoc(favoritedByDocRef);
     promptDataToReturn.currentUserIsFavorite = favoritedBySnap.exists();
