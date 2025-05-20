@@ -25,7 +25,6 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 
 This project has recently undergone a significant migration to Firebase for backend services and a major refactoring to use modern JavaScript (ES Modules) and a Rollup build process.
 
-
 ## Recent Major Changes (2025)
 
 - **Popup Navigation Tabs Accessibility & Layout Improved:**
@@ -37,6 +36,7 @@ This project has recently undergone a significant migration to Firebase for back
 - **Font Awesome Updated:**
   - The extension now uses Font Awesome 6.4.2 for full icon support, including the reset icon.
 - **General UI/UX Improvements:**
+
   - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
   - Filter checkboxes are properly aligned and sized for better UX.
   - Copy-to-clipboard works for all users, regardless of login state.

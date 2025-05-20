@@ -625,12 +625,16 @@ export const copyPromptToClipboard = async promptId => {
 
     await navigator.clipboard.writeText(prompt.text);
 
-    // Try to increment usage count, but ignore errors (allow copy for all users)
+    // Try to increment usage count, but if it fails, return false
     try {
       const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
       await incrementUsageCountFn({ promptId });
-    } catch {
-      // Silently ignore usage count errors (e.g., not logged in)
+    } catch (error) {
+      Utils.handleError(`Error incrementing usage count for prompt ${promptId}: ${error.message}`, {
+        userVisible: false,
+        originalError: error,
+      });
+      return false;
     }
 
     return true;
