@@ -80,10 +80,10 @@ This project has recently undergone a significant migration to Firebase for back
    ```bash
    # Standard development build
    npm run build
-   
+
    # Production build (minified, no source maps)
    npm run build:prod
-   
+
    # Package for Chrome Web Store (creates optimized zip file)
    npm run package
    ```

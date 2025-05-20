@@ -319,4 +319,76 @@ export const incrementUsageCount = functions
     });
 
     return { success: true };
-  }, 'incrementUsageCount'));
+  }, 'incrementUsageCount');
+
+/**
+ * Deletes all documents in subcollections of a prompt when the prompt is deleted.
+ */
+export const onPromptDeleted = functions
+  .region('europe-west1')
+  .firestore.document('prompts/{promptId}')
+  .onDelete(async (snap, context) => {
+    const promptId = context.params.promptId;
+    const startTime = Date.now();
+
+    logInfo('Prompt deleted, cleaning up subcollections', {
+      promptId,
+      operation: 'onPromptDeleted',
+    });
+
+    const subcollections = ['ratings', 'favoritedBy'];
+    const batch = db.batch();
+
+    for (const subcollectionName of subcollections) {
+      try {
+        const snapshot = await db
+          .collection('prompts')
+          .doc(promptId)
+          .collection(subcollectionName)
+          .get();
+
+        if (!snapshot.empty) {
+          logInfo(`Found documents in subcollection '${subcollectionName}' to delete`, {
+            promptId,
+            count: snapshot.size,
+            operation: 'onPromptDeleted',
+          });
+          snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+        }
+      } catch (error) {
+        logError(
+          `Error fetching documents from ${subcollectionName} for prompt ${promptId}`,
+          ErrorType.DATABASE_ERROR,
+          {
+            promptId,
+            operation: 'onPromptDeleted',
+            originalError: error instanceof Error ? error : new Error(String(error)),
+          }
+        );
+        // Optionally, rethrow or handle to prevent commit if critical
+      }
+    }
+
+    try {
+      await batch.commit();
+      logInfo('Successfully deleted subcollections for prompt', {
+        promptId,
+        operation: 'onPromptDeleted',
+        executionTimeMs: Date.now() - startTime,
+      });
+    } catch (error) {
+      logError(
+        `Error committing batch delete for subcollections of prompt ${promptId}`,
+        ErrorType.DATABASE_ERROR,
+        {
+          promptId,
+          operation: 'onPromptDeleted',
+          executionTimeMs: Date.now() - startTime,
+          originalError: error instanceof Error ? error : new Error(String(error)),
+        }
+      );
+    }
+    return null;
+  });

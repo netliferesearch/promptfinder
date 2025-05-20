@@ -4,8 +4,8 @@
   "description": "A community-powered tool for managing and sharing AI prompts",
   "private": true,
   "scripts": {
-    "lint": "npx eslint . --ext .js,.mjs",
-    "lint:fix": "npx eslint . --ext .js,.mjs --fix",
+    "lint": "npx eslint ./app.js ./js ./pages ./tests --ext .js,.mjs",
+    "lint:fix": "npx eslint ./app.js ./js ./pages ./tests --ext .js,.mjs --fix",
     "format": "prettier --write \"**/*.{js,mjs,html,css,md,json}\"",
     "test": "jest",
     "build:js:dev": "rollup -c --environment NODE_ENV:development",
