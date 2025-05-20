@@ -80,6 +80,8 @@ _Status: 🚧_
    - ✅ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
    - ✅ Update existing tests in `tests/` to align with ESM and v9 API mocks (including `increment()` handling, improved mock stability for `setPathData`).
    - ✅ Project cleanup: Removed backup files (.bak, .new, .broken) and unnecessary debug logs.
+   - ✅ Added a global Jest mock for `js/firebase-init.js` in `tests/setupTests.js` to ensure all test files use the same mock for Firebase services. This, along with `simulateLogin`/`simulateLogout` helpers, ensures robust and isolated test environments.
+   - ✅ All unit tests now pass (61/61), confirming correct isolation from the real Firebase SDK.
    - 🚧 Write new unit tests for recently added functionalities:
      - ✅ Data Layer (`promptData.js`):
        - ✅ ratings (`ratePrompt`)
@@ -113,7 +115,7 @@ _Status: 🚧_
 
 ### Ongoing Testing Status & Roadmap (Unit Tests)
 
-This section provides a snapshot of current unit test coverage and areas for future expansion. This is a sub-section of Phase 4.1.
+This section provides a snapshot of current unit test coverage and areas for future expansion. The test environment now uses a global Jest mock for `js/firebase-init.js` and helpers for simulated authentication, ensuring all tests are robust and isolated from the real Firebase SDK.
 
 **Covered (`✅`):**
 

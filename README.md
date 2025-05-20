@@ -40,7 +40,7 @@ This project has recently undergone a significant migration to Firebase for back
 
 **Recent Accomplishments:**
 
-- ✅ **Unit Tests Updated:** All tests have been adapted for ES Modules and Firebase v9 SDK and are now passing.
+- ✅ **Unit Tests Updated & Passing:** All tests have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably.
 - ✅ **Firestore Security Rules:** Implemented robust data protection.
 - ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
 
@@ -114,7 +114,7 @@ This project has recently undergone a significant migration to Firebase for back
 
 ### Testing
 
-Jest is used for unit testing. The test suite has been fully updated to work with the ES Module structure and Firebase v9 SDK.
+Jest is used for unit testing. The test suite is fully updated for ES Modules and Firebase v9 SDK. **A global Jest mock for `js/firebase-init.js` is used in `tests/setupTests.js` to ensure all test files use the same mock for `auth`, `db`, and `functions`.**
 
 To run tests:
 
@@ -132,8 +132,8 @@ All tests are now passing (61 tests across 7 test suites). The test coverage inc
 
 The testing implementation includes:
 
-- Mocks for Firebase services (Auth, Firestore, Functions)
-- Simulated user interactions
+- Global Jest mock for Firebase services (`js/firebase-init.js`)
+- Simulated user authentication with `simulateLogin`/`simulateLogout` helpers
 - Error condition testing
 - Integration tests for Cloud Functions
 
