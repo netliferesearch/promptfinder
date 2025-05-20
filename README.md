@@ -39,6 +39,7 @@ This project has recently undergone a significant migration to Firebase for back
 
   - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
   - Filter checkboxes are properly aligned and sized for better UX.
+  - **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent. All tests updated and passing for new error handling logic.
   - Copy-to-clipboard works for all users, regardless of login state.
   - CSP updated to allow Cloud Functions endpoint for all users.
 

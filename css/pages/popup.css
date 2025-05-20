@@ -1,3 +1,56 @@
+/* Toast notification styles */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.toast-message {
+  min-width: 220px;
+  max-width: 90vw;
+  margin-top: 0.5rem;
+  background: #222;
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  padding: 0.75rem 1.5rem 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  opacity: 0;
+  pointer-events: auto;
+  transition:
+    opacity 0.3s,
+    transform 0.3s;
+  outline: none;
+}
+.toast-message.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast-message.success {
+  background: #2e7d32;
+}
+.toast-message.error {
+  background: #c62828;
+}
+.toast-message.info {
+  background: #1565c0;
+}
+.toast-message .toast-close {
+  margin-left: 1rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
 /* Reset Filters Button */
 .button-icon {
   width: 40px;

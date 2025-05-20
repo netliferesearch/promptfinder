@@ -192,6 +192,9 @@ export const logoutUser = async () => {
   }
   try {
     await firebaseSignOut(auth);
+    if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+      window.showToast('Logged out successfully.', { type: 'success', duration: 3000 });
+    }
     return true;
   } catch (error) {
     Utils.handleError(`Logout error (v9): ${error.message}`, {
@@ -625,16 +628,27 @@ export const copyPromptToClipboard = async promptId => {
 
     await navigator.clipboard.writeText(prompt.text);
 
-    // Try to increment usage count, but if it fails, return false
+    // Try to increment usage count, but ignore expected auth errors (do not affect user experience)
     try {
       const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
       await incrementUsageCountFn({ promptId });
     } catch (error) {
-      Utils.handleError(`Error incrementing usage count for prompt ${promptId}: ${error.message}`, {
-        userVisible: false,
-        originalError: error,
-      });
-      return false;
+      // Only log unexpected errors, not auth/permission errors
+      const msg = error && (error.message || error.code || error.toString());
+      if (
+        msg &&
+        (msg.includes('PERMISSION_DENIED') ||
+          msg.includes('401') ||
+          msg.includes('unauth') ||
+          msg.includes('not authorized'))
+      ) {
+        // Do nothing: this is expected for logged-out users
+      } else if (window && window.console) {
+        console.warn(
+          `Non-blocking: Failed to increment usage count for prompt ${promptId}:`,
+          error
+        );
+      }
     }
 
     return true;

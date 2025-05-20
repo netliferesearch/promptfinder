@@ -120,8 +120,10 @@ _Status: 🚧_
    - ✅ Filter and sort controls are visually consistent, accessible, and mobile-friendly.
    - ✅ Font Awesome updated for full icon support.
    - ✅ Filter checkboxes are properly aligned and sized for better UX.
+   - ✅ **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent.
    - ✅ Copy-to-clipboard works for all users, regardless of login state.
    - ✅ CSP updated to allow Cloud Functions endpoint for all users.
+   - ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests pass after these changes.
    - ⬜ Further refine the display of prompt ownership.
    - ⬜ Review and improve overall popup layout, detached window forms, and user flows based on testing and feedback.
    - ⬜ Consider UI for managing `targetAiTools` if it needs to be more than a text input.

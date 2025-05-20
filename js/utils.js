@@ -158,23 +158,27 @@ export const displayAuthError = (message, element) => {
 };
 
 export const showConfirmationMessage = (message, options = {}) => {
-  const {
-    timeout = 3000,
-    specificErrorElement = typeof document !== 'undefined'
-      ? document.getElementById('confirmation-message')
-      : null,
-    type = 'success',
-  } = options;
-
-  if (specificErrorElement) {
-    handleError(message, {
-      specificErrorElement: specificErrorElement,
-      type: type,
-      timeout: timeout,
-      userVisible: true,
-    });
+  // Use toast if available, otherwise fallback to old method
+  if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+    window.showToast(message, { type: 'success', duration: options.timeout || 3000 });
   } else {
-    console.info('Confirmation:', message); // Changed to console.info for confirmations
+    const {
+      timeout = 3000,
+      specificErrorElement = typeof document !== 'undefined'
+        ? document.getElementById('confirmation-message')
+        : null,
+      type = 'success',
+    } = options;
+    if (specificErrorElement) {
+      handleError(message, {
+        specificErrorElement: specificErrorElement,
+        type: type,
+        timeout: timeout,
+        userVisible: true,
+      });
+    } else {
+      console.info('Confirmation:', message);
+    }
   }
 };
 

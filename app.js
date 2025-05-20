@@ -25,16 +25,20 @@ function showAuthView() {
 window.showAuthViewGlobally = showAuthView;
 
 window.handleAuthRequiredAction = actionDescription => {
-  const generalMessageElement = document.getElementById('error-message');
-  const messageHtml = `Please <a href="#" id="auth-action-link" class="inline-link">login or create an account</a> to ${actionDescription}.`;
-  Utils.handleError(messageHtml, {
-    specificErrorElement: generalMessageElement,
-    type: 'info',
-    timeout: 5000,
-    isHtml: true,
-    linkId: 'auth-action-link',
-    onClickAction: showAuthView,
-  });
+  // Use toast notification for all auth-required actions
+  if (typeof window.showToast === 'function') {
+    window.showToast(`Please login or create an account to ${actionDescription}.`, {
+      type: 'info',
+      duration: 5000,
+    });
+  } else {
+    // fallback for environments without toast
+    Utils.handleError(`Please login or create an account to ${actionDescription}.`, {
+      userVisible: true,
+      type: 'info',
+      timeout: 5000,
+    });
+  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

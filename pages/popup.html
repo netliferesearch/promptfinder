@@ -123,8 +123,6 @@
             </div>
           </div>
         </section>
-        <p id="confirmation-message" class="hidden" aria-live="polite"></p>
-        <p id="error-message" class="hidden" aria-live="assertive"></p>
         <div class="add-prompt-bar">
           <button id="add-prompt-button" class="button button-primary">
             <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
@@ -242,6 +240,8 @@
           </form>
         </section>
         <footer class="bottom-bar hidden"></footer>
+        <!-- Toast notification container for global messages -->
+        <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
       </main>
 
       <section id="auth-view" class="hidden auth-container">
@@ -288,5 +288,7 @@
 
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/toast.js"></script>
   </body>
 </html>

@@ -208,7 +208,7 @@ describe('Cloud Functions Integration Tests', () => {
       expect(updatedPrompt.usageCount).toBe(1);
     });
 
-    test('should handle errors when incrementUsageCount function fails', async () => {
+    test('should ignore usage count errors and not call handleError when incrementUsageCount function fails', async () => {
       // Setup the httpsCallable mock to return an error
       const mockError = new Error('Function execution failed');
       const incrementUsageCountSpy = jest.fn().mockRejectedValue(mockError);
@@ -220,9 +220,10 @@ describe('Cloud Functions Integration Tests', () => {
       // Verify the function was called
       expect(incrementUsageCountSpy).toHaveBeenCalledWith({ promptId: testPromptId });
 
-      // Verify error was handled
-      expect(Utils.handleError).toHaveBeenCalled();
-      expect(result).toBe(false);
+      // Should NOT call handleError for usage count errors
+      expect(Utils.handleError).not.toHaveBeenCalled();
+      // Should still return true (clipboard write succeeded)
+      expect(result).toBe(true);
     });
   });
 
