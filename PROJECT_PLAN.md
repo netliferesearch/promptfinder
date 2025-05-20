@@ -72,7 +72,16 @@ _Status: 🚧_
 
 ---
 
-### Phase 4: Testing, UI/UX Refinement, & Optimization (NOW IN PROGRESS)
+
+### Phase 4: Testing, UI/UX Refinement, Automation & Optimization (NOW IN PROGRESS)
+2. ✅ **Automation & Maintenance:**
+   - ✅ Added `update-deps.sh` script to automate dependency upgrades, linting, building, and testing.
+   - ✅ All dependencies (including `firebase`, `rollup`, etc.) are now kept up to date.
+   - ✅ Project uses ES Modules (`type: module` in `package.json`) for modern compatibility.
+   - ✅ All Cloud Functions migrated to Firebase Functions v2 API and deployed as 2nd Gen in `europe-west1`.
+   - ✅ All tests (61/61) are passing, including Cloud Functions and client logic.
+   - ✅ Linting, formatting, and build processes are enforced and automated.
+   - ✅ Guidance for using the automation script is included in the README.
 
 _Status: 🚧_
 

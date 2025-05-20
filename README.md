@@ -25,6 +25,18 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 
 This project has recently undergone a significant migration to Firebase for backend services and a major refactoring to use modern JavaScript (ES Modules) and a Rollup build process.
 
+
+## Recent Major Changes (2025)
+
+- **Cloud Functions Fully Migrated to Firebase Functions v2 API:** All backend logic (ratings, favorites, usage count, stats, subcollection cleanup) is now implemented as 2nd Gen Cloud Functions in `europe-west1`.
+- **Automated Dependency & Code Health Script:** Use `./update-deps.sh` to automatically check for outdated npm packages, upgrade all dependencies, and run lint, build, and test. This helps keep your project up to date and healthy.
+- **All Dependencies Up to Date:** Core packages like `firebase`, `rollup`, and others are now kept current. The project uses ES Modules (`type: module` in `package.json`) for modern compatibility.
+- **All Tests Passing:** 61/61 tests pass, including unit and integration tests for Cloud Functions and client logic.
+- **Strict Linting, Formatting, and Build:** Code quality is enforced with ESLint and Prettier. The build process is automated and tested after every update.
+- **Cloud Functions Deployment:** All functions are deployed as 2nd Gen in `europe-west1` and tested for permissions and runtime issues.
+
+---
+
 **Recent Highlights (Completed as part of Phase 1 & 2 of PROJECT_PLAN.md):**
 
 - Full Firebase Integration (Auth & Firestore using v9+ SDK).
