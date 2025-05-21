@@ -201,7 +201,7 @@ describe('Cloud Functions Integration Tests', () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(testPrompt.text);
 
       // Verify the operation succeeded
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // Verify that the usage count was incremented
       const updatedPrompt = global.mockFirestoreDb.getPathData(`prompts/${testPromptId}`);
@@ -223,7 +223,7 @@ describe('Cloud Functions Integration Tests', () => {
       // Should NOT call handleError for usage count errors
       expect(Utils.handleError).not.toHaveBeenCalled();
       // Should still return true (clipboard write succeeded)
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
     });
   });
 

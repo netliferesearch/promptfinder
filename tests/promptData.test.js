@@ -271,18 +271,35 @@ describe('PromptData Module - Firestore v9', () => {
       navigator.clipboard.writeText.mockResolvedValue(undefined);
     });
 
-    test('should copy text and increment usageCount successfully', async () => {
-      const success = await PromptData.copyPromptToClipboard(promptId);
-      expect(success).toBe(true);
+    test('should copy text and increment usageCount successfully when user is logged in', async () => {
+      // Simulate logged-in user
+      global.simulateLogin();
+
+      const result = await PromptData.copyPromptToClipboard(promptId);
+      expect(result.success).toBe(true);
+      expect(result.prompt).toBeDefined();
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(promptText);
       const updatedPrompt = global.mockFirestoreDb.getPathData(`prompts/${promptId}`);
       expect(updatedPrompt.usageCount).toBe(1);
     });
 
+    test('should copy text but NOT increment usageCount when user is logged out', async () => {
+      // Ensure user is logged out
+      global.simulateLogout();
+
+      const result = await PromptData.copyPromptToClipboard(promptId);
+      expect(result.success).toBe(true);
+      expect(result.prompt).toBeDefined();
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(promptText);
+      const updatedPrompt = global.mockFirestoreDb.getPathData(`prompts/${promptId}`);
+      // usageCount should remain at 0 for logged-out users
+      expect(updatedPrompt.usageCount).toBe(0);
+    });
+
     test('should return false and handle error if prompt not found', async () => {
       global.mockFirestoreDb.clear();
       const result = await PromptData.copyPromptToClipboard('nonExistentId');
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
       expect(Utils.handleError).toHaveBeenCalledWith(
         expect.stringContaining('not found'),
         expect.anything()
@@ -292,7 +309,7 @@ describe('PromptData Module - Firestore v9', () => {
     test('should return false if clipboard write fails', async () => {
       navigator.clipboard.writeText.mockRejectedValue(new Error('Clipboard error'));
       const result = await PromptData.copyPromptToClipboard(promptId);
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
       expect(Utils.handleError).toHaveBeenCalledWith(
         expect.stringContaining('Clipboard error'),
         expect.anything()

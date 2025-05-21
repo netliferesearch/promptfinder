@@ -21,6 +21,9 @@ function showAuthView() {
     authErrorMessageElement.textContent = '';
     authErrorMessageElement.classList.add('hidden');
   }
+  // Hide FAB if present
+  const addPromptFabEl = document.getElementById('add-prompt-fab');
+  if (addPromptFabEl) addPromptFabEl.hidden = true;
 }
 window.showAuthViewGlobally = showAuthView;
 
@@ -68,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function showMainContentView() {
     if (authViewElement) authViewElement.classList.add('hidden');
     if (mainContentElement) mainContentElement.classList.remove('hidden');
+    // Show FAB if user is logged in
+    const addPromptFabEl = document.getElementById('add-prompt-fab');
+    if (addPromptFabEl && window.firebaseAuthCurrentUser) {
+      addPromptFabEl.hidden = false;
+    }
   }
 
   async function loadAndRenderPrompts() {

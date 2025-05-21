@@ -39,7 +39,16 @@ jest.mock('../js/promptData.js', () => ({
     })
   ),
   ratePrompt: jest.fn().mockResolvedValue(null),
-  copyPromptToClipboard: jest.fn().mockResolvedValue(true),
+  copyPromptToClipboard: jest.fn().mockImplementation(promptId =>
+    Promise.resolve({
+      success: true,
+      prompt: {
+        ...mockPromptForFavoriteTests,
+        id: promptId,
+        usageCount: 1, // Simulate incremented usage count
+      },
+    })
+  ),
   deletePrompt: jest.fn().mockResolvedValue(true),
 }));
 
@@ -370,35 +379,37 @@ describe('UI Module', () => {
       expect(updatedFavoriteButton.querySelector('i').classList.contains('fas')).toBe(true);
     });
 
-    test('should call viewPromptDetails and display details when view details button is clicked', async () => {
+    test('should call viewPromptDetails and display details when the prompt card is clicked', async () => {
       PromptData.findPromptById.mockResolvedValueOnce(currentMockPromptInitial);
-      // const displayDetailsSpy = jest.spyOn(UI, 'displayPromptDetails'); // Temporarily remove spy
 
       const promptsListEl = document.getElementById('prompts-list');
-      const viewDetailsButton = promptsListEl.querySelector(
-        `.view-details[data-id="${mockPromptId}"]`
-      );
-      expect(viewDetailsButton).not.toBeNull();
+      const promptCard = promptsListEl.querySelector(`.prompt-card-btn[data-id="${mockPromptId}"]`);
+      expect(promptCard).not.toBeNull();
 
       const detailsSection = document.getElementById('prompt-details-section');
       expect(detailsSection.classList.contains('hidden')).toBe(true); // Verify it's hidden initially
 
-      viewDetailsButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      promptCard.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
       await flushPromises();
       await flushPromises();
 
       expect(PromptData.findPromptById).toHaveBeenCalledWith(mockPromptId);
-      // Check side-effects of displayPromptDetails instead of spying on the call
+      // Check side-effects of displayPromptDetails
       expect(detailsSection.classList.contains('hidden')).toBe(false);
       expect(detailsSection.dataset.currentPromptId).toBe(mockPromptId);
       const titleEl = document.getElementById('prompt-detail-title');
       expect(titleEl.textContent).toBe(currentMockPromptInitial.title);
-      // displayDetailsSpy.mockRestore(); // No spy to restore if removed
     });
 
     test('should call copyPromptToClipboard when copy button is clicked', async () => {
-      PromptData.copyPromptToClipboard.mockResolvedValueOnce(true);
+      PromptData.copyPromptToClipboard.mockResolvedValueOnce({
+        success: true,
+        prompt: {
+          ...currentMockPromptInitial,
+          usageCount: (currentMockPromptInitial.usageCount || 0) + 1,
+        },
+      });
       PromptData.findPromptById.mockResolvedValueOnce(currentMockPromptInitial);
 
       const promptsListEl = document.getElementById('prompts-list');
@@ -412,17 +423,16 @@ describe('UI Module', () => {
       expect(Utils.showConfirmationMessage).toHaveBeenCalledWith('Prompt copied to clipboard!');
     });
 
-    test('should not call actions if a non-button part of item is clicked', async () => {
+    test('should call findPromptById when prompt card is clicked', async () => {
       const promptsListEl = document.getElementById('prompts-list');
-      const promptItem = promptsListEl.querySelector('.prompt-item');
-      expect(promptItem).not.toBeNull();
+      const promptCard = promptsListEl.querySelector('.prompt-card-btn');
+      expect(promptCard).not.toBeNull();
 
-      promptItem.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      promptCard.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
 
-      expect(PromptData.toggleFavorite).not.toHaveBeenCalled();
-      expect(PromptData.findPromptById).not.toHaveBeenCalled();
-      expect(PromptData.copyPromptToClipboard).not.toHaveBeenCalled();
+      // Now we expect findPromptById to be called because we made the whole card clickable
+      expect(PromptData.findPromptById).toHaveBeenCalled();
     });
 
     test('should call window.handleAuthRequiredAction if favorite is clicked when logged out', async () => {
@@ -439,6 +449,41 @@ describe('UI Module', () => {
 
       expect(window.handleAuthRequiredAction).toHaveBeenCalledWith('favorite a prompt');
       expect(PromptData.toggleFavorite).not.toHaveBeenCalled();
+    });
+
+    test('should allow logged-out users to copy prompts without error', async () => {
+      mockAuthCurrentUser = null; // Ensure user is logged out
+
+      // Mock the copy function to succeed but return a prompt without incrementing usageCount
+      PromptData.copyPromptToClipboard.mockImplementationOnce(async () => {
+        // For logged-out users, the function returns success with the original prompt
+        return {
+          success: true,
+          prompt: {
+            ...mockPromptForFavoriteTests,
+            id: mockPromptId,
+            usageCount: 0, // Not incremented for logged-out users
+          },
+        };
+      });
+
+      const promptsListEl = document.getElementById('prompts-list');
+      const copyButton = promptsListEl.querySelector(`.copy-prompt[data-id="${mockPromptId}"]`);
+      expect(copyButton).not.toBeNull();
+
+      copyButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+
+      expect(PromptData.copyPromptToClipboard).toHaveBeenCalledWith(mockPromptId);
+
+      // Confirm that we still show the success message
+      expect(Utils.showConfirmationMessage).toHaveBeenCalledWith('Prompt copied to clipboard!');
+
+      // Importantly, we should NOT show an error message for auth issues
+      const errorCalls = Utils.handleError.mock.calls.filter(call =>
+        call[0].includes('Failed to process copy action')
+      );
+      expect(errorCalls.length).toBe(0);
     });
   });
 });

@@ -123,11 +123,10 @@
             </div>
           </div>
         </section>
-        <div class="add-prompt-bar">
-          <button id="add-prompt-button" class="button button-primary">
-            <i class="fas fa-plus" aria-hidden="true"></i> Add New Prompt
-          </button>
-        </div>
+        <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
+        <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
+          <i class="fas fa-plus" aria-hidden="true"></i>
+        </button>
         <nav class="tabs" role="tablist" aria-label="Prompt categories">
           <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
           <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
@@ -136,38 +135,57 @@
         <section id="prompts-list" class="cards-container"></section>
 
         <section id="prompt-details-section" class="hidden">
-          <div class="detail-card">
-            <div class="detail-header-icons">
-              <button id="back-to-list-button" aria-label="Back to List">
-                <i class="fas fa-arrow-left"></i>
-              </button>
-              <button id="copy-prompt-button" aria-label="Copy prompt">
-                <i class="fa-regular fa-copy"></i>
-              </button>
-              <!-- Edit and Delete buttons removed from header icons -->
-            </div>
-            <div class="detail-title-container">
-              <h2 id="prompt-detail-title-heading"><span id="prompt-detail-title"></span></h2>
-              <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
-                <i class="far fa-heart"></i>
-              </button>
-            </div>
-            <p><strong>Description:</strong> <span id="prompt-detail-description"></span></p>
-
-            <div class="prompt-text-container">
-              <p><strong>Prompt:</strong></p>
-              <div id="prompt-text-wrapper" class="code-block-wrapper">
-                <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
+          <button
+            id="back-to-list-button"
+            class="back-to-list-btn"
+            aria-label="Back to prompt list"
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to list</span>
+          </button>
+          <div class="detail-card prompt-card-btn" tabindex="-1">
+            <div class="prompt-item__header">
+              <span class="prompt-item__title" id="prompt-detail-title"></span>
+              <div class="prompt-item__actions">
+                <button id="copy-prompt-button" aria-label="Copy prompt">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+                <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
+                  <i class="far fa-heart"></i>
+                </button>
               </div>
-              <button id="prompt-text-view-more" class="button button-link button-sm hidden">
-                View More
-              </button>
             </div>
-
-            <p><strong>Category:</strong> <span id="prompt-detail-category"></span></p>
-            <p><strong>Tags:</strong> <span id="prompt-detail-tags"></span></p>
-            <p><strong>Target AI Tools:</strong> <span id="prompt-detail-tools"></span></p>
-
+            <div class="prompt-item__category" id="prompt-detail-category"></div>
+            <div class="tags" id="prompt-detail-tags"></div>
+            <div class="detail-card__main">
+              <label for="prompt-detail-description" class="detail-label"
+                ><strong>What it’s for</strong></label
+              >
+              <div class="detail-card__description" id="prompt-detail-description"></div>
+            </div>
+            <div class="detail-card__prompt">
+              <div class="prompt-text-container">
+                <label for="prompt-detail-text" class="detail-label"
+                  ><strong>The actual prompt</strong></label
+                >
+                <div id="prompt-text-wrapper" class="code-block-wrapper">
+                  <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
+                </div>
+                <button id="prompt-text-view-more" class="button button-link button-sm hidden">
+                  View More
+                </button>
+              </div>
+            </div>
+            <div class="detail-card__meta">
+              <div class="prompt-meta">
+                <span><strong>Author:</strong> <span id="prompt-detail-author"></span></span>
+                <span><strong>Usage:</strong> <span id="prompt-detail-usage">0</span></span>
+                <span><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></span>
+                <span><strong>Created:</strong> <span id="prompt-detail-created"></span></span>
+                <span><strong>Updated:</strong> <span id="prompt-detail-updated"></span></span>
+                <span><strong>AI Tools:</strong> <span id="prompt-detail-tools"></span></span>
+              </div>
+            </div>
             <div class="ratings-section">
               <div class="user-rating-section">
                 <strong id="user-rating-message" class="rating-message-label"
@@ -181,24 +199,13 @@
                 ></div>
               </div>
               <div id="community-rating-section" class="community-rating-section hidden">
-                <strong id="community-rating-label">Community Rating:</strong>
+                <strong id="community-rating-label">Average vibes:</strong>
                 <div id="community-star-display" class="star-rating-wrapper read-only-stars"></div>
                 <span id="community-average-rating-value">(0.0)</span>
                 <span id="community-rating-count">(0 ratings)</span>
               </div>
             </div>
-
-            <div class="prompt-meta">
-              <p><strong>Author:</strong> <span id="prompt-detail-author"></span></p>
-              <p><strong>Usage Count:</strong> <span id="prompt-detail-usage">0</span></p>
-              <p><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></p>
-              <p><strong>Created:</strong> <span id="prompt-detail-created"></span></p>
-              <p><strong>Last Updated:</strong> <span id="prompt-detail-updated"></span></p>
-            </div>
-
-            <!-- New section for owner actions -->
             <div class="prompt-owner-actions hidden">
-              <!-- Initially hidden, shown by JS if owner -->
               <hr class="section-divider" />
               <button id="edit-prompt-button" class="button button-secondary">
                 <i class="fas fa-edit"></i> Edit Prompt
@@ -207,7 +214,6 @@
                 <i class="fas fa-trash"></i> Delete Prompt
               </button>
             </div>
-
             <div
               id="delete-confirmation"
               class="hidden"

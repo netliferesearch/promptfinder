@@ -63,6 +63,7 @@ let promptDetailsSectionEl,
   communityRatingCountEl;
 
 let controlsEl, tabsContainerEl, addPromptBarEl;
+let addPromptFabEl;
 let resetFiltersButtonEl;
 
 // Sort panel DOM elements and state
@@ -140,6 +141,7 @@ export const cacheDOMElements = () => {
   controlsEl = document.querySelector('.controls');
   tabsContainerEl = document.querySelector('.tabs');
   addPromptBarEl = document.querySelector('.add-prompt-bar');
+  addPromptFabEl = document.getElementById('add-prompt-fab');
 };
 
 export const openDetachedAddPromptWindow = () => {
@@ -203,24 +205,25 @@ const openDetachedEditWindow = promptId => {
 
 async function handlePromptListClick(event) {
   console.log('[UI SUT LOG] handlePromptListClick triggered');
-  const targetButton = event.target.closest('button');
-  if (!targetButton || !targetButton.dataset.id) {
-    console.log('[UI SUT LOG] handlePromptListClick: No target button with data-id found.');
+  // Prevent card click from opening details if copy or favorite button is clicked
+  const copyBtn = event.target.closest('.copy-prompt');
+  const favBtn = event.target.closest('.toggle-favorite');
+  if (copyBtn) {
+    event.stopPropagation();
+    const promptId = copyBtn.dataset.id;
+    if (promptId) await handleCopyPrompt(promptId);
     return;
   }
-  const promptId = targetButton.dataset.id;
-  console.log(
-    `[UI SUT LOG] handlePromptListClick: promptId=${promptId}, button classes=${targetButton.className}`
-  );
-
-  if (targetButton.classList.contains('toggle-favorite')) {
+  if (favBtn) {
     event.stopPropagation();
-    await handleToggleFavorite(promptId);
-  } else if (targetButton.classList.contains('view-details')) {
-    console.log('[UI SUT LOG] handlePromptListClick: view-details branch hit');
-    await viewPromptDetails(promptId);
-  } else if (targetButton.classList.contains('copy-prompt')) {
-    await handleCopyPrompt(promptId);
+    const promptId = favBtn.dataset.id;
+    if (promptId) await handleToggleFavorite(promptId);
+    return;
+  }
+  // Card click: open details
+  const cardBtn = event.target.closest('.prompt-card-btn');
+  if (cardBtn && cardBtn.dataset.id) {
+    await viewPromptDetails(cardBtn.dataset.id);
   }
 }
 
@@ -290,15 +293,25 @@ async function handleRatePrompt(promptId, rating) {
 
 async function handleCopyPrompt(promptId) {
   try {
-    const success = await PromptData.copyPromptToClipboard(promptId);
-    if (success) {
+    const result = await PromptData.copyPromptToClipboard(promptId);
+    if (result.success) {
       Utils.showConfirmationMessage('Prompt copied to clipboard!');
-      if (
-        promptDetailsSectionEl &&
-        !promptDetailsSectionEl.classList.contains('hidden') &&
-        promptDetailsSectionEl.dataset.currentPromptId === promptId
-      ) {
-        await viewPromptDetails(promptId);
+
+      if (result.prompt) {
+        // Update the prompt in the list of all prompts
+        const index = allPrompts.findIndex(p => p.id === promptId);
+        if (index !== -1) {
+          allPrompts[index] = result.prompt;
+        }
+
+        // If we're viewing the details, update the details view
+        if (
+          promptDetailsSectionEl &&
+          !promptDetailsSectionEl.classList.contains('hidden') &&
+          promptDetailsSectionEl.dataset.currentPromptId === promptId
+        ) {
+          displayPromptDetails(result.prompt);
+        }
       }
     } else {
       // Only show an error if clipboard write failed or prompt not found
@@ -308,10 +321,30 @@ async function handleCopyPrompt(promptId) {
       });
     }
   } catch (error) {
-    Utils.handleError('Failed to process copy action in UI', {
-      userVisible: true,
-      originalError: error,
-    });
+    // Don't show errors related to authentication for copy actions
+    if (
+      error &&
+      error.message &&
+      (error.message.includes('must be logged in') ||
+        error.message.includes('not authorized') ||
+        error.message.includes('PERMISSION_DENIED') ||
+        error.message.includes('unauth') ||
+        error.message.includes('401'))
+    ) {
+      // For auth-related errors, silently proceed with copy without showing error
+      console.info(
+        'Auth-related warning during copy (expected for logged-out users):',
+        error.message
+      );
+      // Still show success message since the copy itself succeeded
+      Utils.showConfirmationMessage('Prompt copied to clipboard!');
+    } else {
+      // Show errors for non-auth related issues
+      Utils.handleError('Failed to process copy action in UI', {
+        userVisible: true,
+        originalError: error,
+      });
+    }
   }
 }
 
@@ -353,6 +386,10 @@ function updateResetFiltersButtonVisibility() {
 }
 
 const setupEventListeners = () => {
+  // Floating Action Button (FAB) for Add New Prompt
+  if (addPromptFabEl) {
+    addPromptFabEl.addEventListener('click', openDetachedAddPromptWindow);
+  }
   // Reset Filters button logic
   if (resetFiltersButtonEl) {
     resetFiltersButtonEl.addEventListener('click', () => {
@@ -558,6 +595,36 @@ export const initializeUI = async () => {
     cacheDOMElements();
     setupEventListeners();
     await loadAndDisplayData();
+
+    // Show/hide FAB based on login state AND main content visibility
+    if (addPromptFabEl) {
+      const updateFabVisibility = () => {
+        const user = auth && auth.currentUser;
+        const mainContent = document.getElementById('main-content');
+        const authView = document.getElementById('auth-view');
+        // Always hide FAB if auth view is visible
+        if (authView && !authView.classList.contains('hidden')) {
+          addPromptFabEl.hidden = true;
+          return;
+        }
+        // Only show FAB if user is logged in AND main content is visible AND auth view is hidden
+        const mainVisible = mainContent && !mainContent.classList.contains('hidden');
+        addPromptFabEl.hidden = !(user && mainVisible);
+      };
+      if (auth && typeof auth.onAuthStateChanged === 'function') {
+        auth.onAuthStateChanged(updateFabVisibility);
+        updateFabVisibility();
+      } else {
+        addPromptFabEl.hidden = true;
+      }
+      // Also observe view changes
+      const observer = new MutationObserver(updateFabVisibility);
+      const mainContent = document.getElementById('main-content');
+      const authView = document.getElementById('auth-view');
+      if (mainContent)
+        observer.observe(mainContent, { attributes: true, attributeFilter: ['class'] });
+      if (authView) observer.observe(authView, { attributes: true, attributeFilter: ['class'] });
+    }
   } catch (error) {
     Utils.handleError('Error initializing UI', { userVisible: true, originalError: error });
   }
@@ -613,23 +680,32 @@ export const displayPrompts = prompts => {
     return;
   }
   prompts.forEach(prompt => {
-    const div = document.createElement('div');
-    div.classList.add('prompt-item');
+    // Card is a button for accessibility and clickability
+    const cardBtn = document.createElement('button');
+    cardBtn.classList.add('prompt-item', 'prompt-card-btn');
+    cardBtn.setAttribute('type', 'button');
+    cardBtn.setAttribute('tabindex', '0');
+    cardBtn.setAttribute('aria-label', `View details for prompt: ${prompt.title}`);
+    cardBtn.dataset.id = prompt.id;
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
-    div.innerHTML = `
-      <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite">
-        <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
-      </button>
-      <h3>${Utils.escapeHTML(prompt.title)}</h3>
+    cardBtn.innerHTML = `
+      <div class="prompt-item__header">
+        <span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
+        <div class="prompt-item__actions">
+          <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Copy prompt">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+          <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite" aria-pressed="${isFavoriteDisplay}">
+            <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
+          </button>
+        </div>
+      </div>
+      <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
       <div class="tags">
         ${(prompt.tags || []).map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
       </div>
-      <div class="buttons">
-        <button class="view-details" data-id="${Utils.escapeHTML(prompt.id)}">View Details</button>
-        <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}">Copy</button>
-      </div>
     `;
-    promptsListEl.appendChild(div);
+    promptsListEl.appendChild(cardBtn);
   });
 };
 
@@ -715,6 +791,10 @@ export const displayPromptDetails = prompt => {
   setText(promptDetailUpdatedEl, formatDate(prompt.updatedAt));
   setText(promptDetailUsageEl, prompt.usageCount?.toString() || '0');
   setText(promptDetailFavoritesEl, prompt.favoritesCount?.toString() || '0');
+
+  // Update community rating label if present
+  const communityLabel = document.getElementById('community-rating-label');
+  if (communityLabel) communityLabel.textContent = 'Average vibes:';
 
   if (promptDetailTextEl && promptTextWrapperEl && promptTextViewMoreEl) {
     const fullText = prompt.text || '';

@@ -131,14 +131,28 @@ export const signInWithGoogle = async () => {
     const callbackUrl = await new Promise((resolve, reject) => {
       chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, responseUrl => {
         if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
+          const msg = chrome.runtime.lastError.message;
+          if (msg && msg.includes('The user did not approve access')) {
+            // User cancelled: do not treat as error, but log info
+            console.info('Google Sign-In cancelled by user.');
+            resolve(null);
+          } else {
+            reject(new Error(msg));
+          }
         } else if (!responseUrl) {
-          reject(new Error('Google Sign-In cancelled or no response URL received.'));
+          // User closed/cancelled: do not treat as error, but log info
+          console.info('Google Sign-In cancelled or popup closed by user.');
+          resolve(null);
         } else {
           resolve(responseUrl);
         }
       });
     });
+
+    if (!callbackUrl) {
+      // User cancelled, do nothing (no error)
+      return null;
+    }
 
     const params = new URLSearchParams(callbackUrl.substring(callbackUrl.indexOf('#') + 1));
     const idToken = params.get('id_token');
@@ -178,6 +192,12 @@ export const signInWithGoogle = async () => {
     }
     return userCredential;
   } catch (error) {
+    // Only log as error if not user cancellation
+    if (error && error.message && error.message.includes('The user did not approve access')) {
+      // User cancelled: log info, do not log as error
+      console.info('Google Sign-In cancelled by user.');
+      return null;
+    }
     console.error('Error in signInWithGoogle (launchWebAuthFlow) flow:', error);
     const errMsg = error.message || 'An unknown error occurred during Google Sign-In.';
     Utils.handleError(errMsg, { userVisible: true, originalError: error });
@@ -630,8 +650,16 @@ export const copyPromptToClipboard = async promptId => {
 
     // Try to increment usage count, but ignore expected auth errors (do not affect user experience)
     try {
-      const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
-      await incrementUsageCountFn({ promptId });
+      // Only try to increment usage count if user is logged in
+      if (auth && auth.currentUser) {
+        const incrementUsageCountFn = httpsCallable(functions, 'incrementUsageCount');
+        await incrementUsageCountFn({ promptId });
+
+        // Fetch the prompt again to get the updated usage count
+        const updatedPrompt = await findPromptById(promptId);
+        return { success: true, prompt: updatedPrompt };
+      }
+      // Skip usage tracking for logged-out users entirely
     } catch (error) {
       // Only log unexpected errors, not auth/permission errors
       const msg = error && (error.message || error.code || error.toString());
@@ -640,10 +668,12 @@ export const copyPromptToClipboard = async promptId => {
         (msg.includes('PERMISSION_DENIED') ||
           msg.includes('401') ||
           msg.includes('unauth') ||
-          msg.includes('not authorized'))
+          msg.includes('not authorized') ||
+          msg.includes('must be logged in'))
       ) {
         // Do nothing: this is expected for logged-out users
       } else if (window && window.console) {
+        // Only log truly unexpected errors
         console.warn(
           `Non-blocking: Failed to increment usage count for prompt ${promptId}:`,
           error
@@ -651,13 +681,14 @@ export const copyPromptToClipboard = async promptId => {
       }
     }
 
-    return true;
+    // If we didn't update and refetch (logged-out or error), return the original prompt
+    return { success: true, prompt };
   } catch (error) {
     Utils.handleError(`Error copying to clipboard: ${error.message}`, {
       userVisible: true,
       originalError: error,
     });
-    return false;
+    return { success: false };
   }
 };
 

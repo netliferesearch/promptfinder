@@ -174,7 +174,8 @@ describe('Firebase Cloud Functions Tests', () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(testPrompt.text);
 
       // Verify the operation succeeded
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.prompt).toBeDefined();
 
       // Verify that the usage count was incremented
       // First manually update the count in our test
@@ -202,8 +203,9 @@ describe('Firebase Cloud Functions Tests', () => {
 
       // Should NOT call handleError for usage count errors
       expect(Utils.handleError).not.toHaveBeenCalled();
-      // Should still return true (clipboard write succeeded)
-      expect(result).toBe(true);
+      // Should still return success:true (clipboard write succeeded)
+      expect(result.success).toBe(true);
+      expect(result.prompt).toBeDefined();
     });
   });
 

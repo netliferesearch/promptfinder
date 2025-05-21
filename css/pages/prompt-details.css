@@ -1,4 +1,43 @@
+/* Add style for detail labels in details view */
+.detail-label {
+  display: block;
+  font-size: var(--font-size-sm, 0.95rem);
+  color: var(--color-gray-700, #555);
+  margin-bottom: 2px;
+  margin-top: var(--spacing-xs, 4px);
+  font-weight: 500;
+}
 /* Styles for the prompt details section */
+
+/* Back to list button styles */
+.back-to-list-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  background: none;
+  border: none;
+  color: var(--color-primary, #5a32ea);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: var(--spacing-md, 16px);
+  padding: 0.25em 0.5em;
+  border-radius: var(--border-radius-sm, 8px);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.back-to-list-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  background: var(--color-primary-light, #f3f0ff);
+}
+.back-to-list-btn:hover {
+  background: var(--color-primary-light, #f3f0ff);
+  color: var(--color-primary-dark, #3a1a8a);
+}
+.back-to-list-btn i {
+  font-size: 1.1em;
+}
 
 .prompt-meta {
   margin-top: var(--spacing-md, 16px);
@@ -35,11 +74,154 @@
 }
 
 .detail-card {
-  background-color: var(--color-white, #fff);
-  padding: var(--spacing-md, 16px);
-  border-radius: var(--border-radius-md, 16px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: var(--spacing-md, 16px);
+  background: var(--color-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+  cursor: default;
+  cursor: default;
+  cursor: default;
+  cursor: default;
+  cursor: default;
+  cursor: default;
+  cursor: default;
+}
+.detail-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+  z-index: 2;
+}
+.detail-card:hover {
+  /* Remove all hover effects for details view */
+  box-shadow: var(--shadow-sm);
+  transform: none;
+  background: var(--color-white);
+}
+
+/* Match card pill/category/tag styles */
+.prompt-item__category {
+  display: inline-block;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--spacing-xs);
+  margin-right: var(--spacing-xs);
+  font-weight: 500;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+.tags .tag {
+  font-size: var(--font-size-xs);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+}
+.prompt-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: var(--spacing-xs);
+}
+.prompt-item__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-black);
+  font-size: var(--font-size-lg);
+  padding-right: 2.5em;
+  /* Show full title in details view, no truncation */
+  overflow: visible;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  line-clamp: unset;
+  text-overflow: unset;
+  white-space: normal;
+}
+.prompt-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.prompt-item__actions .copy-prompt,
+.prompt-item__actions .toggle-favorite {
+  background: none !important;
+  border: none;
+  outline: none;
+  color: var(--color-gray-700);
+  font-size: 1.15rem;
+  margin: 0 0.25em;
+  padding: 0.25em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.prompt-item__actions .copy-prompt:focus-visible,
+.prompt-item__actions .toggle-favorite:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  color: var(--color-primary);
+}
+
+.prompt-item__actions .copy-prompt:hover,
+.prompt-item__actions .copy-prompt:active {
+  color: var(--color-primary);
+  background: none !important;
+}
+
+.prompt-item__actions .toggle-favorite[aria-pressed='true'] i {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.prompt-item__actions .toggle-favorite:not([aria-pressed='true']):hover i,
+.prompt-item__actions .toggle-favorite:not([aria-pressed='true']):focus i {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.detail-card__main {
+  margin-bottom: var(--spacing-md);
+}
+.detail-card__description {
+  font-style: italic;
+  color: var(--color-gray-500);
+  margin-bottom: var(--spacing-sm);
+}
+.detail-card__prompt {
+  margin-bottom: var(--spacing-md);
+}
+.detail-card__meta {
+  margin-bottom: var(--spacing-md);
+}
+.prompt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  border-top: 1px solid var(--color-gray-300);
+  padding-top: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
 .detail-title-container h2 span {
@@ -56,10 +238,10 @@
   border: 1px solid var(--color-gray-300, #e0e0e0);
   border-radius: var(--border-radius-sm, 8px);
   padding: var(--spacing-sm, 8px);
-  white-space: pre-wrap;
   white-space: -moz-pre-wrap;
   white-space: -pre-wrap;
   white-space: -o-pre-wrap;
+  white-space: pre-wrap;
   word-wrap: break-word;
   overflow-x: auto;
   max-height: 150px;
