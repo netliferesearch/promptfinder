@@ -2,6 +2,7 @@
  * PromptFinder Extension - Detached Add Prompt Window (ESM Version)
  * Handles the form submission in the detached window.
  */
+import { PROMPT_CATEGORIES } from '../js/categories.js';
 import { auth } from '../js/firebase-init.js';
 import { addPrompt } from '../js/promptData.js';
 import { handleError, showConfirmationMessage } from '../js/utils.js';
@@ -14,7 +15,29 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
   initializeForm();
+  populateCategoryDropdown();
 });
+
+function populateCategoryDropdown() {
+  const categorySelect = document.getElementById('prompt-category');
+  if (categorySelect) {
+    categorySelect.innerHTML = '';
+
+    // Add a default empty option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Select a category --';
+    categorySelect.appendChild(defaultOption);
+
+    // Add all predefined categories
+    PROMPT_CATEGORIES.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      categorySelect.appendChild(option);
+    });
+  }
+}
 
 function initializeForm() {
   const addPromptForm = document.getElementById('add-prompt-form');
@@ -49,7 +72,7 @@ async function handleAddPromptSubmit(event) {
   const titleInput = document.getElementById('prompt-title');
   const descriptionInput = document.getElementById('prompt-description');
   const textInput = document.getElementById('prompt-text');
-  const categoryInput = document.getElementById('prompt-category');
+  const categorySelect = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
   const toolsInput = document.getElementById('prompt-tools');
   const privateCheckbox = document.getElementById('prompt-private');
@@ -57,7 +80,7 @@ async function handleAddPromptSubmit(event) {
   const title = titleInput ? titleInput.value.trim() : '';
   const description = descriptionInput ? descriptionInput.value.trim() : '';
   const text = textInput ? textInput.value.trim() : '';
-  const category = categoryInput ? categoryInput.value.trim() : '';
+  const category = categorySelect ? categorySelect.value : '';
   const targetAiToolsArray = toolsInput
     ? toolsInput.value
         .split(',')

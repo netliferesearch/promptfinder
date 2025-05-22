@@ -2,6 +2,7 @@
  * PromptFinder Extension - Detached Edit Prompt Window (ESM Version)
  * Handles form population and submission in the detached window.
  */
+import { PROMPT_CATEGORIES } from '../js/categories.js';
 import { auth } from '../js/firebase-init.js';
 import { findPromptById, updatePrompt } from '../js/promptData.js';
 import { handleError, showConfirmationMessage } from '../js/utils.js';
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initializeForm();
+  populateCategoryDropdown();
   loadPromptData(promptId, errorMessageElement);
 });
 
@@ -48,6 +50,27 @@ function initializeForm() {
   if (cancelEditPromptButton) {
     cancelEditPromptButton.addEventListener('click', () => {
       window.close();
+    });
+  }
+}
+
+function populateCategoryDropdown() {
+  const categorySelect = document.getElementById('prompt-category');
+  if (categorySelect) {
+    categorySelect.innerHTML = '';
+
+    // Add a default empty option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Select a category --';
+    categorySelect.appendChild(defaultOption);
+
+    // Add all predefined categories
+    PROMPT_CATEGORIES.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      categorySelect.appendChild(option);
     });
   }
 }
@@ -69,7 +92,7 @@ async function loadPromptData(promptId, errorElement) {
     const titleInput = document.getElementById('prompt-title');
     const descriptionInput = document.getElementById('prompt-description');
     const textInput = document.getElementById('prompt-text');
-    const categoryInput = document.getElementById('prompt-category');
+    const categorySelect = document.getElementById('prompt-category');
     const tagsInput = document.getElementById('prompt-tags');
     const toolsInput = document.getElementById('prompt-tools');
     const privateCheckbox = document.getElementById('prompt-private');
@@ -77,7 +100,7 @@ async function loadPromptData(promptId, errorElement) {
     if (titleInput) titleInput.value = prompt.title || '';
     if (descriptionInput) descriptionInput.value = prompt.description || '';
     if (textInput) textInput.value = prompt.text || '';
-    if (categoryInput) categoryInput.value = prompt.category || '';
+    if (categorySelect) categorySelect.value = prompt.category || '';
     if (tagsInput) tagsInput.value = prompt.tags ? prompt.tags.join(', ') : '';
     if (toolsInput) toolsInput.value = prompt.targetAiTools ? prompt.targetAiTools.join(', ') : '';
     if (privateCheckbox) privateCheckbox.checked = prompt.isPrivate || false;
@@ -114,7 +137,7 @@ async function handleEditPromptSubmit(event) {
   const titleInput = document.getElementById('prompt-title');
   const descriptionInput = document.getElementById('prompt-description');
   const textInput = document.getElementById('prompt-text');
-  const categoryInput = document.getElementById('prompt-category');
+  const categorySelect = document.getElementById('prompt-category');
   const tagsInput = document.getElementById('prompt-tags');
   const toolsInput = document.getElementById('prompt-tools');
   const privateCheckbox = document.getElementById('prompt-private');
@@ -123,7 +146,7 @@ async function handleEditPromptSubmit(event) {
   const title = titleInput ? titleInput.value.trim() : '';
   const description = descriptionInput ? descriptionInput.value.trim() : '';
   const text = textInput ? textInput.value.trim() : '';
-  const category = categoryInput ? categoryInput.value.trim() : '';
+  const category = categorySelect ? categorySelect.value : '';
   const targetAiToolsArray = toolsInput
     ? toolsInput.value
         .split(',')

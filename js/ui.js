@@ -6,6 +6,7 @@
 import * as Utils from './utils.js';
 import * as PromptData from './promptData.js';
 import { auth } from './firebase-init.js'; // Import the initialized auth service
+import { PROMPT_CATEGORIES } from './categories.js';
 
 // Import Prism.js
 import 'prismjs'; // Core
@@ -552,11 +553,11 @@ export const loadAndDisplayData = async () => {
     allPrompts = await PromptData.loadPrompts();
 
     // Populate filter dropdowns (category, tag, ai tool)
-    const categories = new Set();
+    // Use the predefined categories from categories.js instead of extracting from prompts
+    const categories = new Set(PROMPT_CATEGORIES);
     const tags = new Set();
     const aiTools = new Set();
     allPrompts.forEach(p => {
-      if (p.category) categories.add(p.category);
       if (Array.isArray(p.tags)) p.tags.forEach(t => tags.add(t));
       if (Array.isArray(p.targetAiTools)) p.targetAiTools.forEach(t => aiTools.add(t));
     });
