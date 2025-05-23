@@ -1,3 +1,676 @@
+// (Removed duplicate: Always hide the delete confirmation dialog when entering add mode)
+// Cancel edit handler for in-place editing
+function handleCancelEditPrompt(prompt) {
+  // Clear draft and revert to original data
+  getDraftStorage()
+    .remove(editDraftKey(prompt.id))
+    .then(() => {
+      // Remove global edit mode class from body
+      document.body.classList.remove('editing-prompt');
+
+      // Remove edit mode heading if it exists
+      const editHeading = document.getElementById('edit-mode-heading');
+      if (editHeading && editHeading.parentNode) {
+        editHeading.parentNode.removeChild(editHeading);
+      }
+
+      // Show elements that were hidden during edit mode
+      // Will be handled by displayPromptDetails
+
+      displayPromptDetails(prompt);
+    });
+}
+// --- In-place editing state and helpers ---
+let promptDetailEditableFieldsWrapperEl;
+let promptDetailStaticFieldsWrapperEl;
+let promptEditActionsBarEl;
+let promptOwnerActionsBarEl;
+// Draft storage keys
+const editDraftKey = promptId => `editDraft_${promptId}`;
+
+// Add a constant for the add prompt draft key
+const ADD_DRAFT_KEY = 'addDraft';
+
+// Function to show inline add prompt form
+function showAddPromptInline() {
+  // Always hide the delete confirmation dialog when entering add mode
+  var localDeleteConfirmationEl = document.getElementById('delete-confirmation');
+  if (localDeleteConfirmationEl) {
+    localDeleteConfirmationEl.classList.add('hidden');
+  }
+  if (!promptDetailsSectionEl) return;
+
+  // Cache DOM elements if needed
+  if (!promptDetailEditableFieldsWrapperEl)
+    promptDetailEditableFieldsWrapperEl = document.getElementById(
+      'prompt-detail-editable-fields-wrapper'
+    );
+  if (!promptDetailStaticFieldsWrapperEl)
+    promptDetailStaticFieldsWrapperEl = document.getElementById(
+      'prompt-detail-static-fields-wrapper'
+    );
+  if (!promptEditActionsBarEl)
+    promptEditActionsBarEl = document.getElementById('prompt-edit-actions-bar');
+  if (!promptOwnerActionsBarEl)
+    promptOwnerActionsBarEl = document.getElementById('prompt-owner-actions-bar');
+
+  // Get draft storage to retrieve any previously entered data
+  const draftStorage = getDraftStorage();
+
+  // Retrieve any existing draft
+  draftStorage.get(ADD_DRAFT_KEY).then(draft => {
+    // Set up edit view similar to showEditMode but for a new prompt
+    promptDetailEditableFieldsWrapperEl.innerHTML = renderAddPromptForm(draft);
+    promptDetailEditableFieldsWrapperEl.classList.remove('hidden');
+    promptDetailStaticFieldsWrapperEl.classList.add('hidden');
+
+    // Show edit actions bar but toggle between edit and add buttons
+    if (promptEditActionsBarEl) {
+      promptEditActionsBarEl.classList.remove('hidden');
+      const editButtons = document.getElementById('edit-prompt-buttons');
+      const addButtons = document.getElementById('add-prompt-buttons');
+      if (editButtons) editButtons.classList.add('hidden');
+      if (addButtons) addButtons.classList.remove('hidden');
+    }
+
+    if (promptOwnerActionsBarEl) promptOwnerActionsBarEl.classList.add('hidden');
+
+    // Add classes to body for styling - both editing-prompt for shared styles and adding-prompt for add-specific styles
+    document.body.classList.add('editing-prompt', 'adding-prompt');
+
+    // Add editing class to prompt details section
+    if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('editing');
+
+    // Hide category dropdown bar
+    const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
+    if (categoryDropdownBar) categoryDropdownBar.classList.add('hidden');
+
+    // Hide additional elements in add mode
+    // 1. Prompt title and actions (copy, favorite)
+    const promptHeader = document.querySelector('.prompt-item__header');
+    if (promptHeader) promptHeader.classList.add('hidden');
+
+    // Add a heading to indicate add mode
+    const editHeading = document.createElement('div');
+    editHeading.id = 'edit-mode-heading';
+    editHeading.classList.add('edit-mode-heading');
+    editHeading.innerHTML = '<h2>Add new prompt</h2>';
+    if (promptDetailEditableFieldsWrapperEl) {
+      promptDetailEditableFieldsWrapperEl.insertAdjacentElement('beforebegin', editHeading);
+    }
+
+    // 2. Prompt category and tags
+    const promptCategory = document.getElementById('prompt-detail-category');
+    if (promptCategory) promptCategory.classList.add('hidden');
+
+    const promptTags = document.getElementById('prompt-detail-tags');
+    if (promptTags) promptTags.classList.add('hidden');
+
+    // 3. Back to list button
+    const backToListButton = document.getElementById('back-to-list-button');
+    if (backToListButton) backToListButton.classList.add('hidden');
+
+    // Hide ratings
+    if (userStarRatingEl && userStarRatingEl.parentElement) {
+      userStarRatingEl.parentElement.classList.add('hidden');
+    }
+    if (communityRatingSectionEl) {
+      communityRatingSectionEl.classList.add('hidden');
+    }
+
+    // Set up form listeners
+    const form = document.getElementById('prompt-add-form');
+    if (form) {
+      // Wire up Cancel button
+      const cancelAddBtn = document.getElementById('cancel-add-prompt-button');
+      if (cancelAddBtn) {
+        cancelAddBtn.onclick = () => handleCancelAddPrompt();
+      }
+
+      // Wire up Save button
+      const saveAddBtn = document.getElementById('save-add-prompt-button');
+      if (saveAddBtn) {
+        saveAddBtn.onclick = () => handleSaveAddPrompt();
+      }
+
+      // Set up input listeners for draft persistence
+      form.addEventListener('input', () => {
+        const data = {
+          title: document.getElementById('add-title')?.value || '',
+          description: document.getElementById('add-description')?.value || '',
+          text: document.getElementById('add-text')?.value || '',
+          category: document.getElementById('add-category')?.value || '',
+          tags: document.getElementById('add-tags')?.value || '',
+          isPrivate: document.getElementById('add-private')?.checked || false,
+          aiTools:
+            document
+              .getElementById('add-tools')
+              ?.value.split(',')
+              .map(t => t.trim())
+              .filter(Boolean) || [],
+        };
+        draftStorage.set(ADD_DRAFT_KEY, data);
+      });
+    }
+  });
+}
+
+function renderAddPromptForm(draft = null) {
+  // Use PROMPT_CATEGORIES from window or fallback
+  const categories = window.PROMPT_CATEGORIES || [
+    'Brainstorming & Idea Generation',
+    'Planning & Strategy',
+    'Writing & Content Creation',
+    'Design & Visual Thinking',
+    'Code & Technical Productivity',
+    'Research & Analysis',
+    'Execution & Delivery',
+    'Optimization & Testing',
+    'Decision-Making & Clarity',
+    'Personal Productivity & Focus',
+    'Workshop & Meeting Support',
+    'Client Communication & Sales',
+    'Team Collaboration & Alignment',
+    'Professional Development',
+    'Creative Projects & Hobbies',
+    'Life Admin & Personal Insight',
+  ];
+
+  // Use draft values if available
+  const title = draft?.title || '';
+  const description = draft?.description || '';
+  const text = draft?.text || '';
+  const category = draft?.category || '';
+  const tags = draft?.tags || '';
+  const targetAiTools = draft?.aiTools?.join(', ') || '';
+  const isPrivate = draft?.isPrivate || false;
+
+  return `
+    <form id="prompt-add-form" autocomplete="off" novalidate>
+      <div class="form-group">
+        <label for="add-title">Title: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="add-title" name="title" required maxlength="100" rows="2" aria-required="true">${Utils.escapeHTML(title)}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="add-description">Description: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="add-description" name="description" required maxlength="500" aria-required="true">${Utils.escapeHTML(description)}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="add-text">Prompt Text: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="add-text" name="text" required aria-required="true">${Utils.escapeHTML(text)}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="add-category">Category: <span class="required" aria-hidden="true">*</span></label>
+        <select id="add-category" name="category" required aria-required="true">
+          <option value="">-- Select a category --</option>
+          ${categories.map(cat => `<option value="${Utils.escapeHTML(cat)}" ${category === cat ? 'selected' : ''}>${Utils.escapeHTML(cat)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="add-tags">Tags (comma-separated):</label>
+        <input type="text" id="add-tags" name="tags" value="${Utils.escapeHTML(tags)}" />
+      </div>
+      <div class="form-group">
+        <label for="add-tools">Target AI Tools (comma-separated): <span class="required" aria-hidden="true">*</span></label>
+        <input type="text" id="add-tools" name="targetAiTools" required aria-required="true" value="${Utils.escapeHTML(targetAiTools)}" />
+      </div>
+      <div class="form-group">
+        <input type="checkbox" id="add-private" name="isPrivate" ${isPrivate ? 'checked' : ''} />
+        <label for="add-private">Make Private</label>
+      </div>
+    </form>
+  `;
+}
+
+function getAddFormData() {
+  const form = document.getElementById('prompt-add-form');
+  if (!form) return {};
+
+  return {
+    title: document.getElementById('add-title')?.value.trim() || '',
+    description: document.getElementById('add-description')?.value.trim() || '',
+    text: document.getElementById('add-text')?.value.trim() || '',
+    category: document.getElementById('add-category')?.value || '',
+    tags: document
+      .getElementById('add-tags')
+      ?.value.split(',')
+      .map(t => t.trim())
+      .filter(Boolean),
+    targetAiTools: document
+      .getElementById('add-tools')
+      ?.value.split(',')
+      .map(t => t.trim())
+      .filter(Boolean),
+    isPrivate: document.getElementById('add-private')?.checked || false,
+  };
+}
+
+function handleCancelAddPrompt() {
+  // Remove global edit mode classes from body
+  document.body.classList.remove('editing-prompt', 'adding-prompt');
+
+  // Remove edit mode heading if it exists
+  const editHeading = document.getElementById('edit-mode-heading');
+  if (editHeading && editHeading.parentNode) {
+    editHeading.parentNode.removeChild(editHeading);
+  }
+
+  // Get the form data before closing and save it to draft storage
+  const form = document.getElementById('prompt-add-form');
+  if (form) {
+    const data = {
+      title: document.getElementById('add-title')?.value || '',
+      description: document.getElementById('add-description')?.value || '',
+      text: document.getElementById('add-text')?.value || '',
+      category: document.getElementById('add-category')?.value || '',
+      tags: document.getElementById('add-tags')?.value || '',
+      isPrivate: document.getElementById('add-private')?.checked || false,
+      aiTools:
+        document
+          .getElementById('add-tools')
+          ?.value.split(',')
+          .map(t => t.trim())
+          .filter(Boolean) || [],
+    };
+    // Save the draft data so it's available if user returns
+    getDraftStorage().set(ADD_DRAFT_KEY, data);
+  }
+
+  // Return to prompt list view
+  showPromptList();
+}
+
+async function handleSaveAddPrompt() {
+  const form = document.getElementById('prompt-add-form');
+  if (!form) return;
+  const data = getAddFormData();
+
+  // Validate required fields and show inline, accessible error message
+  const requiredFields = [
+    { id: 'add-title', name: 'Title' },
+    { id: 'add-description', name: 'Description' },
+    { id: 'add-text', name: 'Prompt Text' },
+    { id: 'add-category', name: 'Category' },
+    { id: 'add-tools', name: 'Target AI Tools' },
+  ];
+  let firstInvalid = null;
+  let missingFields = [];
+  requiredFields.forEach(field => {
+    const el = document.getElementById(field.id);
+    let value = el?.value?.trim() || '';
+    if (field.id === 'add-category' && value === '') value = '';
+    if (
+      field.id === 'add-tools' &&
+      value
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean).length === 0
+    )
+      value = '';
+    if (!value) {
+      missingFields.push(field.name);
+      if (!firstInvalid) firstInvalid = el;
+      if (el) {
+        el.setAttribute('aria-invalid', 'true');
+        el.classList.add('input-error');
+      }
+    } else if (el) {
+      el.removeAttribute('aria-invalid');
+      el.classList.remove('input-error');
+    }
+  });
+  // Show error using the global message system
+  if (missingFields.length > 0) {
+    Utils.handleError(`Please fill in all required fields: ${missingFields.join(', ')}.`, {
+      userVisible: true,
+      type: 'error',
+      timeout: 5000,
+      specificErrorElement: null,
+    });
+    if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
+    return;
+  }
+
+  try {
+    const newPrompt = await PromptData.addPrompt(data);
+    if (newPrompt && newPrompt.id) {
+      // Clear the draft storage since we successfully saved the prompt
+      const draftStorage = getDraftStorage();
+      await draftStorage.remove(ADD_DRAFT_KEY);
+
+      Utils.showConfirmationMessage('Prompt added successfully!');
+
+      // Notify any listeners (like the popup) that a prompt was modified (silence connection warning)
+      if (chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'PROMPT_ADDED_OR_MODIFIED' }, _response => {
+          if (
+            chrome.runtime.lastError &&
+            !chrome.runtime.lastError.message.includes('Could not establish connection')
+          ) {
+            console.warn(
+              'Could not send PROMPT_ADDED_OR_MODIFIED message:',
+              chrome.runtime.lastError.message
+            );
+          }
+        });
+      }
+
+      // Show the details view for the newly added prompt
+      await loadAndDisplayData();
+      if (newPrompt && newPrompt.id) {
+        // If you want to always reload from DB, use: await viewPromptDetails(newPrompt.id);
+        displayPromptDetails(newPrompt);
+      }
+    } else {
+      Utils.handleError('Failed to add prompt. Please check details or try again.', {
+        userVisible: true,
+      });
+    }
+  } catch (error) {
+    Utils.handleError('Critical error adding prompt: ' + error.message, {
+      userVisible: true,
+      originalError: error,
+    });
+  }
+}
+
+function getDraftStorage() {
+  // Prefer chrome.storage.local, fallback to localStorage
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    return {
+      get: key =>
+        new Promise(resolve => {
+          chrome.storage.local.get([key], result => resolve(result[key] || null));
+        }),
+      set: (key, value) =>
+        new Promise(resolve => {
+          chrome.storage.local.set({ [key]: value }, resolve);
+        }),
+      remove: key =>
+        new Promise(resolve => {
+          chrome.storage.local.remove([key], resolve);
+        }),
+    };
+  } else {
+    return {
+      get: key =>
+        Promise.resolve(localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : null),
+      set: (key, value) => Promise.resolve(localStorage.setItem(key, JSON.stringify(value))),
+      remove: key => Promise.resolve(localStorage.removeItem(key)),
+    };
+  }
+}
+
+function renderPromptEditForm(prompt, draft) {
+  // Returns HTML for the edit form fields, using draft if present, else prompt
+  const val = (field, fallback = '') =>
+    draft && draft[field] !== undefined ? draft[field] : prompt[field] || fallback;
+  const tags = Array.isArray(val('tags', [])) ? val('tags', []).join(', ') : val('tags', '');
+  const tools = Array.isArray(val('targetAiTools', []))
+    ? val('targetAiTools', []).join(', ')
+    : val('targetAiTools', '');
+  // Use PROMPT_CATEGORIES from window or fallback
+  const categories = window.PROMPT_CATEGORIES || [
+    'Brainstorming & Idea Generation',
+    'Planning & Strategy',
+    'Writing & Content Creation',
+    'Design & Visual Thinking',
+    'Code & Technical Productivity',
+    'Research & Analysis',
+    'Execution & Delivery',
+    'Optimization & Testing',
+    'Decision-Making & Clarity',
+    'Personal Productivity & Focus',
+    'Workshop & Meeting Support',
+    'Client Communication & Sales',
+    'Team Collaboration & Alignment',
+    'Professional Development',
+    'Creative Projects & Hobbies',
+    'Life Admin & Personal Insight',
+  ];
+  return `
+    <form id="prompt-edit-form" autocomplete="off" novalidate>
+      <div class="form-group">
+        <label for="edit-title">Title: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="edit-title" name="title" required maxlength="100" rows="2" aria-required="true">${Utils.escapeHTML(val('title'))}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-description">Description: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="edit-description" name="description" required maxlength="500" aria-required="true">${Utils.escapeHTML(val('description'))}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-text">Prompt Text: <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="edit-text" name="text" required aria-required="true">${Utils.escapeHTML(val('text'))}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-category">Category: <span class="required" aria-hidden="true">*</span></label>
+        <select id="edit-category" name="category" required aria-required="true">
+          <option value="">-- Select a category --</option>
+          ${categories.map(cat => `<option value="${Utils.escapeHTML(cat)}"${val('category') === cat ? ' selected' : ''}>${Utils.escapeHTML(cat)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="edit-tags">Tags (comma-separated):</label>
+        <input type="text" id="edit-tags" name="tags" value="${Utils.escapeHTML(tags)}" />
+      </div>
+      <div class="form-group">
+        <label for="edit-tools">Target AI Tools (comma-separated): <span class="required" aria-hidden="true">*</span></label>
+        <input type="text" id="edit-tools" name="targetAiTools" required aria-required="true" value="${Utils.escapeHTML(tools)}" />
+      </div>
+      <div class="form-group">
+        <input type="checkbox" id="edit-private" name="isPrivate"${val('isPrivate') ? ' checked' : ''} />
+        <label for="edit-private">Make Private</label>
+      </div>
+    </form>
+  `;
+}
+
+function showEditMode(prompt) {
+  if (!promptDetailsSectionEl) return;
+  if (!promptDetailEditableFieldsWrapperEl)
+    promptDetailEditableFieldsWrapperEl = document.getElementById(
+      'prompt-detail-editable-fields-wrapper'
+    );
+  if (!promptDetailStaticFieldsWrapperEl)
+    promptDetailStaticFieldsWrapperEl = document.getElementById(
+      'prompt-detail-static-fields-wrapper'
+    );
+  if (!promptEditActionsBarEl)
+    promptEditActionsBarEl = document.getElementById('prompt-edit-actions-bar');
+  if (!promptOwnerActionsBarEl)
+    promptOwnerActionsBarEl = document.getElementById('prompt-owner-actions-bar');
+  const draftStorage = getDraftStorage();
+  const promptId = prompt.id;
+  draftStorage.get(editDraftKey(promptId)).then(draft => {
+    promptDetailEditableFieldsWrapperEl.innerHTML = renderPromptEditForm(prompt, draft);
+    promptDetailEditableFieldsWrapperEl.classList.remove('hidden');
+    promptDetailStaticFieldsWrapperEl.classList.add('hidden');
+
+    // Show edit buttons and hide add buttons
+    if (promptEditActionsBarEl) {
+      console.log('Showing edit actions bar:', promptEditActionsBarEl);
+      promptEditActionsBarEl.classList.remove('hidden');
+      promptEditActionsBarEl.style.display = 'flex'; // Force display flex
+
+      const editButtons = document.getElementById('edit-prompt-buttons');
+      const addButtons = document.getElementById('add-prompt-buttons');
+
+      if (editButtons) {
+        console.log('Found edit buttons, showing:', editButtons);
+        editButtons.classList.remove('hidden');
+        editButtons.style.display = 'flex'; // Force display flex
+      }
+
+      if (addButtons) {
+        console.log('Found add buttons, hiding:', addButtons);
+        addButtons.classList.add('hidden');
+      }
+    }
+
+    if (promptOwnerActionsBarEl) promptOwnerActionsBarEl.classList.add('hidden');
+
+    // Add editing-prompt class but ensure adding-prompt class is removed
+    // This ensures we're in edit mode but not add mode
+    document.body.classList.add('editing-prompt');
+    document.body.classList.remove('adding-prompt');
+
+    // Add editing class to prompt details section for specific styling
+    if (promptDetailsSectionEl) promptDetailsSectionEl.classList.add('editing');
+
+    // Hide category dropdown bar in edit mode
+    const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
+    if (categoryDropdownBar) categoryDropdownBar.classList.add('hidden');
+
+    // Hide additional elements in edit mode
+    // 1. Prompt title and actions (copy, favorite)
+    const promptHeader = document.querySelector('.prompt-item__header');
+    if (promptHeader) promptHeader.classList.add('hidden');
+
+    // Add a heading to indicate edit mode
+    const editHeading = document.createElement('div');
+    editHeading.id = 'edit-mode-heading';
+    editHeading.classList.add('edit-mode-heading');
+    editHeading.innerHTML = '<h2>Editing prompt</h2>';
+    if (promptDetailEditableFieldsWrapperEl) {
+      promptDetailEditableFieldsWrapperEl.insertAdjacentElement('beforebegin', editHeading);
+    }
+
+    // 2. Prompt category and tags
+    const promptCategory = document.getElementById('prompt-detail-category');
+    if (promptCategory) promptCategory.classList.add('hidden');
+
+    const promptTags = document.getElementById('prompt-detail-tags');
+    if (promptTags) promptTags.classList.add('hidden');
+
+    // 3. Back to list button
+    const backToListButton = document.getElementById('back-to-list-button');
+    if (backToListButton) backToListButton.classList.add('hidden');
+
+    // Hide ratings when editing
+    if (userStarRatingEl && userStarRatingEl.parentElement) {
+      userStarRatingEl.parentElement.classList.add('hidden');
+    }
+    if (communityRatingSectionEl) {
+      communityRatingSectionEl.classList.add('hidden');
+    }
+
+    // Set up input listeners for draft persistence
+    const form = document.getElementById('prompt-edit-form');
+    if (form) {
+      form.addEventListener('input', () => {
+        const data = getEditFormData();
+        draftStorage.set(editDraftKey(promptId), data);
+      });
+      // Wire up Cancel button after rendering the form
+      const cancelEditBtn = document.getElementById('cancel-edit-prompt-button');
+      if (cancelEditBtn) {
+        cancelEditBtn.onclick = () => handleCancelEditPrompt(prompt);
+      }
+    }
+  });
+}
+
+function getEditFormData() {
+  const form = document.getElementById('prompt-edit-form');
+  if (!form) return {};
+  return {
+    title: form.title.value.trim(),
+    description: form.description.value.trim(),
+    text: form.text.value.trim(),
+    category: form.category.value,
+    tags: form.tags.value
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean),
+    targetAiTools: form.targetAiTools.value
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean),
+    isPrivate: form.isPrivate.checked,
+  };
+}
+
+async function handleSaveEditPrompt(prompt) {
+  const form = document.getElementById('prompt-edit-form');
+  if (!form) return;
+  const data = getEditFormData();
+  // Validate required fields and show inline, accessible error message
+  const requiredFields = [
+    { id: 'edit-title', name: 'Title' },
+    { id: 'edit-description', name: 'Description' },
+    { id: 'edit-text', name: 'Prompt Text' },
+    { id: 'edit-category', name: 'Category' },
+    { id: 'edit-tools', name: 'Target AI Tools' },
+  ];
+  let firstInvalid = null;
+  let missingFields = [];
+  requiredFields.forEach(field => {
+    const el = document.getElementById(field.id);
+    let value = el?.value?.trim() || '';
+    if (field.id === 'edit-category' && value === '') value = '';
+    if (
+      field.id === 'edit-tools' &&
+      value
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean).length === 0
+    ) {
+      value = '';
+    }
+    if (!value) {
+      missingFields.push(field.name);
+      if (!firstInvalid) firstInvalid = el;
+      if (el) {
+        el.setAttribute('aria-invalid', 'true');
+        el.classList.add('input-error');
+      }
+    } else if (el) {
+      el.removeAttribute('aria-invalid');
+      el.classList.remove('input-error');
+    }
+  });
+  // Show error using the global message system
+  if (missingFields.length > 0) {
+    Utils.handleError(`Please fill in all required fields: ${missingFields.join(', ')}.`, {
+      userVisible: true,
+      type: 'error',
+      timeout: 5000,
+      specificErrorElement: null,
+    });
+    if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
+    return;
+  }
+  try {
+    const updatedPrompt = await PromptData.updatePrompt(prompt.id, data);
+    if (updatedPrompt && updatedPrompt.id) {
+      // Clear draft
+      await getDraftStorage().remove(editDraftKey(prompt.id));
+      Utils.showConfirmationMessage('Prompt updated successfully!');
+      displayPromptDetails(updatedPrompt);
+    } else {
+      Utils.handleError('Failed to update prompt. Please check details or try again.', {
+        userVisible: true,
+      });
+    }
+  } catch (error) {
+    Utils.handleError('Critical error updating prompt: ' + error.message, {
+      userVisible: true,
+      originalError: error,
+    });
+  }
+}
+
+// --- Category dropdown sync helpers ---
+function syncCategoryDropdowns(source) {
+  if (!mainCategoryDropdownEl || !categoryFilterEl) return;
+  if (source === 'main') {
+    categoryFilterEl.value = mainCategoryDropdownEl.value;
+  } else {
+    mainCategoryDropdownEl.value = categoryFilterEl.value;
+  }
+}
+// Main category dropdown DOM element
+let mainCategoryDropdownEl;
 /**
  * PromptFinder Extension - UI Controllers
  * Contains functions for managing the UI and interactions.
@@ -73,6 +746,7 @@ let currentSortBy = 'createdAt';
 let currentSortDir = 'desc';
 
 export const cacheDOMElements = () => {
+  mainCategoryDropdownEl = document.getElementById('main-category-dropdown');
   resetFiltersButtonEl = document.getElementById('reset-filters-button');
   sortPanelEl = document.getElementById('sort-panel');
   sortBySelectEl = document.getElementById('sort-by');
@@ -146,62 +820,11 @@ export const cacheDOMElements = () => {
 };
 
 export const openDetachedAddPromptWindow = () => {
-  try {
-    if (chrome && chrome.windows && chrome.runtime) {
-      chrome.windows.create(
-        {
-          url: chrome.runtime.getURL('pages/add-prompt.html'),
-          type: 'popup',
-          width: 500,
-          height: 600,
-          focused: true,
-        },
-        _window => {
-          if (chrome.runtime.lastError) {
-            Utils.handleError(
-              'Could not open add prompt window: ' + chrome.runtime.lastError.message,
-              { userVisible: true }
-            );
-          }
-        }
-      );
-    } else {
-      Utils.handleError('Chrome API not available to open window.', { userVisible: true });
-    }
-  } catch (error) {
-    Utils.handleError('Failed to open add prompt window.', {
-      userVisible: true,
-      originalError: error,
-    });
-  }
-};
-
-const openDetachedEditWindow = promptId => {
-  try {
-    if (!promptId) return Utils.handleError('No prompt ID for editing.', { userVisible: true });
-    if (chrome && chrome.windows && chrome.runtime) {
-      chrome.windows.create(
-        {
-          url: chrome.runtime.getURL(`pages/edit-prompt.html?id=${promptId}`),
-          type: 'popup',
-          width: 500,
-          height: 600,
-          focused: true,
-        },
-        _window => {
-          if (chrome.runtime.lastError) {
-            Utils.handleError('Could not open edit window: ' + chrome.runtime.lastError.message, {
-              userVisible: true,
-            });
-          }
-        }
-      );
-    } else {
-      Utils.handleError('Chrome API not available to open window.', { userVisible: true });
-    }
-  } catch (error) {
-    Utils.handleError('Failed to open edit window.', { userVisible: true, originalError: error });
-  }
+  // Instead of opening a detached window, we now show the add form inline
+  // First switch to the details view with proper setup
+  showPromptDetailsView();
+  // Then show add prompt interface
+  showAddPromptInline();
 };
 
 async function handlePromptListClick(event) {
@@ -387,6 +1010,22 @@ function updateResetFiltersButtonVisibility() {
 }
 
 const setupEventListeners = () => {
+  // Main always-visible category dropdown
+  if (mainCategoryDropdownEl) {
+    mainCategoryDropdownEl.addEventListener('change', () => {
+      syncCategoryDropdowns('main');
+      showTab(activeTab);
+      updateResetFiltersButtonVisibility();
+    });
+  }
+  // Keep filter panel category select in sync
+  if (categoryFilterEl) {
+    categoryFilterEl.addEventListener('change', () => {
+      syncCategoryDropdowns('filter');
+      showTab(activeTab);
+      updateResetFiltersButtonVisibility();
+    });
+  }
   // Floating Action Button (FAB) for Add New Prompt
   if (addPromptFabEl) {
     addPromptFabEl.addEventListener('click', openDetachedAddPromptWindow);
@@ -501,13 +1140,43 @@ const setupEventListeners = () => {
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
       if (promptId) handleCopyPrompt(promptId);
     });
-    editPromptButtonEl?.addEventListener('click', () => {
+    editPromptButtonEl?.addEventListener('click', async () => {
       const promptId =
         promptDetailsSectionEl.dataset.currentPromptId ||
         (userStarRatingEl ? userStarRatingEl.dataset.id : null);
-      if (promptId && editPromptButtonEl && !editPromptButtonEl.disabled)
-        openDetachedEditWindow(promptId);
+      if (promptId && editPromptButtonEl && !editPromptButtonEl.disabled) {
+        // In-place edit mode
+        const prompt = await PromptData.findPromptById(promptId);
+        if (prompt) showEditMode(prompt);
+      }
     });
+    // Save/cancel handlers for in-place edit
+    const saveEditBtn = document.getElementById('save-edit-prompt-button');
+    const cancelEditBtn = document.getElementById('cancel-edit-prompt-button');
+    if (saveEditBtn) {
+      saveEditBtn.onclick = async () => {
+        const promptId = promptDetailsSectionEl.dataset.currentPromptId;
+        const prompt = await PromptData.findPromptById(promptId);
+        if (prompt) handleSaveEditPrompt(prompt);
+      };
+    }
+    if (cancelEditBtn) {
+      cancelEditBtn.onclick = async () => {
+        const promptId = promptDetailsSectionEl.dataset.currentPromptId;
+        const prompt = await PromptData.findPromptById(promptId);
+        if (prompt) {
+          // Ensure the function is in scope and defined
+          if (typeof handleCancelEditPrompt === 'function') {
+            handleCancelEditPrompt(prompt);
+          } else if (window.handleCancelEditPrompt) {
+            window.handleCancelEditPrompt(prompt);
+          } else {
+            // fallback: just redisplay details
+            displayPromptDetails(prompt);
+          }
+        }
+      };
+    }
     deletePromptTriggerButtonEl?.addEventListener('click', () => {
       if (deletePromptTriggerButtonEl && !deletePromptTriggerButtonEl.disabled) {
         if (deleteConfirmationEl) deleteConfirmationEl.classList.remove('hidden');
@@ -562,11 +1231,11 @@ export const loadAndDisplayData = async () => {
       if (Array.isArray(p.targetAiTools)) p.targetAiTools.forEach(t => aiTools.add(t));
     });
     // Helper to populate a select
-    function populateSelect(selectEl, values) {
+    function populateSelect(selectEl, values, anyLabel = 'Any') {
       if (!selectEl) return;
       const current = selectEl.value;
       selectEl.innerHTML =
-        '<option value="">Any</option>' +
+        `<option value="">${anyLabel}</option>` +
         Array.from(values)
           .sort()
           .map(v => `<option value="${Utils.escapeHTML(v)}">${Utils.escapeHTML(v)}</option>`)
@@ -576,9 +1245,10 @@ export const loadAndDisplayData = async () => {
         selectEl.value = current;
       }
     }
-    populateSelect(categoryFilterEl, categories);
-    populateSelect(tagFilterEl, tags);
-    populateSelect(aiToolFilterEl, aiTools);
+    populateSelect(categoryFilterEl, categories, 'Any');
+    populateSelect(tagFilterEl, tags, 'Any');
+    populateSelect(aiToolFilterEl, aiTools, 'Any');
+    populateSelect(mainCategoryDropdownEl, categories, 'All Categories');
 
     showTab(activeTab);
   } catch (error) {
@@ -656,7 +1326,12 @@ export const showTab = which => {
     minUserRating: minUserRatingSelectEl ? parseInt(minUserRatingSelectEl.value) : 0,
     yourPromptsOnly: yourPromptsOnlyEl ? yourPromptsOnlyEl.checked : false,
     usedByYou: usedByYouEl ? usedByYouEl.checked : false,
-    category: categoryFilterEl ? categoryFilterEl.value : '',
+    // Use mainCategoryDropdownEl for category filter, fallback to categoryFilterEl for safety
+    category: mainCategoryDropdownEl
+      ? mainCategoryDropdownEl.value
+      : categoryFilterEl
+        ? categoryFilterEl.value
+        : '',
     tag: tagFilterEl ? tagFilterEl.value : '',
     aiTool: aiToolFilterEl ? aiToolFilterEl.value : '',
     dateFrom: dateFromEl ? dateFromEl.value : '',
@@ -716,6 +1391,11 @@ const showPromptList = () => {
   if (controlsEl) controlsEl.classList.remove('hidden');
   if (tabsContainerEl) tabsContainerEl.classList.remove('hidden');
   if (addPromptBarEl) addPromptBarEl.classList.remove('hidden');
+
+  // Show category dropdown bar in list view
+  const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
+  if (categoryDropdownBar) categoryDropdownBar.classList.remove('hidden');
+
   showTab(activeTab);
 };
 
@@ -725,6 +1405,10 @@ const showPromptDetailsView = () => {
   if (controlsEl) controlsEl.classList.add('hidden');
   if (tabsContainerEl) tabsContainerEl.classList.add('hidden');
   if (addPromptBarEl) addPromptBarEl.classList.add('hidden');
+
+  // Hide category dropdown bar in details view
+  const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
+  if (categoryDropdownBar) categoryDropdownBar.classList.add('hidden');
 };
 
 const createStars = (ratingValue, promptId, isInteractive = true) => {
@@ -764,6 +1448,81 @@ export const displayPromptDetails = prompt => {
   showPromptDetailsView();
   promptDetailsSectionEl.dataset.currentPromptId = prompt.id;
   promptDetailsSectionEl.dataset.fullPromptText = prompt.text || '';
+
+  // Always reset view to static (non-edit) mode
+  if (!promptDetailStaticFieldsWrapperEl)
+    promptDetailStaticFieldsWrapperEl = document.getElementById(
+      'prompt-detail-static-fields-wrapper'
+    );
+  if (!promptDetailEditableFieldsWrapperEl)
+    promptDetailEditableFieldsWrapperEl = document.getElementById(
+      'prompt-detail-editable-fields-wrapper'
+    );
+  if (!promptEditActionsBarEl)
+    promptEditActionsBarEl = document.getElementById('prompt-edit-actions-bar');
+  if (!promptOwnerActionsBarEl)
+    promptOwnerActionsBarEl = document.getElementById('prompt-owner-actions-bar');
+
+  // Show static fields, hide edit fields and edit actions
+  if (promptDetailStaticFieldsWrapperEl)
+    promptDetailStaticFieldsWrapperEl.classList.remove('hidden');
+  if (promptDetailEditableFieldsWrapperEl)
+    promptDetailEditableFieldsWrapperEl.classList.add('hidden');
+  if (promptEditActionsBarEl) {
+    promptEditActionsBarEl.classList.add('hidden');
+    promptEditActionsBarEl.style.display = 'none'; // Explicitly hide with inline style
+  }
+
+  // Remove global edit mode classes when viewing prompt details
+  document.body.classList.remove('editing-prompt', 'adding-prompt');
+
+  // Remove editing class from prompt details section
+  if (promptDetailsSectionEl) promptDetailsSectionEl.classList.remove('editing');
+
+  // Reset any inline styles for edit buttons
+  const editButtons = document.getElementById('edit-prompt-buttons');
+  const addButtons = document.getElementById('add-prompt-buttons');
+  if (editButtons) {
+    editButtons.classList.add('hidden');
+    editButtons.style.display = 'none';
+  }
+  if (addButtons) {
+    addButtons.classList.add('hidden');
+    addButtons.style.display = 'none';
+  }
+
+  // Remove edit mode heading if it exists
+  const editHeading = document.getElementById('edit-mode-heading');
+  if (editHeading && editHeading.parentNode) {
+    editHeading.parentNode.removeChild(editHeading);
+  }
+
+  // Make elements visible again that might have been hidden during edit mode
+  // 1. Prompt header (title, copy, favorite)
+  const promptHeader = document.querySelector('.prompt-item__header');
+  if (promptHeader) promptHeader.classList.remove('hidden');
+
+  // 2. Prompt category and tags
+  const promptCategory = document.getElementById('prompt-detail-category');
+  if (promptCategory) promptCategory.classList.remove('hidden');
+
+  const promptTags = document.getElementById('prompt-detail-tags');
+  if (promptTags) promptTags.classList.remove('hidden');
+
+  // 3. Back to list button
+  const backToListButton = document.getElementById('back-to-list-button');
+  if (backToListButton) backToListButton.classList.remove('hidden');
+
+  // Show ratings and FAB again when not editing
+  if (userStarRatingEl && userStarRatingEl.parentElement) {
+    userStarRatingEl.parentElement.classList.remove('hidden');
+  }
+  if (communityRatingSectionEl) {
+    communityRatingSectionEl.classList.remove('hidden');
+  }
+  if (addPromptFabEl) {
+    addPromptFabEl.classList.remove('hidden');
+  }
 
   const setText = (el, text) => {
     if (el) el.textContent = text || 'N/A';
@@ -827,12 +1586,16 @@ export const displayPromptDetails = prompt => {
 
   const isOwner = currentUser && prompt.userId === currentUser.uid;
   if (promptOwnerActionsEl) {
-    promptOwnerActionsEl.style.display = isOwner ? 'flex' : 'none';
-    if (editPromptButtonEl) {
-      editPromptButtonEl.disabled = !isOwner;
-    }
-    if (deletePromptTriggerButtonEl) {
-      deletePromptTriggerButtonEl.disabled = !isOwner;
+    if (isOwner) {
+      promptOwnerActionsEl.classList.remove('hidden');
+      promptOwnerActionsEl.style.display = 'flex';
+      if (editPromptButtonEl) editPromptButtonEl.disabled = false;
+      if (deletePromptTriggerButtonEl) deletePromptTriggerButtonEl.disabled = false;
+    } else {
+      promptOwnerActionsEl.classList.add('hidden');
+      promptOwnerActionsEl.style.display = 'none';
+      if (editPromptButtonEl) editPromptButtonEl.disabled = true;
+      if (deletePromptTriggerButtonEl) deletePromptTriggerButtonEl.disabled = true;
     }
   } else {
     if (editPromptButtonEl) editPromptButtonEl.style.display = 'none';

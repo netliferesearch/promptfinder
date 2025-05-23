@@ -40,6 +40,9 @@ This project has recently undergone a significant migration to Firebase for back
   - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
   - Filter checkboxes are properly aligned and sized for better UX.
   - **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent. All tests updated and passing for new error handling logic.
+  - **Delete Confirmation Dialog Improved:** The delete confirmation dialog's buttons now match the style and accessibility of the add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
+  - **Add/Edit Prompt Workflow Improved:** After adding a new prompt, users are redirected to the details view for that prompt, improving workflow and clarity.
+  - **Chrome Extension Warning Silenced:** The warning for message passing ("Could not establish connection") is now silenced unless a real error occurs.
   - Copy-to-clipboard works for all users, regardless of login state.
   - CSP updated to allow Cloud Functions endpoint for all users.
 
@@ -55,6 +58,8 @@ This project has recently undergone a significant migration to Firebase for back
 - All navigation tabs and filter/sort controls are now accessible by keyboard and screen reader.
 - Color contrast and focus states have been improved for all interactive elements.
 - The UI is responsive and mobile-friendly.
+- All error and confirmation messages use a consistent, accessible toast notification system.
+- Delete confirmation dialog buttons are styled and accessible, matching the rest of the UI.
 
 ---
 

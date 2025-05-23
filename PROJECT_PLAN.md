@@ -1,6 +1,6 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 20, 2025 (Test suite fixed and passing)
+**Last Updated**: May 23, 2025 (UI/UX improvements, toast notifications, and all tests passing)
 
 **Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
 
@@ -124,9 +124,14 @@ _Status: 🚧_
    - ✅ Copy-to-clipboard works for all users, regardless of login state.
    - ✅ CSP updated to allow Cloud Functions endpoint for all users.
    - ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests pass after these changes.
-   - ⬜ Further refine the display of prompt ownership.
-   - ⬜ Review and improve overall popup layout, detached window forms, and user flows based on testing and feedback.
-   - ⬜ Consider UI for managing `targetAiTools` if it needs to be more than a text input.
+
+- ✅ Delete confirmation dialog buttons now match the style and accessibility of add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
+- ✅ After adding a new prompt, users are redirected to the details view for that prompt (improved workflow).
+- ✅ Chrome extension warning for message passing ("Could not establish connection") is now silenced unless a real error occurs.
+- ⬜ Further refine the display of prompt ownership.
+- ⬜ Review and improve overall popup layout, detached window forms, and user flows based on testing and feedback.
+- ⬜ Consider UI for managing `targetAiTools` if it needs to be more than a text input.
+
 4. ⬜ **Performance Testing & Optimization**: Basic checks for data loading, query performance, and UI responsiveness, especially after bundling and with larger datasets.
 
 ---
