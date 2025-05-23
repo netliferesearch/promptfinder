@@ -1364,9 +1364,13 @@ export const displayPrompts = prompts => {
     cardBtn.setAttribute('aria-label', `View details for prompt: ${prompt.title}`);
     cardBtn.dataset.id = prompt.id;
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
+    // Private icon if prompt.isPrivate
+    const privateIcon = prompt.isPrivate
+      ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private" style="margin-right:0.5em; color:#e74c3c;"></i>`
+      : '';
     cardBtn.innerHTML = `
       <div class="prompt-item__header">
-        <span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
+        ${privateIcon}<span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
         <div class="prompt-item__actions">
           <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Copy prompt">
             <i class="fa-regular fa-copy"></i>
@@ -1541,7 +1545,14 @@ export const displayPromptDetails = prompt => {
     }
   };
 
-  setText(promptDetailTitleEl, prompt.title);
+  // Add private icon to the left of the title if private
+  if (promptDetailTitleEl) {
+    if (prompt.isPrivate) {
+      promptDetailTitleEl.innerHTML = `<i class='fa-solid fa-lock prompt-private-icon' title='Private' aria-label='Private' style='margin-right:0.5em; color:#e74c3c;'></i>${Utils.escapeHTML(prompt.title)}`;
+    } else {
+      promptDetailTitleEl.textContent = prompt.title;
+    }
+  }
   setText(promptDetailDescriptionEl, prompt.description);
   setText(promptDetailCategoryEl, prompt.category);
   setText(promptDetailTagsEl, formatArray(prompt.tags));
