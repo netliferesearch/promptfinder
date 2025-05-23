@@ -71,6 +71,16 @@ export const handleError = (messageOrHtml, options = {}) => {
     linkId = null,
     onClickAction = null,
   } = options;
+  // If no specificErrorElement and toast is available, use toast for user-visible errors
+  if (
+    userVisible &&
+    !specificErrorElement &&
+    typeof window !== 'undefined' &&
+    typeof window.showToast === 'function'
+  ) {
+    window.showToast(messageOrHtml, { type, duration: timeout });
+    return;
+  }
 
   let consoleMethod = console.error; // Default to error
   if (type === 'warning') {

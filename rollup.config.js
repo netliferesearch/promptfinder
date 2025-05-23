@@ -49,22 +49,8 @@ const entryPoints = [
       sourcemap: !isProduction,
     },
   },
-  {
-    input: 'pages/add-prompt.js',
-    output: {
-      file: 'dist/pages/add-prompt.js',
-      format: 'iife',
-      sourcemap: !isProduction,
-    },
-  },
-  {
-    input: 'pages/edit-prompt.js',
-    output: {
-      file: 'dist/pages/edit-prompt.js',
-      format: 'iife',
-      sourcemap: !isProduction,
-    },
-  },
+  // Removed add-prompt.js entry as the file has been deleted and functionality integrated into main UI
+  // Removed edit-prompt.js entry as the file has been deleted
 ];
 
 export default entryPoints.map(entry => ({

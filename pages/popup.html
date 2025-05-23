@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/pages/popup.css" />
     <link rel="stylesheet" href="../css/pages/auth.css" />
     <link rel="stylesheet" href="../css/pages/prompt-details.css" />
+    <link rel="stylesheet" href="../css/pages/edit-mode.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -107,13 +108,6 @@
                 </label>
               </div>
               <div class="filter-cell">
-                <label for="category-filter" class="form-label">Category:</label>
-                <select id="category-filter" class="form-input">
-                  <option value="">Any</option>
-                  <!-- Categories dynamically populated -->
-                </select>
-              </div>
-              <div class="filter-cell">
                 <label for="ai-tool-filter" class="form-label">AI Tool:</label>
                 <select id="ai-tool-filter" class="form-input">
                   <option value="">Any</option>
@@ -127,6 +121,19 @@
         <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
           <i class="fas fa-plus" aria-hidden="true"></i>
         </button>
+
+        <!-- Always-visible category filter above tabs -->
+        <div class="category-dropdown-bar">
+          <select
+            id="main-category-dropdown"
+            class="form-input category-dropdown search-style"
+            aria-label="Filter by category"
+          >
+            <option value="">All Categories</option>
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
         <nav class="tabs" role="tablist" aria-label="Prompt categories">
           <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
           <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
@@ -157,33 +164,38 @@
             </div>
             <div class="prompt-item__category" id="prompt-detail-category"></div>
             <div class="tags" id="prompt-detail-tags"></div>
-            <div class="detail-card__main">
-              <label for="prompt-detail-description" class="detail-label"
-                ><strong>What it’s for</strong></label
-              >
-              <div class="detail-card__description" id="prompt-detail-description"></div>
-            </div>
-            <div class="detail-card__prompt">
-              <div class="prompt-text-container">
-                <label for="prompt-detail-text" class="detail-label"
-                  ><strong>The actual prompt</strong></label
+            <div id="prompt-detail-editable-fields-wrapper" class="detail-card__main hidden"></div>
+            <div id="prompt-detail-static-fields-wrapper">
+              <div class="detail-card__main">
+                <label for="prompt-detail-description" class="detail-label"
+                  ><strong>What it’s for</strong></label
                 >
-                <div id="prompt-text-wrapper" class="code-block-wrapper">
-                  <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
-                </div>
-                <button id="prompt-text-view-more" class="button button-link button-sm hidden">
-                  View More
-                </button>
+                <div class="detail-card__description" id="prompt-detail-description"></div>
               </div>
-            </div>
-            <div class="detail-card__meta">
-              <div class="prompt-meta">
-                <span><strong>Author:</strong> <span id="prompt-detail-author"></span></span>
-                <span><strong>Usage:</strong> <span id="prompt-detail-usage">0</span></span>
-                <span><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></span>
-                <span><strong>Created:</strong> <span id="prompt-detail-created"></span></span>
-                <span><strong>Updated:</strong> <span id="prompt-detail-updated"></span></span>
-                <span><strong>AI Tools:</strong> <span id="prompt-detail-tools"></span></span>
+              <div class="detail-card__prompt">
+                <div class="prompt-text-container">
+                  <label for="prompt-detail-text" class="detail-label"
+                    ><strong>The actual prompt</strong></label
+                  >
+                  <div id="prompt-text-wrapper" class="code-block-wrapper">
+                    <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
+                  </div>
+                  <button id="prompt-text-view-more" class="button button-link button-sm hidden">
+                    View More
+                  </button>
+                </div>
+              </div>
+              <div class="detail-card__meta">
+                <div class="prompt-meta">
+                  <span><strong>Author:</strong> <span id="prompt-detail-author"></span></span>
+                  <span><strong>Usage:</strong> <span id="prompt-detail-usage">0</span></span>
+                  <span
+                    ><strong>Favorites:</strong> <span id="prompt-detail-favorites">0</span></span
+                  >
+                  <span><strong>Created:</strong> <span id="prompt-detail-created"></span></span>
+                  <span><strong>Updated:</strong> <span id="prompt-detail-updated"></span></span>
+                  <span><strong>AI Tools:</strong> <span id="prompt-detail-tools"></span></span>
+                </div>
               </div>
             </div>
             <div class="ratings-section">
@@ -205,7 +217,7 @@
                 <span id="community-rating-count">(0 ratings)</span>
               </div>
             </div>
-            <div class="prompt-owner-actions hidden">
+            <div class="prompt-owner-actions hidden" id="prompt-owner-actions-bar">
               <hr class="section-divider" />
               <button id="edit-prompt-button" class="button button-secondary">
                 <i class="fas fa-edit"></i> Edit Prompt
@@ -213,6 +225,25 @@
               <button id="delete-prompt-detail-trigger-button" class="button button-danger">
                 <i class="fas fa-trash"></i> Delete Prompt
               </button>
+            </div>
+            <div class="prompt-edit-actions hidden" id="prompt-edit-actions-bar">
+              <hr class="section-divider" />
+              <!-- Edit mode buttons -->
+              <div id="edit-prompt-buttons">
+                <button id="save-edit-prompt-button" class="button button-primary">Save</button>
+                <button id="cancel-edit-prompt-button" class="button button-secondary">
+                  Cancel
+                </button>
+              </div>
+              <!-- Add mode buttons -->
+              <div id="add-prompt-buttons" class="hidden">
+                <button id="save-add-prompt-button" class="button button-primary">
+                  Add Prompt
+                </button>
+                <button id="cancel-add-prompt-button" class="button button-secondary">
+                  Cancel
+                </button>
+              </div>
             </div>
             <div
               id="delete-confirmation"
@@ -229,22 +260,7 @@
             </div>
           </div>
         </section>
-
-        <section id="add-prompt-section" class="hidden">
-          <h2>Add New Prompt (Inline)</h2>
-          <form id="add-prompt-form-inline">
-            <div>
-              <label for="prompt-title-inline">Title:</label
-              ><input type="text" id="prompt-title-inline" required />
-            </div>
-            <div>
-              <label for="prompt-text-inline">Prompt Text:</label
-              ><textarea id="prompt-text-inline" required></textarea>
-            </div>
-            <button type="submit">Add</button>
-            <button type="button" id="cancel-add-prompt-inline">Cancel</button>
-          </form>
-        </section>
+        <!-- The add-prompt-section has been removed as add prompt functionality is now integrated into the prompt details section -->
         <footer class="bottom-bar hidden"></footer>
         <!-- Toast notification container for global messages -->
         <div id="toast-container" aria-live="polite" aria-atomic="true"></div>

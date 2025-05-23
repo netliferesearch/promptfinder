@@ -1,3 +1,77 @@
+/* Edit mode field styling for accessibility and clarity */
+#prompt-details-section.editing input[type='text'],
+#prompt-details-section.editing textarea,
+#prompt-details-section.editing select {
+  width: 100%;
+  font-size: 1rem;
+  padding: 0.5em 0.75em;
+  border: 1.5px solid var(--color-primary, #5a32ea);
+  border-radius: var(--border-radius-sm, 8px);
+  background: var(--color-white, #fff);
+  color: var(--color-black, #222);
+  margin-bottom: var(--spacing-sm, 12px);
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+#prompt-details-section.editing input[type='text']:focus,
+#prompt-details-section.editing textarea:focus,
+#prompt-details-section.editing select:focus {
+  outline: 2px solid var(--color-primary-dark, #3a1a8a);
+  border-color: var(--color-primary-dark, #3a1a8a);
+}
+
+/* Checkbox accessibility */
+#prompt-details-section.editing input[type='checkbox'] {
+  accent-color: var(--color-primary, #5a32ea);
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.5em;
+}
+
+/* Save/Cancel button styling in edit mode */
+#prompt-details-section.editing .prompt-owner-actions {
+  display: flex;
+  gap: 0.5em;
+  justify-content: flex-start;
+  margin-top: var(--spacing-md, 16px);
+  padding-top: 0;
+  border-top: none;
+}
+#prompt-details-section.editing .prompt-owner-actions .button {
+  min-width: 90px;
+  padding: 0.5em 1.2em;
+  font-size: 1rem;
+  border-radius: var(--border-radius-sm, 8px);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+#prompt-details-section.editing .prompt-owner-actions .button.save {
+  background: var(--color-primary, #5a32ea);
+  color: #fff;
+}
+#prompt-details-section.editing .prompt-owner-actions .button.save:focus-visible,
+#prompt-details-section.editing .prompt-owner-actions .button.save:hover {
+  background: var(--color-primary-dark, #3a1a8a);
+}
+#prompt-details-section.editing .prompt-owner-actions .button.cancel {
+  background: var(--color-gray-200, #f0f0f0);
+  color: var(--color-black, #222);
+}
+#prompt-details-section.editing .prompt-owner-actions .button.cancel:focus-visible,
+#prompt-details-section.editing .prompt-owner-actions .button.cancel:hover {
+  background: var(--color-gray-300, #e0e0e0);
+}
+
+/* Hide ratings and FAB when editing (edit mode) - single rule for max specificity */
+#prompt-details-section.editing .ratings-section,
+#prompt-details-section.editing .add-prompt-fab,
+#prompt-details-section.editing [class*='add-prompt-fab'] {
+  display: none !important;
+}
 /* Add style for detail labels in details view */
 .detail-label {
   display: block;
@@ -352,4 +426,15 @@
   border-top: 1px solid var(--color-gray-200, #eee);
   margin-top: var(--spacing-lg, 24px);
   margin-bottom: var(--spacing-lg, 24px);
+}
+
+/* Add specific rule to hide prompt edit actions in normal prompt details view */
+#prompt-details-section:not(.editing) #prompt-edit-actions-bar {
+  display: none !important;
+}
+
+/* Hide button containers when not in edit mode */
+#prompt-details-section:not(.editing) #edit-prompt-buttons,
+#prompt-details-section:not(.editing) #add-prompt-buttons {
+  display: none !important;
 }
