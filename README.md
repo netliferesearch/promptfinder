@@ -1,6 +1,22 @@
 # PromptFinder - AI Prompt Management Chrome Extension
 
-PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
+PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI promp4. **Build JavaScript (if not using watch mode):**
+
+   ```bash
+   npm run build:js:dev
+   # or the full build (includes CSS optimization)
+   npm run build
+   ```
+
+5. **CSS Optimization:** To optimize CSS separately:
+
+   ```bash
+   npm run css:purge
+   ```
+
+   This runs PurgeCSS to remove unused CSS selectors, reducing the final bundle size by ~43% (92K → 52K).
+
+6. **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:lows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
 
 ## Key Features
 
@@ -37,6 +53,15 @@ This project has recently undergone a significant migration to Firebase for back
   - ✅ **Message Standardization:** Unified all authentication, validation, error, and success messages across the extension
   - ✅ **Maintainability Improvement:** Eliminated scattered hardcoded strings, making text updates centralized and consistent
   - ✅ **I18n Ready:** Built foundation for future internationalization support with locale-aware text management
+
+- **CSS Optimization & Performance Improvements (January 2025):**
+
+  - ✅ **PurgeCSS Integration:** Implemented automated unused CSS removal achieving 43% size reduction (92K → 52K)
+  - ✅ **Legacy System Cleanup:** Removed outdated `/css-min/` directory (56KB) and CSS migration helper files
+  - ✅ **Icon Optimization:** Resized all icons from 800x800px to proper dimensions (16px, 48px, 128px) for ~98% size reduction
+  - ✅ **Build Process Enhancement:** Added `npm run css:purge` command and integrated CSS optimization into build workflow
+  - ✅ **Performance Validation:** Maintained full functionality while achieving significant performance improvements across all tests
+  - ✅ **Configuration Management:** Created comprehensive PurgeCSS configuration with safelist for dynamic classes
 
 - **Critical Bug Fix - Prompt List Virtualization (May 2025):**
 
@@ -167,7 +192,7 @@ This project has recently undergone a significant migration to Firebase for back
 
    You will still need to manually reload the extension in Chrome to see changes.
 
-5. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
+7. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
 
 ### Testing
 
@@ -264,7 +289,7 @@ For detailed implementation information, see [CENTRALIZED_TEXT_MANAGEMENT_SUMMAR
 
 ```plaintext
 promptfinder/
-├── css/                    # Source CSS files (modular structure)
+├── css/                    # Source CSS files (modular structure) - 92K total
 │   ├── base/
 │   ├── components/
 │   ├── layout/
@@ -272,7 +297,7 @@ promptfinder/
 ├── dist/                   # Build output (gitignored)
 │   ├── js/
 │   └── pages/
-│   └── css-purged/         # Purged CSS output
+│   └── css-purged/         # Optimized CSS output - 52K (43% reduction via PurgeCSS)
 ├── docs/                   # Documentation
 ├── functions/               # Firebase Cloud Functions
 │   ├── src/                 # TypeScript source code for Cloud Functions

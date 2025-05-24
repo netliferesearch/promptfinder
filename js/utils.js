@@ -3,48 +3,6 @@
  * Contains shared utility functions for the extension.
  */
 
-import { getText } from './text-constants.js';
-
-/**
- * Promise wrapper for chrome.storage.local.get
- * @param {string|Array|Object} keys - Keys to retrieve from storage
- * @returns {Promise<Object>} - Promise resolving to the retrieved items
- */
-export const chromeStorageGet = keys => {
-  return new Promise((resolve, reject) => {
-    if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-      return reject(new Error(getText('CHROME_STORAGE_NOT_AVAILABLE')));
-    }
-    chrome.storage.local.get(keys, result => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result);
-      }
-    });
-  });
-};
-
-/**
- * Promise wrapper for chrome.storage.local.set
- * @param {Object} items - Items to store
- * @returns {Promise<void>} - Promise resolving when storage is complete
- */
-export const chromeStorageSet = items => {
-  return new Promise((resolve, reject) => {
-    if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-      return reject(new Error(getText('CHROME_STORAGE_NOT_AVAILABLE')));
-    }
-    chrome.storage.local.set(items, () => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve();
-      }
-    });
-  });
-};
-
 /**
  * Centralized error/message handling function
  * @param {string} messageOrHtml - The message (text or HTML) to display
