@@ -2,11 +2,11 @@
 
 PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI promp4. **Build JavaScript (if not using watch mode):**
 
-   ```bash
-   npm run build:js:dev
-   # or the full build (includes CSS optimization)
-   npm run build
-   ```
+```bash
+npm run build:js:dev
+# or the full build (includes CSS optimization)
+npm run build
+```
 
 5. **CSS Optimization:** To optimize CSS separately:
 
@@ -192,7 +192,7 @@ This project has recently undergone a significant migration to Firebase for back
 
    You will still need to manually reload the extension in Chrome to see changes.
 
-7. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
+5. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
 
 ### Testing
 

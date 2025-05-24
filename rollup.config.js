@@ -3,7 +3,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
 import replace from '@rollup/plugin-replace';
-import postcss from 'rollup-plugin-postcss'; // Added postcss
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -22,12 +21,6 @@ const commonPlugins = isProd =>
       babelHelpers: 'bundled',
       exclude: 'node_modules/**',
       presets: [['@babel/preset-env', { modules: false }]],
-    }),
-    postcss({
-      // Added postcss plugin configuration
-      extract: false, // Set to true to extract to a file, e.g., 'dist/css/style.css'
-      inject: true, // Injects CSS into <head> if extract is false
-      extensions: ['.css'],
     }),
     isProd && terser(),
   ].filter(Boolean);
