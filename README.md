@@ -16,6 +16,7 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 - **Usage Count:** Tracks how many times a prompt has been copied.
 - **Search & Filtering:** Search across multiple fields. Filter by tabs (All, Favorites, Private).
 - **Private Prompts:** Option to keep prompts private to your account.
+- **Private Prompt Indicator:** Private prompts are visually marked with a lock icon next to their title in both the prompt list and details views.
 - **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.
 - **Custom Display Names:** Users set a display name upon email/password signup, avoiding email exposure.
 
@@ -27,14 +28,32 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+- **Centralized Text Management System (January 2025):**
+
+  - ✅ **Text Constants Architecture:** Created comprehensive text management system with 137 organized constants covering all user-facing strings
+  - ✅ **TextManager Class:** Implemented with `get()`, `has()`, `format()` methods and internationalization infrastructure
+  - ✅ **Variable Interpolation:** Added `{{variable}}` syntax for dynamic text with proper escaping
+  - ✅ **Codebase Integration:** Updated all JavaScript files to use centralized text management, replacing 80+ hardcoded strings
+  - ✅ **Message Standardization:** Unified all authentication, validation, error, and success messages across the extension
+  - ✅ **Maintainability Improvement:** Eliminated scattered hardcoded strings, making text updates centralized and consistent
+  - ✅ **I18n Ready:** Built foundation for future internationalization support with locale-aware text management
+
+- **Critical Bug Fix - Prompt List Virtualization (May 2025):**
+
+  - ✅ **Fixed Empty Prompt Lists:** Resolved critical issue where no prompts were visible in any tab (All, Favorites, Private)
+  - ✅ **Clusterize.js Integration Completed:** Fixed DOM element reference mismatch that prevented the virtualization library from initializing properly
+  - ✅ **Performance Optimization Working:** Large prompt lists now use efficient virtualization for smooth scrolling and reduced memory usage
+  - ✅ **Build Process Improved:** Excluded third-party minified libraries from linting to prevent build failures
+
 - **Popup Navigation Tabs Accessibility & Layout Improved:**
   - Tab buttons now have better color contrast for hover, focus, and active states, meeting accessibility guidelines.
   - Tab button widths are reduced and responsive, so all tabs are always visible without horizontal scrolling.
   - Horizontal scrolling is minimized and styled for accessibility.
 - **Reset Filters Button Logic Fixed:**
   - The reset filters button now appears and disappears immediately as filters are changed or reset, improving usability and accessibility.
-- **Font Awesome Updated:**
+  - **Font Awesome Updated:**
   - The extension now uses Font Awesome 6.4.2 for full icon support, including the reset icon.
+  - **Private Prompt Lock Icon:** Private prompts now display a lock icon next to their title in both the list and details views, making it easy to distinguish private content at a glance.
 - **General UI/UX Improvements:**
 
   - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
@@ -214,6 +233,33 @@ For details on deployment and testing, see:
 - [FIREBASE_CLOUD_FUNCTIONS_DEPLOYMENT.md](/docs/FIREBASE_CLOUD_FUNCTIONS_DEPLOYMENT.md)
 - [TESTING_CLOUD_FUNCTIONS.md](/docs/TESTING_CLOUD_FUNCTIONS.md)
 
+## Centralized Text Management
+
+The project uses a centralized text management system to maintain consistency and enable future internationalization:
+
+- **Text Constants:** All user-facing strings are defined in `js/text-constants.js` with 137 organized constants
+- **TextManager Class:** Provides `get()`, `has()`, and `format()` methods for text retrieval and interpolation
+- **Variable Interpolation:** Dynamic text uses `{{variable}}` syntax with proper escaping (e.g., `getText('WELCOME_MESSAGE', {name: 'John'})`)
+- **I18n Ready:** Built with locale support infrastructure for future multi-language support
+- **Consistent Messaging:** All authentication, validation, error, and success messages use the centralized system
+
+**Usage Examples:**
+
+```javascript
+// Simple text retrieval
+const message = getText('LOGIN_SUCCESS');
+
+// Text with variable interpolation
+const welcome = textManager.format('WELCOME_USER', { name: user.displayName });
+
+// Check if text constant exists
+if (textManager.has('CUSTOM_MESSAGE')) {
+  // Use the constant
+}
+```
+
+For detailed implementation information, see [CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md](/docs/CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md).
+
 ## File Structure Overview
 
 ```plaintext
@@ -238,6 +284,7 @@ promptfinder/
 ├── js/                     # Source JavaScript modules
 │   ├── firebase-init.js
 │   ├── promptData.js
+│   ├── text-constants.js   # Centralized text management system
 │   ├── ui.js
 │   └── utils.js
 ├── node_modules/           # (Ignored by Git)
