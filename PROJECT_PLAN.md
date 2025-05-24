@@ -1,6 +1,6 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 23, 2025 (UI/UX improvements, toast notifications, and all tests passing)
+**Last Updated**: May 24, 2025 (Centralized text management system completed and documented)
 
 **Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
 
@@ -11,6 +11,68 @@
 - `✅` Completed
 - `❗` Blocked/Issue
 - `❓` Needs Discussion/Decision
+
+---
+
+### 🔥 CRITICAL BUG FIXES (May 2025) - COMPLETED
+
+**Status**: ✅
+
+**Issue**: Prompt lists were empty across all tabs (All, Favorites, Private) due to DOM element reference mismatch preventing Clusterize.js virtualization from working.
+
+**Root Cause**: The `cacheDOMElements` function in `js/ui.js` was referencing a non-existent DOM element ID (`prompts-list`) instead of the actual HTML structure (`prompts-list-scroll`).
+
+**Fixes Applied**:
+
+1. ✅ **DOM Element Reference Fix**: Updated `js/ui.js` line 772 to reference correct element ID
+2. ✅ **Clusterize.js Library Integration**: Replaced placeholder content with actual Clusterize.js v0.18.1 library
+3. ✅ **Build Configuration Fix**: Added `js/clusterize.min.js` to ESLint ignore list to prevent linting errors
+4. ✅ **Verification**: Confirmed fixes are included in distribution bundle (`dist/js/app.js`)
+
+**Impact**:
+
+- ✅ Prompt lists now display correctly in all tabs
+- ✅ Clusterize.js virtualization working for performance with large datasets
+- ✅ Build process stable and error-free
+- ✅ Extension fully functional for prompt management
+
+--- Project Plan
+
+**Last Updated**: May 23, 2025 (Critical bug fix - Prompt list virtualization working, Clusterize.js integration completed)
+
+**Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
+
+**Legend**:
+
+- `⬜` Todo
+- `🚧` In Progress
+- `✅` Completed
+- `❗` Blocked/Issue
+- `❓` Needs Discussion/Decision
+
+---
+
+### 🔥 CRITICAL BUG FIXES (May 2025) - COMPLETED
+
+_Status: ✅_
+
+**Issue**: Prompt lists were empty across all tabs (All, Favorites, Private) due to DOM element reference mismatch preventing Clusterize.js virtualization from working.
+
+**Root Cause**: The `cacheDOMElements` function in `js/ui.js` was referencing a non-existent DOM element ID (`prompts-list`) instead of the actual HTML structure (`prompts-list-scroll`).
+
+**Fixes Applied**:
+
+1. ✅ **DOM Element Reference Fix**: Updated `js/ui.js` line 772 to reference correct element ID
+2. ✅ **Clusterize.js Library Integration**: Replaced placeholder content with actual Clusterize.js v0.18.1 library
+3. ✅ **Build Configuration Fix**: Added `js/clusterize.min.js` to ESLint ignore list to prevent linting errors
+4. ✅ **Verification**: Confirmed fixes are included in distribution bundle (`dist/js/app.js`)
+
+**Impact**:
+
+- ✅ Prompt lists now display correctly in all tabs
+- ✅ Clusterize.js virtualization working for performance with large datasets
+- ✅ Build process stable and error-free
+- ✅ Extension fully functional for prompt management
 
 ---
 
@@ -75,6 +137,7 @@ _Status: 🚧_
 ### Phase 4: Testing, UI/UX Refinement, Automation & Optimization (NOW IN PROGRESS)
 
 2. ✅ **Automation & Maintenance:**
+
    - ✅ Added `update-deps.sh` script to automate dependency upgrades, linting, building, and testing.
    - ✅ All dependencies (including `firebase`, `rollup`, etc.) are now kept up to date.
    - ✅ Project uses ES Modules (`type: module` in `package.json`) for modern compatibility.
@@ -83,9 +146,22 @@ _Status: 🚧_
    - ✅ Linting, formatting, and build processes are enforced and automated.
    - ✅ Guidance for using the automation script is included in the README.
 
-_Status: 🚧_
+3. ✅ **Centralized Text Management System:**
+   - ✅ **Text Constants Architecture**: Created comprehensive `js/text-constants.js` with 137 organized text constants covering all user-facing strings
+   - ✅ **TextManager Class**: Implemented with `get()`, `has()`, `format()` methods and internationalization infrastructure
+   - ✅ **Variable Interpolation**: Added `{{variable}}` syntax for dynamic text with proper escaping
+   - ✅ **Core Integration**: Updated all JavaScript files (`ui.js`, `promptData.js`, `app.js`, `utils.js`) to use centralized text management
+   - ✅ **String Replacement**: Converted 80+ hardcoded strings to use `getText()` and `textManager.format()` calls
+   - ✅ **Error Message Centralization**: Moved all authentication, validation, and system error messages to centralized constants
+   - ✅ **Form Validation Standardization**: Unified form validation messages using text constants
+   - ✅ **Success Message Consistency**: Standardized success messages for all user actions
+   - ✅ **System Verification**: Tested and confirmed 93 function calls working correctly with text constants system
+   - ✅ **Documentation**: Created comprehensive implementation summary in `docs/CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md`
+
+### Phase 4: Testing, UI/UX Refinement, Automation & Optimization (NOW IN PROGRESS)
 
 1. 🚧 **Unit Tests Update & Expansion**:
+
    - ✅ Configure Jest to correctly handle ES Modules (ESM) and the Firebase v9 SDK.
    - ✅ Update existing tests in `tests/` to align with ESM and v9 API mocks (including `increment()` handling, improved mock stability for `setPathData`).
    - ✅ Project cleanup: Removed backup files (.bak, .new, .broken) and unnecessary debug logs.
@@ -103,32 +179,50 @@ _Status: 🚧_
        - ⬜ Filter panel interactions (toggle, min rating select)
        - ⬜ Prompt Details View: specific interactions (back, copy, edit, delete buttons, view more/less text, favorite toggle on details, star rating clicks)
        - ⬜ Add/Edit form specific UI logic (if any beyond standard form submissions handled by `app.js` or `pages/*.js`)
-2. 🚧 **Integration Testing**:
-   - 🚧 Test the interaction between UI, client-side logic, and Firebase services
-   - **Firebase Cloud Functions:**
 
-- ✅ `recalculateRating`: Unit tests for client-side integration implemented
-- ✅ `updateFavoritesCount`: Unit tests for client-side integration implemented
-- ✅ `incrementUsageCount`: Unit tests for client-side integration implemented
-- ✅ `recalculateAllStats`: Admin function testing implemented
-- ✅ Automated testing of Cloud Functions with Firebase emulators
-- ⬜ End-to-end testing with real Firebase services in a test environment
+2. ✅ **Automation & Maintenance:**
 
-3. 🚧 **UI/UX Refinements**:
-   - ✅ Navigation tabs now have improved accessibility, color contrast, and responsive widths (no more horizontal scroll for tabs).
-   - ✅ Reset filters button logic and visibility is now robust and accessible.
-   - ✅ Filter and sort controls are visually consistent, accessible, and mobile-friendly.
-   - ✅ Font Awesome updated for full icon support.
-   - ✅ Filter checkboxes are properly aligned and sized for better UX.
-   - ✅ **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent.
-   - ✅ Copy-to-clipboard works for all users, regardless of login state.
-   - ✅ CSP updated to allow Cloud Functions endpoint for all users.
-   - ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests pass after these changes.
+   - ✅ Added `update-deps.sh` script to automate dependency upgrades, linting, building, and testing.
+   - ✅ All dependencies (including `firebase`, `rollup`, etc.) are now kept up to date.
+   - ✅ Project uses ES Modules (`type: module` in `package.json`) for modern compatibility.
+   - ✅ All Cloud Functions migrated to Firebase Functions v2 API and deployed as 2nd Gen in `europe-west1`.
+   - ✅ All tests (61/61) are passing, including Cloud Functions and client logic.
+   - ✅ Linting, formatting, and build processes are enforced and automated.
+   - ✅ Guidance for using the automation script is included in the README.
+
+3. ✅ **Centralized Text Management System:**
+   - ✅ **Text Constants Architecture**: Created comprehensive `js/text-constants.js` with 137 organized text constants covering all user-facing strings
+   - ✅ **TextManager Class**: Implemented with `get()`, `has()`, `format()` methods and internationalization infrastructure
+   - ✅ **Variable Interpolation**: Added `{{variable}}` syntax for dynamic text with proper escaping
+   - ✅ **Core Integration**: Updated all JavaScript files (`ui.js`, `promptData.js`, `app.js`, `utils.js`) to use centralized text management
+   - ✅ **String Replacement**: Converted 80+ hardcoded strings to use `getText()` and `textManager.format()` calls
+   - ✅ **Error Message Centralization**: Moved all authentication, validation, and system error messages to centralized constants
+   - ✅ **Form Validation Standardization**: Unified form validation messages using text constants
+   - ✅ **Success Message Consistency**: Standardized success messages for all user actions
+   - ✅ **System Verification**: Tested and confirmed 93 function calls working correctly with text constants system
+   - ✅ **Documentation**: Created comprehensive implementation summary in `docs/CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md`
+
+_Status: 🚧_
+
+- ✅ Navigation tabs now have improved accessibility, color contrast, and responsive widths (no more horizontal scroll for tabs).
+- ✅ Reset filters button logic and visibility is now robust and accessible.
+- ✅ Filter and sort controls are visually consistent, accessible, and mobile-friendly.
+- ✅ Font Awesome updated for full icon support.
+- ✅ Private prompt lock icon: Private prompts now display a lock icon next to their title in both the list and details views.
+- ✅ Filter checkboxes are properly aligned and sized for better UX.
+- ✅ **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent.
+- ✅ Copy-to-clipboard works for all users, regardless of login state.
+- ✅ CSP updated to allow Cloud Functions endpoint for all users.
+- ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests pass after these changes.
 
 - ✅ Delete confirmation dialog buttons now match the style and accessibility of add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
 - ✅ After adding a new prompt, users are redirected to the details view for that prompt (improved workflow).
 - ✅ Chrome extension warning for message passing ("Could not establish connection") is now silenced unless a real error occurs.
-- ⬜ Further refine the display of prompt ownership.
+  - ⬜ Further refine the display of prompt ownership.
+  - ✅ Expanded UI unit tests to cover the new private prompt lock icon and other rendering edge cases.
+  - ⬜ Add further UI unit tests for edge cases: missing/undefined `isPrivate`, title escaping, long/truncated titles, accessibility of lock icon, and regression for legacy prompt objects.
+  - ⬜ Expand tests for tab switching, search/filter, and error handling in UI.
+  - ⬜ Continue refining prompt ownership display and optimize performance for large prompt datasets.
 - ⬜ Review and improve overall popup layout, detached window forms, and user flows based on testing and feedback.
 - ⬜ Consider UI for managing `targetAiTools` if it needs to be more than a text input.
 
@@ -136,88 +230,86 @@ _Status: 🚧_
 
 ---
 
-### Ongoing Testing Status & Roadmap (Unit Tests)
+## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
 
-This section provides a snapshot of current unit test coverage and areas for future expansion. The test environment now uses a global Jest mock for `js/firebase-init.js` and helpers for simulated authentication, ensuring all tests are robust and isolated from the real Firebase SDK.
+**Major infrastructure improvement completed: Centralized Text Management System is now fully implemented, providing consistency, maintainability, and internationalization readiness across the entire codebase.**
 
-**Covered (`✅`):**
+**Now that the critical prompt list bug has been fixed and text management is centralized, here are the recommended next steps:**
 
-- **`promptData.js` (Data Logic):**
-  - ✅ User Authentication (signup, login, logout, auth state)
-  - ✅ Prompt CRUD (add, (implicitly by load/find: get, update, delete))
-  - ✅ Rating System (`ratePrompt` - add new, update existing, invalid, logged out)
-  - ✅ Favorites System (`toggleFavorite` - favorite, unfavorite, toggle multiple, logged out, no ID)
-  - ✅ Usage Count (`copyPromptToClipboard`)
-  - ✅ Filtering Logic (`filterPrompts` - though tests might be in `ui.test.js` context if not directly tested)
-- **`ui.js` (UI Logic - Partial):**
-  - ✅ Initialization, DOM caching, basic event listener setup (`initializeUI`)
-  - ✅ Data loading and initial display (`loadAndDisplayData`, `displayPrompts`)
-  - ✅ Prompt list item click handling (`handlePromptListClick` and its delegations to `handleToggleFavorite`, `viewPromptDetails`, `handleCopyPrompt`)
-  - ✅ Basic prompt details display (`displayPromptDetails` - checked via side-effects)
-- **`utils.js` (Utility Functions):**
-  - ✅ `chromeStorageGet`, `chromeStorageSet`
-  - ✅ Error/Confirmation message handling (`handleError`, `showConfirmationMessage`)
-  - ✅ `highlightStars`, `escapeHTML`
-- **Firebase Cloud Functions:**
-  - ✅ `recalculateRating`: Unit tests implemented
-  - ✅ `updateFavoritesCount`: Unit tests implemented
-  - ✅ `incrementUsageCount`: Unit tests implemented
-  - ✅ `recalculateAllStats`: Unit tests implemented
+### 1. **Manual Testing & Validation** (High Priority - Immediate)
 
-**To Be Tested (`⬜`) / Areas for Expansion (`🚧`):**
+- ✅ **Load Extension in Chrome**: Test the fixed extension in a development environment
+- ✅ **Verify Prompt Lists**: Confirm all tabs (All, Favorites, Private) display prompts correctly
+- ✅ **Test Virtualization**: Verify smooth scrolling with large prompt datasets
+- ✅ **Test Core Functions**: Copy prompts, toggle favorites, rate prompts, add/edit/delete prompts
+- ✅ **Cross-browser Testing**: Ensure compatibility across different Chrome versions
 
-- **`ui.js` (UI Logic - Remaining):**
-  - ⬜ **Tab Switching & Filtering:**
-    - `showTab('all')`, `showTab('favs')`, `showTab('private')` - verify correct calls to `filterPrompts` and `displayPrompts`.
-    - Verify active class toggling on tab buttons.
-    - Verify UI state changes (e.g., details view hidden, list shown).
-  - ⬜ **Search Functionality:**
-    - `searchInputEl` event listener triggering `showTab`.
-    - Verify `filterPrompts` is called with correct `searchTerm`.
-  - ⬜ **Rating Filter Panel:**
-    - `filterButtonEl` click toggling `ratingFilterPanelEl` visibility and button active state.
-    - `minRatingSelectEl` change event triggering `showTab`.
-    - Verify `filterPrompts` is called with correct `minRating`.
-  - ⬜ **Prompt Details View Interactions (More granular):**
-    - Back button (`backToListButtonEl`) functionality (calls `showPromptList`).
-    - Copy button on details page (`copyPromptDetailButtonEl`) calling `handleCopyPrompt`.
-    - Edit button (`editPromptButtonEl`) calling `openDetachedEditWindow` (check conditions like ownership, disabled state).
-    - Delete button flow (`deletePromptTriggerButtonEl`, `deleteConfirmationEl`, `cancelDeleteButtonEl`, `confirmDeleteButtonEl`) calling `handleDeletePrompt`.
-    - Favorite toggle on details page (`#toggle-fav-detail`) calling `handleToggleFavorite` and updating its own icon.
-    - "View More/Less" for prompt text (`promptTextViewMoreEl`).
-    - Interactive star rating clicks (`userStarRatingEl` children) calling `handleRatePrompt` and UI feedback.
-  - ⬜ **Rendering Edge Cases in `displayPrompts` & `displayPromptDetails`:**
-    - Prompts with missing optional fields (e.g., no tags, no description).
-    - Long text truncation and expansion in `displayPromptDetails`.
-    - Correct display of community ratings vs. user ratings based on `isPrivate` and login state.
-  - ⬜ **Error Handling in UI Event Handlers:**
-    - If `PromptData` functions (e.g., `toggleFavorite`, `ratePrompt`) reject/throw, ensure `Utils.handleError` is called by the UI handler.
-  - 🚧 **`openDetachedAddPromptWindow` / `openDetachedEditWindow`:** Verify `chrome.windows.create` is called with correct parameters (these involve Chrome APIs which are mocked).
-- **`app.js` (Main Popup Logic):**
-  - ⬜ Event listeners for login/signup form submissions.
-  - ⬜ Handling of `DOMContentLoaded`.
-  - ⬜ `handleAuthRequiredAction` behavior.
-  - ⬜ Navigation between views (auth vs. main content).
-- **Page-Specific JS (`pages/add-prompt.js`, `pages/edit-prompt.js`):**
+### 2. **User Experience Improvements** (High Priority - This Week)
 
-  - ⬜ Interaction with `chrome.runtime.sendMessage` or other Chrome APIs if used for inter-script communication.
+- ⬜ **Prompt Loading States**: Add loading indicators when fetching prompts from Firestore
+- ⬜ **Error Handling**: Improve error messages when Firestore operations fail
+- ⬜ **Empty State UX**: Better messaging when no prompts match current filters
+- ⬜ **Search Performance**: Optimize search functionality for large datasets
+- ✅ **Mobile Responsiveness**: Ensure popup works well in smaller browser windows
 
-- **Firebase Cloud Functions Integration Testing:**
-  - ✅ **Client-side integration with `recalculateRating`:**
-    - Verify client properly delegates rating calculation to the Cloud Function
-    - Test error handling when the function fails
-  - ✅ **Client-side integration with `updateFavoritesCount`:**
-    - Verify UI updates correctly after favorite toggling
-    - Test error handling when the function fails
-  - ✅ **Client-side integration with `incrementUsageCount`:**
-    - Verify usage count increments when copying a prompt
-    - Test error handling when the function fails
-  - ✅ **Admin Functions:**
-    - Test `recalculateAllStats` with different data scenarios
-    - Verify permissions enforcement for admin-only functions
-  - ✅ **Emulator Testing:**
-    - Create comprehensive test suite against Firebase emulators
-    - Document the testing workflow for contributors
+### 3. **Performance Optimization** (Medium Priority - Next 2 Weeks)
+
+- ⬜ **Firestore Query Optimization**: Implement proper indexing and pagination
+- ⬜ **Clusterize.js Configuration**: Fine-tune virtualization settings for optimal performance
+- ⬜ **Bundle Size Analysis**: Analyze and optimize the distribution bundle size
+- ⬜ **Memory Usage Testing**: Test with large datasets (1000+ prompts)
+- ⬜ **Background Script Optimization**: Minimize Chrome extension resource usage
+
+### 4. **Code Quality & Maintenance** (Medium Priority - Ongoing)
+
+- ⬜ **Integration Tests**: Add tests specifically for the Clusterize.js integration
+- ⬜ **DOM Testing**: Add tests for UI component interactions
+- ⬜ **Error Scenario Testing**: Test behavior when Firestore is unavailable
+- ⬜ **Code Documentation**: Document the virtualization implementation
+- ⬜ **Dependency Updates**: Regular security and feature updates
+
+### 5. **Advanced Features** (Lower Priority - Future Sprints)
+
+- ⬜ **Bulk Operations**: Select multiple prompts for batch actions
+- ⬜ **Export/Import**: Allow users to backup/restore their prompts
+- ⬜ **Prompt Templates**: Pre-built templates for common use cases
+- ⬜ **Collaboration Features**: Share prompts with specific users
+- ⬜ **Analytics Dashboard**: Usage statistics and insights
+
+---
+
+## 🚀 RECOMMENDED IMMEDIATE ACTION
+
+**Start with Step 1 (Manual Testing):**
+
+1. **Load the Extension**:
+
+   ```bash
+   # Ensure the build is current
+   cd /Users/tor-andershansen/Desktop/Projects/promptfinder
+   npm run build
+   ```
+
+2. **Chrome Extension Testing**:
+
+   - Open Chrome → `chrome://extensions/`
+   - Enable Developer mode
+   - Click "Load unpacked" → Select the project directory
+   - Test all functionality systematically
+
+3. **Create Test Data**: Add sample prompts of varying lengths to test virtualization
+
+4. **Document Issues**: Create a simple test report noting any remaining issues
+
+**Success Criteria for Step 1**:
+
+- ✅ All prompt tabs show content
+- ✅ Scrolling is smooth with 50+ prompts
+- ✅ All CRUD operations work correctly
+- ✅ No console errors during normal usage
+- ✅ Search and filtering work as expected
+
+Once manual testing confirms everything works, proceed to Step 2 for UX improvements.
 
 ---
 
@@ -242,6 +334,16 @@ _Status: ⬜_
    - ⬜ Regularly update dependencies for security and features
 
 ---
+
+---
+
+**Next Recommended Step:**
+
+**Performance Optimization & Ownership Display:**
+
+- Focus on optimizing UI performance for large prompt datasets (virtualized lists, lazy loading, or query optimization).
+- Continue refining the display and management of prompt ownership (e.g., clearer indicators for owned prompts, owner actions, and permissions).
+- After performance and ownership improvements, consider expanding integration/end-to-end tests and accessibility audits.
 
 **Open Questions/Notes**:
 

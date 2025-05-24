@@ -94,7 +94,7 @@ function showAddPromptInline() {
     const editHeading = document.createElement('div');
     editHeading.id = 'edit-mode-heading';
     editHeading.classList.add('edit-mode-heading');
-    editHeading.innerHTML = '<h2>Add new prompt</h2>';
+    editHeading.innerHTML = `<h2>${getText('ADD_NEW_PROMPT')}</h2>`;
     if (promptDetailEditableFieldsWrapperEl) {
       promptDetailEditableFieldsWrapperEl.insertAdjacentElement('beforebegin', editHeading);
     }
@@ -188,35 +188,35 @@ function renderAddPromptForm(draft = null) {
   return `
     <form id="prompt-add-form" autocomplete="off" novalidate>
       <div class="form-group">
-        <label for="add-title">Title: <span class="required" aria-hidden="true">*</span></label>
+        <label for="add-title">${getText('TITLE_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="add-title" name="title" required maxlength="100" rows="2" aria-required="true">${Utils.escapeHTML(title)}</textarea>
       </div>
       <div class="form-group">
-        <label for="add-description">Description: <span class="required" aria-hidden="true">*</span></label>
+        <label for="add-description">${getText('DESCRIPTION_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="add-description" name="description" required maxlength="500" aria-required="true">${Utils.escapeHTML(description)}</textarea>
       </div>
       <div class="form-group">
-        <label for="add-text">Prompt Text: <span class="required" aria-hidden="true">*</span></label>
+        <label for="add-text">${getText('PROMPT_TEXT_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="add-text" name="text" required aria-required="true">${Utils.escapeHTML(text)}</textarea>
       </div>
       <div class="form-group">
-        <label for="add-category">Category: <span class="required" aria-hidden="true">*</span></label>
+        <label for="add-category">${getText('CATEGORY_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <select id="add-category" name="category" required aria-required="true">
-          <option value="">-- Select a category --</option>
+          <option value="">${getText('SELECT_CATEGORY')}</option>
           ${categories.map(cat => `<option value="${Utils.escapeHTML(cat)}" ${category === cat ? 'selected' : ''}>${Utils.escapeHTML(cat)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label for="add-tags">Tags (comma-separated):</label>
+        <label for="add-tags">${getText('TAGS_LABEL')}:</label>
         <input type="text" id="add-tags" name="tags" value="${Utils.escapeHTML(tags)}" />
       </div>
       <div class="form-group">
-        <label for="add-tools">Target AI Tools (comma-separated): <span class="required" aria-hidden="true">*</span></label>
+        <label for="add-tools">${getText('TARGET_AI_TOOLS_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <input type="text" id="add-tools" name="targetAiTools" required aria-required="true" value="${Utils.escapeHTML(targetAiTools)}" />
       </div>
       <div class="form-group">
         <input type="checkbox" id="add-private" name="isPrivate" ${isPrivate ? 'checked' : ''} />
-        <label for="add-private">Make Private</label>
+        <label for="add-private">${getText('MAKE_PRIVATE_LABEL')}</label>
       </div>
     </form>
   `;
@@ -321,12 +321,15 @@ async function handleSaveAddPrompt() {
   });
   // Show error using the global message system
   if (missingFields.length > 0) {
-    Utils.handleError(`Please fill in all required fields: ${missingFields.join(', ')}.`, {
-      userVisible: true,
-      type: 'error',
-      timeout: 5000,
-      specificErrorElement: null,
-    });
+    Utils.handleError(
+      textManager.format('REQUIRED_FIELDS_ERROR', { fields: missingFields.join(', ') }),
+      {
+        userVisible: true,
+        type: 'error',
+        timeout: 5000,
+        specificErrorElement: null,
+      }
+    );
     if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
     return;
   }
@@ -338,7 +341,7 @@ async function handleSaveAddPrompt() {
       const draftStorage = getDraftStorage();
       await draftStorage.remove(ADD_DRAFT_KEY);
 
-      Utils.showConfirmationMessage('Prompt added successfully!');
+      Utils.showConfirmationMessage(getText('PROMPT_ADDED_SUCCESS'));
 
       // Notify any listeners (like the popup) that a prompt was modified (silence connection warning)
       if (chrome.runtime && chrome.runtime.sendMessage) {
@@ -431,35 +434,35 @@ function renderPromptEditForm(prompt, draft) {
   return `
     <form id="prompt-edit-form" autocomplete="off" novalidate>
       <div class="form-group">
-        <label for="edit-title">Title: <span class="required" aria-hidden="true">*</span></label>
+        <label for="edit-title">${getText('TITLE_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="edit-title" name="title" required maxlength="100" rows="2" aria-required="true">${Utils.escapeHTML(val('title'))}</textarea>
       </div>
       <div class="form-group">
-        <label for="edit-description">Description: <span class="required" aria-hidden="true">*</span></label>
+        <label for="edit-description">${getText('DESCRIPTION_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="edit-description" name="description" required maxlength="500" aria-required="true">${Utils.escapeHTML(val('description'))}</textarea>
       </div>
       <div class="form-group">
-        <label for="edit-text">Prompt Text: <span class="required" aria-hidden="true">*</span></label>
+        <label for="edit-text">${getText('PROMPT_TEXT_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <textarea id="edit-text" name="text" required aria-required="true">${Utils.escapeHTML(val('text'))}</textarea>
       </div>
       <div class="form-group">
-        <label for="edit-category">Category: <span class="required" aria-hidden="true">*</span></label>
+        <label for="edit-category">${getText('CATEGORY_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <select id="edit-category" name="category" required aria-required="true">
-          <option value="">-- Select a category --</option>
+          <option value="">${getText('SELECT_CATEGORY')}</option>
           ${categories.map(cat => `<option value="${Utils.escapeHTML(cat)}"${val('category') === cat ? ' selected' : ''}>${Utils.escapeHTML(cat)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label for="edit-tags">Tags (comma-separated):</label>
+        <label for="edit-tags">${getText('TAGS_LABEL')}:</label>
         <input type="text" id="edit-tags" name="tags" value="${Utils.escapeHTML(tags)}" />
       </div>
       <div class="form-group">
-        <label for="edit-tools">Target AI Tools (comma-separated): <span class="required" aria-hidden="true">*</span></label>
+        <label for="edit-tools">${getText('TARGET_AI_TOOLS_LABEL')}: <span class="required" aria-hidden="true">*</span></label>
         <input type="text" id="edit-tools" name="targetAiTools" required aria-required="true" value="${Utils.escapeHTML(tools)}" />
       </div>
       <div class="form-group">
         <input type="checkbox" id="edit-private" name="isPrivate"${val('isPrivate') ? ' checked' : ''} />
-        <label for="edit-private">Make Private</label>
+        <label for="edit-private">${getText('MAKE_PRIVATE_LABEL')}</label>
       </div>
     </form>
   `;
@@ -530,7 +533,7 @@ function showEditMode(prompt) {
     const editHeading = document.createElement('div');
     editHeading.id = 'edit-mode-heading';
     editHeading.classList.add('edit-mode-heading');
-    editHeading.innerHTML = '<h2>Editing prompt</h2>';
+    editHeading.innerHTML = `<h2>${getText('EDITING_PROMPT')}</h2>`;
     if (promptDetailEditableFieldsWrapperEl) {
       promptDetailEditableFieldsWrapperEl.insertAdjacentElement('beforebegin', editHeading);
     }
@@ -631,12 +634,15 @@ async function handleSaveEditPrompt(prompt) {
   });
   // Show error using the global message system
   if (missingFields.length > 0) {
-    Utils.handleError(`Please fill in all required fields: ${missingFields.join(', ')}.`, {
-      userVisible: true,
-      type: 'error',
-      timeout: 5000,
-      specificErrorElement: null,
-    });
+    Utils.handleError(
+      textManager.format('REQUIRED_FIELDS_ERROR', { fields: missingFields.join(', ') }),
+      {
+        userVisible: true,
+        type: 'error',
+        timeout: 5000,
+        specificErrorElement: null,
+      }
+    );
     if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
     return;
   }
@@ -645,7 +651,7 @@ async function handleSaveEditPrompt(prompt) {
     if (updatedPrompt && updatedPrompt.id) {
       // Clear draft
       await getDraftStorage().remove(editDraftKey(prompt.id));
-      Utils.showConfirmationMessage('Prompt updated successfully!');
+      Utils.showConfirmationMessage(getText('PROMPT_UPDATED_SUCCESS'));
       displayPromptDetails(updatedPrompt);
     } else {
       Utils.handleError('Failed to update prompt. Please check details or try again.', {
@@ -680,6 +686,7 @@ import * as Utils from './utils.js';
 import * as PromptData from './promptData.js';
 import { auth } from './firebase-init.js'; // Import the initialized auth service
 import { PROMPT_CATEGORIES } from './categories.js';
+import { getText, textManager } from './text-constants.js';
 
 // Import Prism.js
 import 'prismjs'; // Core
@@ -769,7 +776,7 @@ export const cacheDOMElements = () => {
   dateToEl = document.getElementById('date-to');
   updatedFromEl = document.getElementById('updated-from');
   updatedToEl = document.getElementById('updated-to');
-  promptsListEl = document.getElementById('prompts-list');
+  promptsListEl = document.getElementById('prompts-list-scroll');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
 
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
@@ -881,7 +888,7 @@ async function handleToggleFavorite(promptId) {
       } else {
         showTab(activeTab);
       }
-      Utils.showConfirmationMessage('Favorite status updated!');
+      Utils.showConfirmationMessage(getText('FAVORITE_UPDATED'));
     }
   } catch (error) {
     Utils.handleError('Error toggling favorite status in UI', {
@@ -906,7 +913,7 @@ async function handleRatePrompt(promptId, rating) {
       ) {
         displayPromptDetails(updatedPromptWithNewRating);
       }
-      Utils.showConfirmationMessage(`Rated ${rating} stars!`);
+      Utils.showConfirmationMessage(textManager.format('RATING_SUCCESS', { rating }));
     } else {
       Utils.handleError('Failed to submit rating. Please try again.', { userVisible: true });
     }
@@ -919,7 +926,7 @@ async function handleCopyPrompt(promptId) {
   try {
     const result = await PromptData.copyPromptToClipboard(promptId);
     if (result.success) {
-      Utils.showConfirmationMessage('Prompt copied to clipboard!');
+      Utils.showConfirmationMessage(getText('COPY_SUCCESS'));
 
       if (result.prompt) {
         // Update the prompt in the list of all prompts
@@ -939,7 +946,7 @@ async function handleCopyPrompt(promptId) {
       }
     } else {
       // Only show an error if clipboard write failed or prompt not found
-      Utils.handleError('Failed to copy prompt. Please try again.', {
+      Utils.handleError(getText('COPY_FAILED'), {
         userVisible: true,
         type: 'error',
       });
@@ -961,7 +968,7 @@ async function handleCopyPrompt(promptId) {
         error.message
       );
       // Still show success message since the copy itself succeeded
-      Utils.showConfirmationMessage('Prompt copied to clipboard!');
+      Utils.showConfirmationMessage(getText('COPY_SUCCESS'));
     } else {
       // Show errors for non-auth related issues
       Utils.handleError('Failed to process copy action in UI', {
@@ -976,7 +983,7 @@ async function handleDeletePrompt(promptId) {
   try {
     const success = await PromptData.deletePrompt(promptId);
     if (success) {
-      Utils.showConfirmationMessage('Prompt deleted successfully!');
+      Utils.showConfirmationMessage(getText('PROMPT_DELETED_SUCCESS'));
       await loadAndDisplayData();
       showPromptList();
     }
@@ -1200,7 +1207,7 @@ const setupEventListeners = () => {
     promptTextViewMoreEl?.addEventListener('click', () => {
       if (promptTextWrapperEl && promptDetailTextEl && promptDetailsSectionEl) {
         const isExpanded = promptTextWrapperEl.classList.toggle('expanded');
-        promptTextViewMoreEl.textContent = isExpanded ? 'View Less' : 'View More';
+        promptTextViewMoreEl.textContent = isExpanded ? getText('VIEW_LESS') : getText('VIEW_MORE');
         const fullText = promptDetailsSectionEl.dataset.fullPromptText || '';
         if (isExpanded) {
           promptDetailTextEl.textContent = fullText;
@@ -1257,7 +1264,7 @@ export const loadAndDisplayData = async () => {
       originalError: error,
     });
     if (promptsListEl)
-      promptsListEl.innerHTML = '<p class="empty-state">Could not load prompts.</p>';
+      promptsListEl.innerHTML = `<p class="empty-state">${getText('COULD_NOT_LOAD_PROMPTS')}</p>`;
   }
 };
 
@@ -1347,46 +1354,71 @@ export const showTab = which => {
   updateResetFiltersButtonVisibility();
 };
 
+// Clusterize.js instance for virtualized prompt list
+let clusterizeInstance = null;
+
 export const displayPrompts = prompts => {
-  if (!promptsListEl) return;
-  promptsListEl.innerHTML = '';
+  // Use Clusterize.js for virtualization
+  const scrollElem = document.getElementById('prompts-list-scroll');
+  const contentElem = document.getElementById('prompts-list-content');
+  if (!scrollElem || !contentElem) return;
+
+  // Handle empty state
   if (prompts.length === 0) {
-    promptsListEl.innerHTML =
-      '<div class="empty-state"><p>No prompts found. Try adjusting filters or add new prompts.</p></div>';
+    if (clusterizeInstance) {
+      clusterizeInstance.update([]);
+    }
+    contentElem.innerHTML = `<div class="empty-state"><p>${getText('NO_PROMPTS_FOUND')}</p></div>`;
+    // Reset scroll position
+    scrollElem.scrollTop = 0;
     return;
   }
-  prompts.forEach(prompt => {
-    // Card is a button for accessibility and clickability
-    const cardBtn = document.createElement('button');
-    cardBtn.classList.add('prompt-item', 'prompt-card-btn');
-    cardBtn.setAttribute('type', 'button');
-    cardBtn.setAttribute('tabindex', '0');
-    cardBtn.setAttribute('aria-label', `View details for prompt: ${prompt.title}`);
-    cardBtn.dataset.id = prompt.id;
+
+  // Generate HTML rows for Clusterize
+  const rows = prompts.map(prompt => {
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
-    // Private icon if prompt.isPrivate
     const privateIcon = prompt.isPrivate
       ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private" style="margin-right:0.5em; color:#e74c3c;"></i>`
       : '';
-    cardBtn.innerHTML = `
-      <div class="prompt-item__header">
-        ${privateIcon}<span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
-        <div class="prompt-item__actions">
-          <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Copy prompt">
-            <i class="fa-regular fa-copy"></i>
-          </button>
-          <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="Toggle favorite" aria-pressed="${isFavoriteDisplay}">
-            <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
-          </button>
+    return `
+      <button class="prompt-item prompt-card-btn" type="button" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
+        <div class="prompt-item__header">
+          ${privateIcon}<span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
+          <div class="prompt-item__actions">
+            <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+            <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
+              <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
-      <div class="tags">
-        ${(prompt.tags || []).map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
-      </div>
+        <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
+        <div class="tags">
+          ${(prompt.tags || []).map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
+        </div>
+      </button>
     `;
-    promptsListEl.appendChild(cardBtn);
   });
+
+  // Initialize or update Clusterize
+  if (!clusterizeInstance) {
+    clusterizeInstance = new window.Clusterize({
+      rows,
+      scrollElem,
+      contentElem,
+      tag: 'div',
+      callbacks: {
+        clusterChanged: () => {
+          // No-op, but could be used for lazy-loading images, etc.
+        },
+      },
+    });
+  } else {
+    clusterizeInstance.update(rows);
+  }
+  // Always reset scroll position to top on new render
+  scrollElem.scrollTop = 0;
 };
 
 const showPromptList = () => {
@@ -1565,14 +1597,14 @@ export const displayPromptDetails = prompt => {
 
   // Update community rating label if present
   const communityLabel = document.getElementById('community-rating-label');
-  if (communityLabel) communityLabel.textContent = 'Average vibes:';
+  if (communityLabel) communityLabel.textContent = getText('AVERAGE_VIBES');
 
   if (promptDetailTextEl && promptTextWrapperEl && promptTextViewMoreEl) {
     const fullText = prompt.text || '';
     if (fullText.length > PROMPT_TRUNCATE_LENGTH) {
       promptDetailTextEl.textContent = fullText.substring(0, PROMPT_TRUNCATE_LENGTH) + '...';
       promptTextViewMoreEl.classList.remove('hidden');
-      promptTextViewMoreEl.textContent = 'View More';
+      promptTextViewMoreEl.textContent = getText('VIEW_MORE');
       promptTextWrapperEl.classList.remove('expanded');
     } else {
       promptDetailTextEl.textContent = fullText;
@@ -1622,10 +1654,11 @@ export const displayPromptDetails = prompt => {
     const currentRating = prompt.currentUserRating || 0;
     userStarRatingEl.appendChild(createStars(currentRating, prompt.id, true));
     if (userRatingMessageEl) {
-      userRatingMessageEl.textContent = currentRating > 0 ? 'Your Rating:' : 'Rate this prompt!';
+      userRatingMessageEl.textContent =
+        currentRating > 0 ? getText('YOUR_RATING') : getText('RATE_PROMPT');
     }
   } else {
-    if (userRatingMessageEl) userRatingMessageEl.textContent = 'Login to rate.';
+    if (userRatingMessageEl) userRatingMessageEl.textContent = getText('LOGIN_TO_RATE');
     if (userStarRatingEl) userStarRatingEl.appendChild(createStars(0, prompt.id, false));
   }
 

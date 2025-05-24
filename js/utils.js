@@ -3,6 +3,8 @@
  * Contains shared utility functions for the extension.
  */
 
+import { getText } from './text-constants.js';
+
 /**
  * Promise wrapper for chrome.storage.local.get
  * @param {string|Array|Object} keys - Keys to retrieve from storage
@@ -11,7 +13,7 @@
 export const chromeStorageGet = keys => {
   return new Promise((resolve, reject) => {
     if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-      return reject(new Error('Chrome storage API not available.'));
+      return reject(new Error(getText('CHROME_STORAGE_NOT_AVAILABLE')));
     }
     chrome.storage.local.get(keys, result => {
       if (chrome.runtime.lastError) {
@@ -31,7 +33,7 @@ export const chromeStorageGet = keys => {
 export const chromeStorageSet = items => {
   return new Promise((resolve, reject) => {
     if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-      return reject(new Error('Chrome storage API not available.'));
+      return reject(new Error(getText('CHROME_STORAGE_NOT_AVAILABLE')));
     }
     chrome.storage.local.set(items, () => {
       if (chrome.runtime.lastError) {

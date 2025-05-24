@@ -27,11 +27,12 @@ import { httpsCallable } from 'firebase/functions';
 
 import { auth, db, functions } from '../js/firebase-init.js';
 import * as Utils from '../js/utils.js';
+import { textManager, getText } from './text-constants.js';
 
 // --- Firebase Authentication Functions ---
 export const signupUser = async (email, password, displayName) => {
   if (!auth) {
-    const err = new Error('Firebase Auth not available from firebase-init.js.');
+    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
@@ -44,7 +45,7 @@ export const signupUser = async (email, password, displayName) => {
         await updateProfile(userCredential.user, { displayName: displayName });
       } catch (profileError) {
         console.error('Error updating Firebase Auth profile:', profileError);
-        Utils.handleError('Could not set display name in auth profile.', {
+        Utils.handleError(getText('PROFILE_UPDATE_ERROR'), {
           userVisible: false,
           originalError: profileError,
         });
@@ -61,7 +62,7 @@ export const signupUser = async (email, password, displayName) => {
         });
       } catch (dbError) {
         console.error('Error creating user document in Firestore:', dbError);
-        Utils.handleError('Could not save user details after signup.', {
+        Utils.handleError(getText('USER_DOC_ERROR'), {
           userVisible: true,
           originalError: dbError,
         });
@@ -69,7 +70,7 @@ export const signupUser = async (email, password, displayName) => {
     }
     return userCredential;
   } catch (error) {
-    Utils.handleError(`Signup error: ${error.message}`, {
+    Utils.handleError(textManager.format('SIGNUP_ERROR', { message: error.message }), {
       userVisible: true,
       originalError: error,
     });
@@ -79,7 +80,7 @@ export const signupUser = async (email, password, displayName) => {
 
 export const loginUser = async (email, password) => {
   if (!auth) {
-    const err = new Error('Firebase Auth not available from firebase-init.js.');
+    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
@@ -87,21 +88,23 @@ export const loginUser = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential;
   } catch (error) {
-    Utils.handleError(`Login error: ${error.message}`, { userVisible: true, originalError: error });
+    Utils.handleError(textManager.format('LOGIN_ERROR', { message: error.message }), {
+      userVisible: true,
+      originalError: error,
+    });
     return Promise.reject(error);
   }
 };
 
 export const signInWithGoogle = async () => {
   if (typeof chrome === 'undefined' || !chrome.identity || !chrome.identity.launchWebAuthFlow) {
-    const errMsg =
-      'chrome.identity.launchWebAuthFlow API not available. Google Sign-In cannot proceed.';
+    const errMsg = getText('CHROME_IDENTITY_NOT_AVAILABLE');
     console.error(errMsg);
     Utils.handleError(errMsg, { userVisible: true });
     return Promise.reject(new Error(errMsg));
   }
   if (!auth) {
-    const errMsg = 'Firebase Auth service not initialized.';
+    const errMsg = getText('AUTH_NOT_AVAILABLE');
     console.error(errMsg);
     Utils.handleError(errMsg, { userVisible: true });
     return Promise.reject(new Error(errMsg));
@@ -111,7 +114,7 @@ export const signInWithGoogle = async () => {
     const manifest = chrome.runtime.getManifest();
     const clientId = manifest.oauth2?.client_id;
     if (!clientId) {
-      const errMsg = 'OAuth2 client_id not found in manifest.json.';
+      const errMsg = getText('OAUTH_CLIENT_ID_NOT_FOUND');
       console.error(errMsg);
       Utils.handleError(errMsg, { userVisible: true });
       return Promise.reject(new Error(errMsg));
@@ -134,14 +137,14 @@ export const signInWithGoogle = async () => {
           const msg = chrome.runtime.lastError.message;
           if (msg && msg.includes('The user did not approve access')) {
             // User cancelled: do not treat as error, but log info
-            console.info('Google Sign-In cancelled by user.');
+            console.info(getText('GOOGLE_SIGNIN_CANCELLED'));
             resolve(null);
           } else {
             reject(new Error(msg));
           }
         } else if (!responseUrl) {
           // User closed/cancelled: do not treat as error, but log info
-          console.info('Google Sign-In cancelled or popup closed by user.');
+          console.info(getText('GOOGLE_SIGNIN_CANCELLED_POPUP'));
           resolve(null);
         } else {
           resolve(responseUrl);
@@ -158,7 +161,7 @@ export const signInWithGoogle = async () => {
     const idToken = params.get('id_token');
 
     if (!idToken) {
-      const errMsg = 'Google Sign-In failed: ID token not found in callback URL.';
+      const errMsg = getText('GOOGLE_SIGNIN_ID_TOKEN_NOT_FOUND');
       console.error(errMsg, 'Callback URL params:', params.toString());
       Utils.handleError(errMsg, { userVisible: true });
       return Promise.reject(new Error(errMsg));
@@ -183,7 +186,7 @@ export const signInWithGoogle = async () => {
             'Error creating user document for Google user (launchWebAuthFlow):',
             dbError
           );
-          Utils.handleError('Could not save Google user details after signup.', {
+          Utils.handleError(getText('GOOGLE_USER_DETAILS_SAVE_ERROR'), {
             userVisible: true,
             originalError: dbError,
           });
@@ -195,11 +198,11 @@ export const signInWithGoogle = async () => {
     // Only log as error if not user cancellation
     if (error && error.message && error.message.includes('The user did not approve access')) {
       // User cancelled: log info, do not log as error
-      console.info('Google Sign-In cancelled by user.');
+      console.info(getText('GOOGLE_SIGNIN_CANCELLED'));
       return null;
     }
     console.error('Error in signInWithGoogle (launchWebAuthFlow) flow:', error);
-    const errMsg = error.message || 'An unknown error occurred during Google Sign-In.';
+    const errMsg = error.message || getText('GOOGLE_SIGNIN_UNKNOWN_ERROR');
     Utils.handleError(errMsg, { userVisible: true, originalError: error });
     return Promise.reject(error);
   }
@@ -207,13 +210,13 @@ export const signInWithGoogle = async () => {
 
 export const logoutUser = async () => {
   if (!auth) {
-    Utils.handleError('Firebase Auth not available from firebase-init.js.', { userVisible: true });
+    Utils.handleError(getText('FIREBASE_AUTH_NOT_AVAILABLE'), { userVisible: true });
     return Promise.resolve(false);
   }
   try {
     await firebaseSignOut(auth);
     if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
-      window.showToast('Logged out successfully.', { type: 'success', duration: 3000 });
+      window.showToast(getText('LOGOUT_SUCCESS'), { type: 'success', duration: 3000 });
     }
     return true;
   } catch (error) {
@@ -227,7 +230,7 @@ export const logoutUser = async () => {
 
 export const onAuthStateChanged = callback => {
   if (!auth) {
-    Utils.handleError('Firebase Auth not available from firebase-init.js.', { userVisible: false });
+    Utils.handleError(getText('FIREBASE_AUTH_NOT_AVAILABLE'), { userVisible: false });
     callback(null);
     return () => {};
   }
@@ -238,11 +241,11 @@ export const onAuthStateChanged = callback => {
 export const addPrompt = async promptData => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
-    Utils.handleError('User must be logged in to add a prompt.', { userVisible: true });
+    Utils.handleError(getText('LOGIN_TO_ADD_PROMPT'), { userVisible: true });
     return null;
   }
   if (!db) {
-    Utils.handleError('Firestore not available from firebase-init.js.', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE'), { userVisible: true });
     return null;
   }
   try {
@@ -284,15 +287,15 @@ export const addPrompt = async promptData => {
 export const ratePrompt = async (promptId, ratingValue) => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
-    Utils.handleError('User must be logged in to rate a prompt.', { userVisible: true });
+    Utils.handleError(getText('LOGIN_TO_RATE_PROMPT'), { userVisible: true });
     return null;
   }
   if (!db) {
-    Utils.handleError('Firestore not available.', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return null;
   }
   if (typeof ratingValue !== 'number' || ratingValue < 1 || ratingValue > 5) {
-    Utils.handleError('Invalid rating value. Must be a number between 1 and 5.', {
+    Utils.handleError(getText('INVALID_RATING'), {
       userVisible: true,
     });
     return null;
@@ -370,7 +373,7 @@ const formatLoadedPrompt = (
 export const loadPrompts = async () => {
   const currentUser = auth ? auth.currentUser : null;
   if (!db) {
-    Utils.handleError('Firestore not available for loading prompts (v9).', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_LOADING'), { userVisible: true });
     return [];
   }
 
@@ -437,7 +440,7 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
     return null;
   }
   if (!db) {
-    const msg = '[findPromptById (v9)] Firestore not available.';
+    const msg = getText('FIRESTORE_NOT_AVAILABLE_GENERAL');
     console.error(msg);
     if (handleError && Utils && Utils.handleError) Utils.handleError(msg, { userVisible: true });
     return null;
@@ -489,7 +492,7 @@ export const findPromptById = async (promptId, _promptsUnused = null, options = 
 export const updatePrompt = async (promptId, updates) => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
-    Utils.handleError('User must be logged in to update a prompt.', { userVisible: true });
+    Utils.handleError(getText('LOGIN_TO_UPDATE_PROMPT'), { userVisible: true });
     return null;
   }
   const allowedUpdates = { ...updates };
@@ -501,11 +504,11 @@ export const updatePrompt = async (promptId, updates) => {
   delete allowedUpdates.totalRatingsCount;
 
   if (!db) {
-    Utils.handleError('Firestore not available.', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return null;
   }
   if (!promptId) {
-    Utils.handleError('No prompt ID provided for update.', { userVisible: true });
+    Utils.handleError(getText('NO_PROMPT_ID_UPDATE'), { userVisible: true });
     return null;
   }
   if (!allowedUpdates || Object.keys(allowedUpdates).length === 0) {
@@ -524,7 +527,7 @@ export const updatePrompt = async (promptId, updates) => {
       return null;
     }
     if (docSnap.data().userId !== currentUser.uid) {
-      Utils.handleError('You do not have permission to update this prompt (v9).', {
+      Utils.handleError(getText('NO_PERMISSION_UPDATE'), {
         userVisible: true,
       });
       return null;
@@ -546,11 +549,11 @@ export const updatePrompt = async (promptId, updates) => {
 export const deletePrompt = async promptId => {
   const currentUser = auth ? auth.currentUser : null;
   if (!currentUser) {
-    Utils.handleError('User must be logged in to delete a prompt.', { userVisible: true });
+    Utils.handleError(getText('LOGIN_TO_DELETE_PROMPT'), { userVisible: true });
     return false;
   }
   if (!db) {
-    Utils.handleError('Firestore not available.', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return false;
   }
   if (!promptId) {
@@ -592,7 +595,7 @@ export const toggleFavorite = async promptId => {
     return null;
   }
   if (!db) {
-    Utils.handleError('Firestore not available.', { userVisible: true });
+    Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return null;
   }
   if (!promptId) {

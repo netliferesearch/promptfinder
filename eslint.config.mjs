@@ -27,6 +27,7 @@ export default [
       'purgecss.config.mjs',
       'rollup.config.js',
       'babel.config.json',
+      'js/clusterize.min.js',
       '.vscode/',
       '.idx/',
     ],

@@ -1,3 +1,4 @@
+import { textManager, getText } from './js/text-constants.js';
 import {
   loginUser,
   signupUser,
@@ -29,14 +30,15 @@ window.showAuthViewGlobally = showAuthView;
 
 window.handleAuthRequiredAction = actionDescription => {
   // Use toast notification for all auth-required actions
+  const message = textManager.format('AUTH_ACTION_REQUIRED', { action: actionDescription });
   if (typeof window.showToast === 'function') {
-    window.showToast(`Please login or create an account to ${actionDescription}.`, {
+    window.showToast(message, {
       type: 'info',
       duration: 5000,
     });
   } else {
     // fallback for environments without toast
-    Utils.handleError(`Please login or create an account to ${actionDescription}.`, {
+    Utils.handleError(message, {
       userVisible: true,
       type: 'info',
       timeout: 5000,
@@ -122,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         if (window.handleAuthRequiredAction) {
-          window.handleAuthRequiredAction('add a new prompt');
+          window.handleAuthRequiredAction(getText('ACTION_ADD_PROMPT'));
         }
       }
     });
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (error) {
         Utils.displayAuthError(
-          error.message || 'Login failed. Please try again.',
+          error.message || getText('AUTH_LOGIN_FAILED'),
           authErrorMessageElement
         );
       }
@@ -173,11 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = signupPasswordInput.value;
 
       if (!displayName) {
-        Utils.displayAuthError('Please enter a display name.', authErrorMessageElement);
+        Utils.displayAuthError(getText('FORM_DISPLAY_NAME_REQUIRED'), authErrorMessageElement);
         return;
       }
       if (displayName.includes('@') || displayName.includes('.')) {
-        Utils.displayAuthError('Display name cannot be an email address.', authErrorMessageElement);
+        Utils.displayAuthError(getText('FORM_DISPLAY_NAME_INVALID'), authErrorMessageElement);
         return;
       }
 
@@ -185,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userCredential = await signupUser(email, password, displayName);
         if (userCredential && userCredential.user) {
           signupForm.reset();
-          Utils.showConfirmationMessage('Signup successful! You are now logged in.', {
+          Utils.showConfirmationMessage(getText('AUTH_SIGNUP_SUCCESS'), {
             specificErrorElement: confirmationMessageElement,
             timeout: 5000,
             type: 'success',
@@ -193,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (error) {
         Utils.displayAuthError(
-          error.message || 'Signup failed. Please try again.',
+          error.message || getText('AUTH_SIGNUP_FAILED'),
           authErrorMessageElement
         );
       }
@@ -206,7 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         await signInWithGoogle();
       } catch (error) {
-        Utils.displayAuthError(error.message || 'Google Sign-In failed.', authErrorMessageElement);
+        Utils.displayAuthError(
+          error.message || getText('AUTH_GOOGLE_SIGNIN_FAILED'),
+          authErrorMessageElement
+        );
       }
     });
   }
