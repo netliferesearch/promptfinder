@@ -1,22 +1,6 @@
 # PromptFinder - AI Prompt Management Chrome Extension
 
-PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI promp4. **Build JavaScript (if not using watch mode):**
-
-```bash
-npm run build:js:dev
-# or the full build (includes CSS optimization)
-npm run build
-```
-
-5. **CSS Optimization:** To optimize CSS separately:
-
-   ```bash
-   npm run css:purge
-   ```
-
-   This runs PurgeCSS to remove unused CSS selectors, reducing the final bundle size by ~43% (92K → 52K).
-
-6. **Watch Mode (Recommended for Active Development):** For automatic rebuilding of JavaScript on changes:lows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
+PromptFinder is a Chrome extension designed to help users efficiently manage, store, and discover AI prompts. It allows you to search, browse, add, and organize prompts for various AI tools (like ChatGPT, Midjourney, Claude, etc.). All your prompts are synced to the cloud using Firebase, allowing access across different Chrome browsers where you're signed in.
 
 ## Key Features
 
@@ -61,6 +45,7 @@ This project has recently undergone a significant migration to Firebase for back
   - ✅ **Icon Optimization:** Resized all icons from 800x800px to proper dimensions (16px, 48px, 128px) for ~98% size reduction
   - ✅ **Build Process Enhancement:** Added `npm run css:purge` command and integrated CSS optimization into build workflow
   - ✅ **Performance Validation:** Maintained full functionality while achieving significant performance improvements across all tests
+  - ✅ **Performance Validation:** Maintained full functionality while achieving significant performance improvements across all tests in the main `/tests` system
   - ✅ **Configuration Management:** Created comprehensive PurgeCSS configuration with safelist for dynamic classes
 
 - **Critical Bug Fix - Prompt List Virtualization (May 2025):**
@@ -84,16 +69,18 @@ This project has recently undergone a significant migration to Firebase for back
   - Filter and sort controls are visually consistent, accessible, and mobile-friendly.
   - Filter checkboxes are properly aligned and sized for better UX.
   - **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent. All tests updated and passing for new error handling logic.
-  - **Delete Confirmation Dialog Improved:** The delete confirmation dialog's buttons now match the style and accessibility of the add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
-  - **Add/Edit Prompt Workflow Improved:** After adding a new prompt, users are redirected to the details view for that prompt, improving workflow and clarity.
-  - **Chrome Extension Warning Silenced:** The warning for message passing ("Could not establish connection") is now silenced unless a real error occurs.
-  - Copy-to-clipboard works for all users, regardless of login state.
-  - CSP updated to allow Cloud Functions endpoint for all users.
+- **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent. All tests in the main `/tests` system updated and passing for new error handling logic.
+- **Delete Confirmation Dialog Improved:** The delete confirmation dialog's buttons now match the style and accessibility of the add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
+- **Add/Edit Prompt Workflow Improved:** After adding a new prompt, users are redirected to the details view for that prompt, improving workflow and clarity.
+- **Chrome Extension Warning Silenced:** The warning for message passing ("Could not establish connection") is now silenced unless a real error occurs.
+- Copy-to-clipboard works for all users, regardless of login state.
+- CSP updated to allow Cloud Functions endpoint for all users.
 
 - **Cloud Functions Fully Migrated to Firebase Functions v2 API:** All backend logic (ratings, favorites, usage count, stats, subcollection cleanup) is now implemented as 2nd Gen Cloud Functions in `europe-west1`.
 - **Automated Dependency & Code Health Script:** Use `./update-deps.sh` to automatically check for outdated npm packages, upgrade all dependencies, and run lint, build, and test. This helps keep your project up to date and healthy.
 - **All Dependencies Up to Date:** Core packages like `firebase`, `rollup`, and others are now kept current. The project uses ES Modules (`type: module` in `package.json`) for modern compatibility.
 - **All Tests Passing:** 61/61 tests pass, including unit and integration tests for Cloud Functions and client logic.
+- **All Tests Passing:** 61/61 tests pass in the main `/tests` system, including unit and integration tests for Cloud Functions and client logic. Redesign-specific test files have been removed; only the core test suite is maintained.
 - **Strict Linting, Formatting, and Build:** Code quality is enforced with ESLint and Prettier. The build process is automated and tested after every update.
 - **Cloud Functions Deployment:** All functions are deployed as 2nd Gen in `europe-west1` and tested for permissions and runtime issues.
 
@@ -122,7 +109,8 @@ This project has recently undergone a significant migration to Firebase for back
 
 **Recent Accomplishments:**
 
-- ✅ **Unit Tests Updated & Passing:** All tests have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably.
+- ✅ **Unit Tests Updated & Passing:** All tests in the main `/tests` system have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably. Redesign-specific test files have been removed as part of project maintenance.
+- ✅ **Unit Tests Updated & Passing:** All tests in the main `/tests` system have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably. Redesign-specific test files have been removed as part of project maintenance.
 - ✅ **Firestore Security Rules:** Implemented robust data protection.
 - ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
 
@@ -196,7 +184,9 @@ This project has recently undergone a significant migration to Firebase for back
 
 ### Testing
 
-Jest is used for unit testing. The test suite is fully updated for ES Modules and Firebase v9 SDK. **A global Jest mock for `js/firebase-init.js` is used in `tests/setupTests.js` to ensure all test files use the same mock for `auth`, `db`, and `functions`.**
+Jest is used for unit testing. The main `/tests` suite is fully updated for ES Modules and Firebase v9 SDK. **A global Jest mock for `js/firebase-init.js` is used in `tests/setupTests.js` to ensure all test files use the same mock for `auth`, `db`, and `functions`.**
+
+**Note:** All redesign-specific test files and ad hoc test HTML/scripts have been removed. Only the core `/tests` system is maintained and used for ongoing production and maintenance testing.
 
 To run tests:
 

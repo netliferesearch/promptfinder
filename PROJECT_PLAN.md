@@ -225,7 +225,7 @@ _Status: 🚧_
 - ✅ **Global Toast Notification System:** All user-facing messages (success, error, info) now use an accessible toast notification system. Legacy message elements have been removed from the UI. All user actions (copy, favorite, logout, etc.) provide clear, accessible feedback via toast. Copying prompts always works for logged-out users; usage count increment errors are now silent.
 - ✅ Copy-to-clipboard works for all users, regardless of login state.
 - ✅ CSP updated to allow Cloud Functions endpoint for all users.
-- ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests pass after these changes.
+- ✅ Tests updated to match new error handling logic for toast notifications and copy/favorite actions. All tests in the main `/tests` system pass after these changes. Redesign-specific test files and ad hoc test HTML/scripts have been removed; only the core test suite is maintained.
 
 - ✅ Delete confirmation dialog buttons now match the style and accessibility of add/edit prompt buttons ("Delete" is red, "Cancel" is secondary style).
 - ✅ After adding a new prompt, users are redirected to the details view for that prompt (improved workflow).
