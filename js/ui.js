@@ -855,7 +855,7 @@ async function handlePromptListClick(event) {
   console.log('[UI SUT LOG] handlePromptListClick triggered');
   // Prevent card click from opening details if copy or favorite button is clicked
   const copyBtn = event.target.closest('.copy-prompt');
-  const favBtn = event.target.closest('.toggle-favorite');
+  const favBtn = event.target.closest('.prompt-fav-btn');
   if (copyBtn) {
     event.stopPropagation();
     const promptId = copyBtn.dataset.id;
@@ -892,19 +892,21 @@ async function handleToggleFavorite(promptId) {
   try {
     const updatedPrompt = await PromptData.toggleFavorite(promptId);
     if (updatedPrompt) {
-      const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) {
-        allPrompts[index] = updatedPrompt;
-      }
+      // After toggling favorite, reload all prompts to ensure counts are up to date
+      allPrompts = await PromptData.loadPrompts();
       if (
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
         promptDetailsSectionEl.dataset.currentPromptId === promptId
       ) {
-        displayPromptDetails(updatedPrompt);
-      } else {
-        showTab(activeTab);
+        // Find the updated prompt from the new allPrompts array
+        const freshPrompt = allPrompts.find(p => p.id === promptId) || updatedPrompt;
+        displayPromptDetails(freshPrompt);
       }
+      // Always re-render the list to update favorite count, but preserve scroll position
+      const scrollElem = document.getElementById('prompts-list-scroll');
+      const prevScrollTop = scrollElem ? scrollElem.scrollTop : 0;
+      showTab(activeTab, { preserveScrollTop: prevScrollTop });
       Utils.showConfirmationMessage(getText('FAVORITE_UPDATED'));
     }
   } catch (error) {
@@ -1331,7 +1333,7 @@ export const initializeUI = async () => {
   }
 };
 
-export const showTab = which => {
+export const showTab = (which, opts = {}) => {
   activeTab = which;
   if (tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
   if (tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
@@ -1373,14 +1375,14 @@ export const showTab = which => {
   };
   const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
   const filtered = PromptData.filterPrompts(promptsToFilter, filters);
-  displayPrompts(filtered);
+  displayPrompts(filtered, opts);
   updateResetFiltersButtonVisibility();
 };
 
 // Clusterize.js instance for virtualized prompt list
 let clusterizeInstance = null;
 
-export const displayPrompts = prompts => {
+export const displayPrompts = (prompts, opts = {}) => {
   // Use Clusterize.js for virtualization
   const scrollElem = document.getElementById('prompts-list-scroll');
   const contentElem = document.getElementById('prompts-list-content');
@@ -1397,8 +1399,10 @@ export const displayPrompts = prompts => {
     return;
   }
 
-  // Generate HTML rows for Clusterize
-  const rows = prompts.map(prompt => {
+  // Generate HTML rows for Clusterize, always using the latest prompt data from allPrompts by ID
+  const rows = prompts.map(p => {
+    // Always use the latest prompt object from allPrompts if available
+    const prompt = allPrompts.find(ap => ap.id === p.id) || p;
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     const privateIcon = prompt.isPrivate
       ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private"></i>`
@@ -1407,9 +1411,21 @@ export const displayPrompts = prompts => {
     const desc = Utils.escapeHTML(prompt.description || '').replace(/\n/g, ' ');
     const descShort = desc.length > 120 ? desc.slice(0, 120) + '…' : desc;
     // Tools/compatibility pills
-    const tools = (prompt.tools || prompt.aiTools || [])
+    // Prefer targetAiTools, fallback to aiTools/tools for legacy
+    const toolsArr =
+      Array.isArray(prompt.targetAiTools) && prompt.targetAiTools.length > 0
+        ? prompt.targetAiTools
+        : Array.isArray(prompt.aiTools) && prompt.aiTools.length > 0
+          ? prompt.aiTools
+          : Array.isArray(prompt.tools) && prompt.tools.length > 0
+            ? prompt.tools
+            : [];
+    const tools = toolsArr
       .map(tool => `<span class="tool-pill">${Utils.escapeHTML(tool)}</span>`)
       .join('');
+    const toolsSection = toolsArr.length
+      ? `<div class="prompt-detail-tools-label">Compatible with</div>\n         <div class="prompt-detail-tools">${tools}</div>`
+      : '';
     // Community rating (read-only stars)
     const avgRating =
       typeof prompt.averageRating === 'number' ? prompt.averageRating.toFixed(1) : '-';
@@ -1439,8 +1455,7 @@ export const displayPrompts = prompts => {
         <div class="prompt-card__tags tags">
           ${(prompt.tags || []).map(t => `<span class="prompt-card__tag tag">${Utils.escapeHTML(t)}</span>`).join('')}
         </div>
-        <div class="prompt-detail-tools-label">Compatible with</div>
-        <div class="prompt-detail-tools">${tools}</div>
+        ${toolsSection}
         <div class="prompt-card-bottom">
           <div class="community-rating-section">
             ${stars}
@@ -1477,8 +1492,12 @@ export const displayPrompts = prompts => {
     if (counter)
       counter.textContent = `${prompts.length} prompt${prompts.length === 1 ? '' : 's'} found`;
   }
-  // Always reset scroll position to top on new render
-  scrollElem.scrollTop = 0;
+  // Restore scroll position if requested (e.g., after favorite toggle), else reset to top
+  if (opts && typeof opts.preserveScrollTop === 'number') {
+    scrollElem.scrollTop = opts.preserveScrollTop;
+  } else {
+    scrollElem.scrollTop = 0;
+  }
 };
 
 const showPromptList = () => {
