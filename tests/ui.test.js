@@ -51,27 +51,28 @@ window.Clusterize = jest.fn().mockImplementation(options => {
 });
 
 // Enhanced filter mock that properly handles tab filtering
-const enhancedFilterMock = (prompts, filters) => {
-  let result = [...prompts];
-
-  // Handle tab filtering
-  if (filters.tab === 'private') {
-    result = result.filter(p => p.isPrivate);
-  } else if (filters.tab === 'favs') {
-    result = result.filter(p => p.currentUserIsFavorite);
-  }
-
-  // Handle search filtering
-  if (filters.searchTerm) {
-    result = result.filter(
-      p =>
-        p.title?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        p.description?.toLowerCase().includes(filters.searchTerm.toLowerCase())
-    );
-  }
-
-  return result;
-};
+// (Unused, kept for reference. Remove if not needed.)
+// const enhancedFilterMock = (prompts, filters) => {
+//   let result = [...prompts];
+//
+//   // Handle tab filtering
+//   if (filters.tab === 'private') {
+//     result = result.filter(p => p.isPrivate);
+//   } else if (filters.tab === 'favs') {
+//     result = result.filter(p => p.currentUserIsFavorite);
+//   }
+//
+//   // Handle search filtering
+//   if (filters.searchTerm) {
+//     result = result.filter(
+//       p =>
+//         p.title?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+//         p.description?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+//     );
+//   }
+//
+//   return result;
+// };
 
 // Mock dependencies of ui.js
 const mockPromptForFavoriteTests = {
