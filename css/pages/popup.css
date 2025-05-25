@@ -1,3 +1,86 @@
+/* Main content min width */
+.popup-container,
+#main-content {
+  min-width: 400px;
+  background: #f7fafd;
+}
+
+/* Main controls layout */
+.main-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 0 1.5rem;
+  background: #f7fafd;
+}
+
+.search-bar {
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 1px 4px 0 rgba(16, 30, 54, 0.04);
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid #e3e8f0;
+  /*padding: 0.75rem 1rem;*/
+  font-size: 1rem;
+  appearance: none;
+}
+.search-input {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  /*padding: 0.75rem 0;*/
+  box-shadow: none;
+  /*color: #222b45;*/
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+.search-input:focus {
+  background: #fff;
+}
+
+.category-sort-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.category-dropdown,
+.sort-dropdown {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #e3e8f0;
+  background: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  box-shadow: 0 1px 4px 0 rgba(16, 30, 54, 0.04);
+  appearance: none;
+}
+
+.filter-sort-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-counter-row {
+  padding: 0 1.5rem 0.5rem 1.5rem;
+  font-size: var(--font-size-xs);
+  color: #3b4252;
+  font-weight: 500;
+}
+/* Prompt list tabs */
+/* Prompt list container */
+#prompts-list-scroll.cards-container {
+  background: transparent;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  min-height: 300px;
+  border: none;
+  box-shadow: none;
+}
 /* Clusterize.js virtualization container for prompt list */
 #prompts-list-scroll.cards-container {
   height: 400px;
@@ -338,43 +421,6 @@ body.editing-prompt .fab {
   text-align: center;
   padding: var(--spacing-xl) var(--spacing-md);
   color: var(--color-gray-500);
-}
-
-/* Navigation Tabs Accessibility & Layout Fixes */
-.tabs {
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  overflow-x: auto;
-  padding: 0 4px 4px 4px;
-  scrollbar-width: thin;
-}
-.tabs button {
-  min-width: 90px;
-  max-width: 120px;
-  flex: 1 1 90px;
-  padding: 6px 8px;
-  font-size: 0.98rem;
-  background: var(--color-gray-100, #f7f7f7);
-  color: var(--color-primary, #007bff);
-  border: none;
-  border-radius: 6px 6px 0 0;
-  transition:
-    background 0.2s,
-    color 0.2s;
-  outline: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.tabs button.active {
-  background: var(--color-primary, #007bff);
-  color: #fff;
-  font-weight: 600;
-}
-.tabs button:hover:not(.active),
-.tabs button:focus-visible:not(.active) {
-  background: var(--color-primary-light, #e6f0ff);
-  color: var(--color-primary, #007bff);
 }
 
 /* Hide horizontal scrollbar but allow scroll */

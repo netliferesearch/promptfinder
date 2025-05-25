@@ -687,6 +687,7 @@ import * as PromptData from './promptData.js';
 import { auth } from './firebase-init.js'; // Import the initialized auth service
 import { PROMPT_CATEGORIES } from './categories.js';
 import { getText, textManager } from './text-constants.js';
+import { handleConnectionError } from './firebase-connection-handler.js';
 
 // Import Prism.js
 import 'prismjs'; // Core
@@ -759,6 +760,22 @@ export const cacheDOMElements = () => {
   sortBySelectEl = document.getElementById('sort-by');
   sortDirToggleEl = document.getElementById('sort-dir-toggle');
   sortDirIconEl = document.getElementById('sort-dir-icon');
+
+  // Populate sort dropdown with i18n text constants
+  if (sortBySelectEl) {
+    const sortOptions = [
+      { value: 'createdAt', label: getText('SORT_NEWEST') },
+      { value: 'updatedAt', label: getText('SORT_RECENTLY_EDITED') },
+      { value: 'averageRating', label: getText('SORT_COMMUNITY_RATING') },
+      { value: 'currentUserRating', label: getText('SORT_YOUR_RATING') },
+      { value: 'usageCount', label: getText('SORT_MOST_USED') },
+      { value: 'favoritesCount', label: getText('SORT_MOST_FAVORITED') },
+      { value: 'title', label: getText('SORT_TITLE_AZ') },
+    ];
+    sortBySelectEl.innerHTML = sortOptions
+      .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+      .join('');
+  }
   tabAllEl = document.getElementById('tab-all');
   tabFavsEl = document.getElementById('tab-favs');
   tabPrivateEl = document.getElementById('tab-private');
@@ -1259,6 +1276,12 @@ export const loadAndDisplayData = async () => {
 
     showTab(activeTab);
   } catch (error) {
+    // Check for connection-specific errors and handle them
+    if (error.message && error.message.includes('WebChannelConnection')) {
+      console.log('WebChannel connection error detected in loadAndDisplayData');
+      await handleConnectionError(error);
+    }
+
     Utils.handleError('Error loading and displaying prompt data', {
       userVisible: true,
       originalError: error,
@@ -1378,24 +1401,54 @@ export const displayPrompts = prompts => {
   const rows = prompts.map(prompt => {
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     const privateIcon = prompt.isPrivate
-      ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private" style="margin-right:0.5em; color:#e74c3c;"></i>`
+      ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private"></i>`
       : '';
+    // Truncate description to 2 lines with ellipsis (CSS will handle the visual, but we can limit chars for fallback)
+    const desc = Utils.escapeHTML(prompt.description || '').replace(/\n/g, ' ');
+    const descShort = desc.length > 120 ? desc.slice(0, 120) + '…' : desc;
+    // Tools/compatibility pills
+    const tools = (prompt.tools || prompt.aiTools || [])
+      .map(tool => `<span class="tool-pill">${Utils.escapeHTML(tool)}</span>`)
+      .join('');
+    // Community rating (read-only stars)
+    const avgRating =
+      typeof prompt.averageRating === 'number' ? prompt.averageRating.toFixed(1) : '-';
+    const stars = (() => {
+      const val = Math.round(prompt.averageRating || 0);
+      return `<span class="star-rating-wrapper read-only-stars">${[1, 2, 3, 4, 5].map(i => (i <= val ? "<i class='fas fa-star'></i>" : "<i class='far fa-star'></i>")).join('')}</span>`;
+    })();
+    // Favorite count
+    const favCount = typeof prompt.favoritesCount === 'number' ? prompt.favoritesCount : 0;
     return `
       <button class="prompt-item prompt-card-btn" type="button" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
-        <div class="prompt-item__header">
-          ${privateIcon}<span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
-          <div class="prompt-item__actions">
-            <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
-              <i class="fa-regular fa-copy"></i>
-            </button>
-            <button class="toggle-favorite" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
-              <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i>
-            </button>
+        <div class="prompt-card__header-bg">
+          <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
+          <div class="prompt-item__header">
+            <div class="prompt-title-row">
+              ${privateIcon ? `<span class="prompt-private-icon">${privateIcon}</span>` : ''}
+              <span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
+            </div>
+            <div class="prompt-item__actions">
+              <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
           </div>
+          <div class="prompt-card__description">${descShort}</div>
         </div>
-        <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
-        <div class="tags">
-          ${(prompt.tags || []).map(t => `<span class="tag">${Utils.escapeHTML(t)}</span>`).join('')}
+        <div class="prompt-card__tags tags">
+          ${(prompt.tags || []).map(t => `<span class="prompt-card__tag tag">${Utils.escapeHTML(t)}</span>`).join('')}
+        </div>
+        <div class="prompt-detail-tools-label">Compatible with</div>
+        <div class="prompt-detail-tools">${tools}</div>
+        <div class="prompt-card-bottom">
+          <div class="community-rating-section">
+            ${stars}
+            <span class="avg-rating">(${avgRating})</span>
+          </div>
+          <button class="prompt-fav-btn${isFavoriteDisplay ? ' active' : ''}" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
+            <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i> <span>${favCount}</span>
+          </button>
         </div>
       </button>
     `;
@@ -1410,12 +1463,19 @@ export const displayPrompts = prompts => {
       tag: 'div',
       callbacks: {
         clusterChanged: () => {
-          // No-op, but could be used for lazy-loading images, etc.
+          // Update prompt counter
+          const counter = document.getElementById('prompt-counter');
+          if (counter)
+            counter.textContent = `${prompts.length} prompt${prompts.length === 1 ? '' : 's'} found`;
         },
       },
     });
   } else {
     clusterizeInstance.update(rows);
+    // Update prompt counter
+    const counter = document.getElementById('prompt-counter');
+    if (counter)
+      counter.textContent = `${prompts.length} prompt${prompts.length === 1 ? '' : 's'} found`;
   }
   // Always reset scroll position to top on new render
   scrollElem.scrollTop = 0;

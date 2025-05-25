@@ -2,6 +2,14 @@
 // Centralized text management for consistency and future internationalization
 
 export const TEXT_CONSTANTS = {
+  // Sort Dropdown Options
+  SORT_NEWEST: 'Newest',
+  SORT_RECENTLY_EDITED: 'Recently Edited',
+  SORT_COMMUNITY_RATING: 'Community Rating',
+  SORT_YOUR_RATING: 'Your Rating',
+  SORT_MOST_USED: 'Most Used',
+  SORT_MOST_FAVORITED: 'Most Favorited',
+  SORT_TITLE_AZ: 'Title (A-Z)',
   // App branding
   APP_NAME: 'PromptFinder',
 

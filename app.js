@@ -10,6 +10,7 @@ import {
 import * as Utils from './js/utils.js';
 import * as UI from './js/ui.js';
 import * as PromptDataModule from './js/promptData.js';
+import { initializeConnectionMonitoring } from './js/firebase-connection-handler.js';
 
 window.DebugPromptData = PromptDataModule;
 
@@ -48,6 +49,9 @@ window.handleAuthRequiredAction = actionDescription => {
 
 document.addEventListener('DOMContentLoaded', () => {
   console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
+
+  // Initialize Firebase connection monitoring
+  initializeConnectionMonitoring();
 
   mainContentElement = document.getElementById('main-content');
   authViewElement = document.getElementById('auth-view');

@@ -11,8 +11,14 @@
     "scopes": ["openid", "email", "profile"]
   },
   "permissions": ["storage", "clipboardWrite", "windows", "identity", "identity.email"],
+  "host_permissions": [
+    "https://*.firebaseapp.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.firebaseio.com/*",
+    "https://*.cloudfunctions.net/*"
+  ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://auth.firebase.com https://auth.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://europe-west1-promptfinder-2a095.cloudfunctions.net;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://europe-west1-promptfinder-2a095.cloudfunctions.net https://*.cloudfunctions.net wss://*.firebaseio.com https://firebasestorage.googleapis.com https://firebase.googleapis.com wss://firestore.googleapis.com;"
   },
   "icons": {
     "16": "icons/icon16.png",

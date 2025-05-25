@@ -1,58 +1,86 @@
-/* Make the whole card look like a card, not a button */
+/* Header section - no special background, just content structure */
+.prompt-card__header-bg {
+  background: none;
+  border-radius: 0;
+  padding: 1.25em 1.5em 0.75em 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  box-shadow: none;
+}
 
+/* Ensure only one background rule for the card */
 .prompt-card-btn {
   all: unset;
   display: block;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  background: var(--color-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--spacing-md);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px 0 rgba(16, 30, 54, 0.08);
+  margin-bottom: 1.25rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0 0 1.25rem 0;
+  position: relative;
+  overflow: hidden;
   transition:
     box-shadow 0.2s,
     transform 0.2s;
-  position: relative;
-  overflow: hidden;
+}
+
+/* Ensure all sections within the card have consistent white background */
+/* Use very specific selectors to override any existing rules */
+.prompt-card-btn,
+.prompt-card-btn > *,
+.prompt-card-btn .prompt-card__content,
+.prompt-card-btn .prompt-card__header,
+.prompt-card-btn .prompt-card__description {
+  background: #fff !important;
+}
+
+.prompt-card-btn .prompt-card__tags,
+.prompt-card-btn .prompt-card__tags.tags,
+.prompt-card-btn .prompt-detail-tools,
+.prompt-card-btn .prompt-detail-tools-label,
+.prompt-card-btn .prompt-card-bottom,
+.prompt-card-btn .community-rating-section {
+  background: #fff !important;
+}
+
+/* Make sure individual tags and tools keep their original styled backgrounds */
+.prompt-card-btn .tags .tag,
+.prompt-card-btn .prompt-card__tag,
+.prompt-card-btn .prompt-card__tag.tag {
+  background: #f1f5fa !important;
+}
+
+.prompt-card-btn .prompt-detail-tools .tool-pill {
+  background: #f1f5fa !important;
 }
 .prompt-card-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid #222b45;
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  box-shadow: 0 0 0 3px #e3e8f0;
   z-index: 2;
 }
 .prompt-card-btn:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 24px 0 rgba(16, 30, 54, 0.14);
   transform: translateY(-2px);
-  background-color: var(--color-primary-light, #ede7ff);
+  background-color: #fff !important; /* Keep white background on hover */
 }
-/* Category pill above tags */
-.prompt-item__category {
-  display: inline-block;
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  padding: 2px var(--spacing-xs);
-  border-radius: var(--border-radius-sm);
-  margin-bottom: var(--spacing-xs);
-  margin-right: var(--spacing-xs);
-  font-weight: 500;
+.prompt-card-btn:hover > *,
+.prompt-card-btn:hover .prompt-card__content,
+.prompt-card-btn:hover .prompt-card__header,
+.prompt-card-btn:hover .prompt-card__description,
+.prompt-card-btn:hover .prompt-card__tags,
+.prompt-card-btn:hover .prompt-card__tags.tags,
+.prompt-card-btn:hover .prompt-detail-tools,
+.prompt-card-btn:hover .prompt-detail-tools-label,
+.prompt-card-btn:hover .prompt-card-bottom,
+.prompt-card-btn:hover .community-rating-section {
+  background: #fff !important;
 }
-
-/* Remove default button styles for children */
-.prompt-card-btn button {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-
 /* Layout for actions in header */
 /* Actions: copy and favorite closer together, no extra margin */
 .prompt-item__actions {
@@ -201,11 +229,62 @@
 }
 
 /* Card header and title */
-.prompt-card__header {
+
+/* Category pill */
+.prompt-item__category {
+  display: inline-block;
+  background: #e3d6ff;
+  color: #7c4dff;
+  font-size: 1em;
+  padding: 0.35em 1.2em;
+  border-radius: 999px;
+  margin-bottom: 0.7em;
+  margin-right: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.prompt-item__header {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   justify-content: space-between;
+  width: 100%;
+  margin-bottom: var(--spacing-xs);
+}
+.prompt-title-row {
+  display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
+  gap: 0.5em;
+  min-width: 0;
+}
+.prompt-private-icon {
+  color: #e74c3c;
+  font-size: 1.1em;
+  margin-right: 0.4em;
+  display: flex;
+  align-items: center;
+}
+.prompt-item__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-black);
+  font-size: var(--font-size-lg);
+  padding-right: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+.prompt-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  margin-left: 1em;
 }
 
 .prompt-card__title,
@@ -225,6 +304,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: var(--spacing-sm);
+  padding: 0 1.5em; /* Match header padding */
 }
 
 /* Tags */
@@ -235,6 +315,95 @@
   gap: var(--spacing-xs);
   margin-top: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+  padding: 0 1.5em; /* Match header padding */
+}
+
+.tags .tag {
+  background: #f1f5fa;
+  color: #3b4252;
+  border-radius: 999px;
+  padding: 0.25em 0.9em;
+  font-size: 0.95em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Compatible with section */
+.prompt-detail-tools-label {
+  display: block;
+  font-size: 0.95em;
+  color: #7b8190;
+  font-weight: 500;
+  margin-bottom: 0.25em;
+  padding: 0 1.5em; /* Match header padding */
+}
+
+.prompt-detail-tools {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  margin-bottom: 0.75em;
+  padding: 0 1.5em; /* Match header padding */
+}
+
+.prompt-detail-tools .tool-pill {
+  background: #f1f5fa;
+  color: #222b45;
+  border-radius: 999px;
+  padding: 0.25em 0.9em;
+  font-size: 0.95em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Card bottom row: rating and favorite */
+.prompt-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25em;
+  gap: 1em;
+  padding: 0 1.5em; /* Match header padding */
+}
+
+.community-rating-section {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: #7b8190;
+  font-size: 1em;
+}
+
+.community-rating-section .star-rating-wrapper {
+  margin-right: 0.25em;
+}
+
+.prompt-fav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  color: #7b8190;
+  font-size: 1em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.prompt-fav-btn[aria-pressed='true'],
+.prompt-fav-btn.active {
+  color: #e74c3c;
+}
+
+/* Remove default button styles for children */
+.prompt-card-btn button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .prompt-card__tag,
@@ -304,4 +473,29 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* Additional comprehensive background fixes for prompt cards */
+/* Handle any nested elements that might inherit background */
+.prompt-card-btn *:not(.tag):not(.tool-pill):not(.prompt-card__tag):not(.star):not(i) {
+  background: #fff !important;
+}
+
+/* Ensure star ratings and icons maintain their styling */
+.prompt-card-btn .star-rating,
+.prompt-card-btn .star-rating *,
+.prompt-card-btn .fas,
+.prompt-card-btn .far,
+.prompt-card-btn i {
+  background: transparent !important;
+}
+
+/* Force white background on focus states too */
+.prompt-card-btn:focus,
+.prompt-card-btn:focus-visible {
+  background: #fff !important;
+}
+.prompt-card-btn:focus *:not(.tag):not(.tool-pill):not(.prompt-card__tag),
+.prompt-card-btn:focus-visible *:not(.tag):not(.tool-pill):not(.prompt-card__tag) {
+  background: #fff !important;
 }

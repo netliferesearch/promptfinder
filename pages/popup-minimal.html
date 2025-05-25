@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PromptFinder - Minimal Test</title>
+    <!-- Minimal CSS for testing -->
+    <link rel="stylesheet" href="../css/base/reset.css" />
+    <link rel="stylesheet" href="../css/base/variables.css" />
+    <link rel="stylesheet" href="../css/components/buttons.css" />
+  </head>
+
+  <body>
+    <div class="popup-container">
+      <header class="pf-header">
+        <h1>PromptFinder - Test</h1>
+      </header>
+
+      <main id="main-content">
+        <div class="test-content">
+          <p>Extension loading test - minimal version</p>
+          <button class="button">Test Button</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Test JavaScript loading -->
+    <script>
+      console.log('Minimal popup loaded successfully');
+
+      // Check if Chrome extension APIs are available
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        console.log('Chrome extension APIs available');
+        console.log('Extension ID:', chrome.runtime.id);
+      } else {
+        console.log('Chrome extension APIs not available');
+      }
+    </script>
+  </body>
+</html>
