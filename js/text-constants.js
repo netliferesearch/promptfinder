@@ -9,6 +9,24 @@ export const TEXT_CONSTANTS = {
   RESET_PASSWORD_BUTTON: 'Send reset email',
   RESET_PASSWORD_SUCCESS:
     'If an account exists for this email, a password reset link has been sent.',
+
+  // Email verification
+  EMAIL_VERIFICATION_SENT:
+    'Verification email sent! Please check your inbox and click the verification link.',
+  EMAIL_VERIFICATION_REQUIRED: 'Please verify your email address to access all features.',
+  EMAIL_VERIFICATION_SUCCESS: 'Email verified successfully! You can now access all features.',
+  EMAIL_VERIFICATION_ERROR: 'Could not send verification email: {{message}}',
+  EMAIL_VERIFICATION_SEND_ERROR: 'Could not send verification email. You can resend it later.',
+  EMAIL_VERIFICATION_CHECK_ERROR: 'Could not check verification status: {{message}}',
+  EMAIL_VERIFICATION_RESENT: 'Verification email sent again! Please check your inbox.',
+  EMAIL_VERIFICATION_RESEND_ERROR: 'Could not resend verification email. Please try again later.',
+  EMAIL_NOT_VERIFIED: 'Your email address is not verified.',
+  EMAIL_NOT_VERIFIED_YET: 'Your email address is not verified yet. Please check your inbox.',
+  EMAIL_ALREADY_VERIFIED: 'Your email address is already verified.',
+  RESEND_VERIFICATION: 'Resend verification email',
+  VERIFY_EMAIL_TITLE: 'Verify Your Email',
+  VERIFY_EMAIL_MESSAGE:
+    'We sent a verification link to {{email}}. Please check your inbox and click the link to verify your account.',
   // Sort Dropdown Options
   SORT_NEWEST: 'Newest',
   SORT_RECENTLY_EDITED: 'Recently Edited',

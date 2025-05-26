@@ -250,6 +250,7 @@
                 >Forgot password?</a
               >
             </div>
+            <button type="submit" class="button button-primary auth-signin-btn">Sign in</button>
           </form>
 
           <!-- Password Reset Form (hidden by default) -->
@@ -260,7 +261,8 @@
               aria-label="Back to sign in"
               type="button"
             >
-              ...
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+              <span>Back to login</span>
             </button>
             <h2 class="auth-title" id="reset-password-title">Reset Password</h2>
             <p class="auth-subtext" id="reset-password-subtext">
@@ -274,8 +276,8 @@
               Send reset email
             </button>
             <p id="reset-password-message" class="error-message hidden" aria-live="polite"></p>
-            <!-- HIDDEN: <button type="submit" class="button button-primary auth-signin-btn">Sign in</button> -->
           </form>
+
           <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
           <button id="google-signin-button" class="button button-google">
             <img
@@ -362,6 +364,40 @@
             <a href="#" id="show-login-link" class="auth-link signup-link">Sign in</a>
           </div>
         </form>
+
+        <!-- Email Verification Section (hidden by default) -->
+        <div id="email-verification-section" class="verification-card hidden">
+          <button
+            id="verification-back-button"
+            class="back-to-list-btn"
+            aria-label="Back to sign in"
+            type="button"
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to list</span>
+          </button>
+          <h2 class="auth-title">Verify Your Email</h2>
+          <div class="verification-content">
+            <div class="verification-icon">
+              <i class="fas fa-envelope" aria-hidden="true"></i>
+            </div>
+            <p class="auth-subtext" id="verification-message">
+              We sent a verification link to your email address. Please check your inbox and click
+              the link to verify your account.
+            </p>
+            <div class="verification-actions">
+              <button type="button" class="button button-primary" id="check-verification-button">
+                I've verified my email
+              </button>
+              <button type="button" class="button button-secondary" id="resend-verification-button">
+                Resend verification email
+              </button>
+            </div>
+            <p class="verification-note">
+              Didn't receive the email? Check your spam folder or click resend.
+            </p>
+          </div>
+        </div>
       </section>
     </div>
 

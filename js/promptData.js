@@ -7,7 +7,44 @@ import {
   signInWithCredential,
   updateProfile,
   sendPasswordResetEmail,
+  sendEmailVerification as firebaseSendEmailVerification,
+  reload as firebaseReload,
 } from 'firebase/auth';
+// --- Email Verification ---
+export const sendEmailVerification = async (user = null) => {
+  const currentUser = user || (auth ? auth.currentUser : null);
+  if (!currentUser) {
+    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+    Utils.handleError(err.message, { userVisible: true, originalError: err });
+    return Promise.reject(err);
+  }
+  try {
+    await firebaseSendEmailVerification(currentUser);
+    return true;
+  } catch (error) {
+    Utils.handleError(textManager.format('EMAIL_VERIFICATION_ERROR', { message: error.message }), {
+      userVisible: true,
+      originalError: error,
+    });
+    return Promise.reject(error);
+  }
+};
+
+export const checkEmailVerified = async () => {
+  const currentUser = auth ? auth.currentUser : null;
+  if (!currentUser) {
+    return false;
+  }
+  try {
+    // Reload user to get latest verification status
+    await firebaseReload(currentUser);
+    return currentUser.emailVerified;
+  } catch (error) {
+    console.error('Error checking email verification status:', error);
+    return false;
+  }
+};
+
 // --- Password Reset ---
 export const sendResetPasswordEmail = async email => {
   if (!auth) {
@@ -78,6 +115,7 @@ export const signupUser = async (email, password, displayName) => {
           email: userCredential.user.email,
           displayName: displayName,
           createdAt: serverTimestamp(),
+          emailVerified: false, // Will be updated when email is verified
         });
       } catch (dbError) {
         console.error('Error creating user document in Firestore:', dbError);
@@ -87,6 +125,20 @@ export const signupUser = async (email, password, displayName) => {
         });
       }
     }
+
+    // Send email verification
+    try {
+      await firebaseSendEmailVerification(userCredential.user);
+      console.log('Email verification sent to:', userCredential.user.email);
+    } catch (verificationError) {
+      console.error('Error sending email verification:', verificationError);
+      // Don't fail the signup process if email verification fails
+      Utils.handleError(getText('EMAIL_VERIFICATION_SEND_ERROR'), {
+        userVisible: true,
+        originalError: verificationError,
+      });
+    }
+
     return userCredential;
   } catch (error) {
     Utils.handleError(textManager.format('SIGNUP_ERROR', { message: error.message }), {

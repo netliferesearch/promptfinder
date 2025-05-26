@@ -28,6 +28,13 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+### Email Verification Flow Fix (May 2025)
+
+- ✅ **Fixed Blank Email Verification Screen:** Resolved critical issue where email verification screen appeared blank after user registration due to HTML structure problems.
+- ✅ **HTML Structure Refactored:** Moved email verification section from being nested inside the main auth card to being a sibling element, allowing independent show/hide functionality.
+- ✅ **CSS Styling Updated:** Created dedicated `.verification-card` styling to replace `auth-card` class usage for email verification, maintaining visual consistency.
+- ✅ **Authentication Flow Improved:** Email verification now displays correctly after signup, providing proper user guidance for account verification.
+
 ### UI Cleanup & Sort Controls Refactor (May 2025)
 
 - ✅ **Removed `.filter-sort-row`:** All traces of the legacy `.filter-sort-row` class have been removed from the codebase (HTML, CSS, JS) for clarity and maintainability.

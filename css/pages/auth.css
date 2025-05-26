@@ -276,3 +276,109 @@
   font-size: var(--font-size-sm);
   margin-bottom: var(--spacing-md);
 }
+
+/* Email Verification Section Styles */
+.verification-card {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1rem 2rem 2rem 2rem;
+  max-width: 370px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 1rem auto;
+  min-height: unset;
+  text-align: center;
+}
+
+#email-verification-section {
+  text-align: center;
+}
+
+.verification-content {
+  padding: 1rem 0;
+}
+
+.verification-icon {
+  font-size: 3rem;
+  color: var(--color-primary, #007bff);
+  margin-bottom: 1.5rem;
+}
+
+.verification-icon i {
+  display: block;
+}
+
+.verification-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 2rem 0 1.5rem 0;
+}
+
+.verification-note {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 1rem;
+  line-height: 1.4;
+}
+
+/* Verification card styling - inherit from auth-card */
+.verification-card .auth-title {
+  text-align: center;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.verification-card .auth-subtext {
+  text-align: center;
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  margin-bottom: 0.5rem;
+}
+
+.verification-card .back-to-list-btn {
+  background: none;
+  border: none;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.verification-card .back-to-list-btn:hover {
+  color: var(--color-primary);
+}
+
+.verification-card .button {
+  width: 100%;
+  margin-top: 0.7rem;
+  margin-bottom: 0.25rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 1.1rem 0;
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive adjustments for verification section */
+@media (max-width: 480px) {
+  .verification-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .verification-actions {
+    margin: 1.5rem 0 1rem 0;
+  }
+}
