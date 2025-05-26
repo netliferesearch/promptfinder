@@ -6,7 +6,26 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
+// --- Password Reset ---
+export const sendResetPasswordEmail = async email => {
+  if (!auth) {
+    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+    Utils.handleError(err.message, { userVisible: true, originalError: err });
+    return Promise.reject(err);
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return true;
+  } catch (error) {
+    Utils.handleError(textManager.format('RESET_PASSWORD_ERROR', { message: error.message }), {
+      userVisible: true,
+      originalError: error,
+    });
+    return Promise.reject(error);
+  }
+};
 
 import {
   collection,

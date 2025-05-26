@@ -1,18 +1,32 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 26, 2025 (UI cleanup, sort controls refactor, and auth view improvements completed)
+**Last Updated**: May 26, 2025 (Toast notification system debugging and CSP compliance fix completed)
 
-### UI/UX Cleanup & Sort Controls Refactor (May 2025) - COMPLETED
+### Toast Notification System Debugging & CSP Compliance (May 2025) - COMPLETED
 
 **Status:** ✅
 
-- Removed all traces of `.filter-sort-row` from HTML, CSS, and JS for a cleaner codebase
-- Refactored sort controls: sort direction toggle is now grouped with the sort dropdown for better UX
-- Improved authentication (login/signup) view CSS, z-index, and maintainability
-- All authentication UI text is now i18n-ready and managed via `js/text-constants.js`
-- Code cleanup in `popup.html`, `popup.css`, `auth.css`, and `ui.js` for maintainability
+**Issue**: Toast notifications were not appearing for password reset functionality in Chrome extension popup, despite console logs showing the system was being called correctly.
 
-**Last Updated**: May 26, 2025 (UI cleanup, sort controls refactor, and auth view improvements completed)
+**Root Cause Analysis**:
+- Toast containers were being appended to hidden parent elements (`main-content` with `hidden` class)
+- Emergency debugging revealed that popup container could be inside hidden elements
+- CSP violations from leftover inline debugging scripts
+
+**Fixes Applied**:
+1. ✅ **Smart Container Positioning**: Modified toast system to always append to `document.body` instead of potentially hidden containers
+2. ✅ **Container Relocation Logic**: Added detection and automatic relocation of existing containers from wrong parents
+3. ✅ **Chrome Extension Optimization**: Specifically designed positioning system for popup window constraints
+4. ✅ **CSS Consistency**: Updated z-index to maximum value (2147483647) for guaranteed visibility
+5. ✅ **Debug Code Cleanup**: Removed all emergency debugging code (red banners, page title changes, test functions)
+6. ✅ **CSP Compliance**: Eliminated inline scripts that violated Content Security Policy
+7. ✅ **Production Ready**: Cleaned toast.js from 445 lines to 102 lines, removed verbose logging
+
+**Final Result**:
+- ✅ Toast notifications now visible for password reset and all other actions
+- ✅ Clean, maintainable codebase without debug bloat
+- ✅ Full Chrome extension CSP compliance
+- ✅ Optimized performance with minimal console output
 
 ### UI/UX Cleanup & Sort Controls Refactor (May 2025) - COMPLETED
 

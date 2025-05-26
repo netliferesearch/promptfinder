@@ -250,7 +250,31 @@
                 >Forgot password?</a
               >
             </div>
-            <button type="submit" class="button button-primary auth-signin-btn">Sign in</button>
+          </form>
+
+          <!-- Password Reset Form (hidden by default) -->
+          <form id="reset-password-form" class="auth-card hidden" autocomplete="off">
+            <button
+              id="reset-password-back-button"
+              class="back-to-list-btn"
+              aria-label="Back to sign in"
+              type="button"
+            >
+              ...
+            </button>
+            <h2 class="auth-title" id="reset-password-title">Reset Password</h2>
+            <p class="auth-subtext" id="reset-password-subtext">
+              Enter your email to reset your password:
+            </p>
+            <div class="form-group">
+              <label for="reset-password-email">Email</label>
+              <input type="email" id="reset-password-email" placeholder="you@email.com" required />
+            </div>
+            <button type="submit" class="button button-primary" id="reset-password-submit">
+              Send reset email
+            </button>
+            <p id="reset-password-message" class="error-message hidden" aria-live="polite"></p>
+            <!-- HIDDEN: <button type="submit" class="button button-primary auth-signin-btn">Sign in</button> -->
           </form>
           <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
           <button id="google-signin-button" class="button button-google">
@@ -343,7 +367,6 @@
 
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
-    <script src="../js/toast.js"></script>
     <script src="../js/toast.js"></script>
   </body>
 </html>

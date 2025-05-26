@@ -48,6 +48,66 @@ window.handleAuthRequiredAction = actionDescription => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  const resetPasswordForm = document.getElementById('reset-password-form');
+  const resetPasswordBackButton = document.getElementById('reset-password-back-button');
+  const resetPasswordEmailInput = document.getElementById('reset-password-email');
+  const resetPasswordMessage = document.getElementById('reset-password-message');
+  const forgotPasswordLink = document.getElementById('forgot-password-link');
+
+  // Show password reset form
+  if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', e => {
+      e.preventDefault();
+      if (loginForm) loginForm.classList.add('hidden');
+      if (resetPasswordForm) {
+        resetPasswordForm.classList.remove('hidden');
+        resetPasswordMessage.classList.add('hidden');
+        resetPasswordEmailInput.value = loginEmailInput.value || '';
+      }
+    });
+  }
+
+  // Back to sign in from reset form
+  if (resetPasswordBackButton) {
+    resetPasswordBackButton.addEventListener('click', () => {
+      if (resetPasswordForm) resetPasswordForm.classList.add('hidden');
+      if (loginForm) loginForm.classList.remove('hidden');
+      if (resetPasswordMessage) resetPasswordMessage.classList.add('hidden');
+    });
+  }
+
+  // Handle password reset submit
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = resetPasswordEmailInput.value.trim();
+
+      if (!email) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(getText('EMAIL') + ' is required.', { type: 'error', duration: 5000 });
+        }
+        return;
+      }
+
+      try {
+        await PromptDataModule.sendResetPasswordEmail(email);
+        if (typeof window.showToast === 'function') {
+          window.showToast(getText('RESET_PASSWORD_SUCCESS'), { type: 'success', duration: 10000 });
+        }
+      } catch (error) {
+        if (typeof window.showToast === 'function') {
+          const errorMessage = getText('RESET_PASSWORD_ERROR').replace(
+            '{{message}}',
+            error.message
+          );
+          window.showToast(errorMessage, {
+            type: 'error',
+            duration: 6000,
+          });
+        }
+      }
+    });
+  }
   console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
 
   // Initialize Firebase connection monitoring

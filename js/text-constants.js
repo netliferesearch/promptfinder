@@ -2,6 +2,13 @@
 // Centralized text management for consistency and future internationalization
 
 export const TEXT_CONSTANTS = {
+  // Password reset
+  RESET_PASSWORD_EMAIL_SENT: 'Password reset email sent! Please check your inbox.',
+  RESET_PASSWORD_ERROR: 'Could not send password reset email: {{message}}',
+  RESET_PASSWORD_PROMPT: 'Enter your email to reset your password:',
+  RESET_PASSWORD_BUTTON: 'Send reset email',
+  RESET_PASSWORD_SUCCESS:
+    'If an account exists for this email, a password reset link has been sent.',
   // Sort Dropdown Options
   SORT_NEWEST: 'Newest',
   SORT_RECENTLY_EDITED: 'Recently Edited',
