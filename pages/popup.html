@@ -50,31 +50,21 @@
               <option value="">All Categories</option>
               <!-- Populated by JS -->
             </select>
-            <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
-              <!-- Options will be populated by JS for i18n support -->
-            </select>
+            <div class="sort-row">
+              <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
+                <!-- Options will be populated by JS for i18n support -->
+              </select>
+              <button
+                id="sort-dir-toggle"
+                class="button button-tertiary button-sm"
+                aria-label="Toggle sort direction"
+                title="Toggle sort direction"
+              >
+                <i id="sort-dir-icon" class="fas fa-arrow-down-wide-short"></i>
+              </button>
+            </div>
           </div>
-          <div class="filter-sort-row">
-            <button id="filter-button" class="button button-secondary button-sm">
-              <i class="fas fa-filter" aria-hidden="true"></i> Filters
-            </button>
-            <button
-              id="sort-dir-toggle"
-              class="button button-tertiary button-sm"
-              aria-label="Toggle sort direction"
-              title="Toggle sort direction"
-            >
-              <i id="sort-dir-icon" class="fas fa-arrow-down-wide-short"></i>
-            </button>
-            <button
-              id="reset-filters-button"
-              class="button button-tertiary button-icon hidden"
-              aria-label="Reset filters"
-              title="Reset filters"
-            >
-              <i class="fas fa-rotate-left"></i>
-            </button>
-          </div>
+          <div class="filter-sort-row"></div>
         </section>
         <nav class="tabs" role="tablist" aria-label="Prompt categories">
           <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
@@ -218,44 +208,136 @@
       </main>
 
       <section id="auth-view" class="hidden auth-container">
-        <h2>Login or Signup</h2>
-        <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
-        <form id="login-form">
-          <h3>Login</h3>
-          <div>
-            <label for="login-email">Email:</label>
-            <input type="email" id="login-email" required />
-          </div>
-          <div>
-            <label for="login-password">Password:</label>
-            <input type="password" id="login-password" required />
-          </div>
-          <button type="submit" class="button button-primary">Login</button>
-        </form>
-        <hr />
-        <form id="signup-form">
-          <h3>Signup</h3>
-          <div>
-            <label for="signup-display-name">Display Name:</label>
-            <input type="text" id="signup-display-name" required minlength="3" />
-          </div>
-          <div>
-            <label for="signup-email">Email:</label>
-            <input type="email" id="signup-email" required />
-          </div>
-          <div>
-            <label for="signup-password">Password:</label>
-            <input type="password" id="signup-password" required minlength="6" />
-          </div>
-          <button type="submit" class="button button-primary">Signup</button>
-        </form>
-        <hr />
-        <div>
-          <button id="google-signin-button" class="button button-secondary">
-            <i class="fab fa-google"></i> Sign in with Google
+        <div class="auth-bg"></div>
+        <div class="auth-card">
+          <button
+            id="auth-back-to-list-button"
+            class="back-to-list-btn"
+            aria-label="Back to prompt list"
+            type="button"
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to list</span>
+          </button>
+          <h2 class="auth-title">Sign in to PromptFinder</h2>
+          <p class="auth-subtext">Welcome back! Please enter your details below.</p>
+          <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
+          <form id="login-form" autocomplete="on">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" placeholder="you@email.com" required />
+              <span class="email-privacy-note">We'll never share your email.</span>
+            </div>
+            <div class="form-group password-group">
+              <label for="login-password">Password</label>
+              <div class="password-input-wrapper">
+                <input
+                  type="password"
+                  id="login-password"
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  id="toggle-password-visibility"
+                  tabindex="-1"
+                  aria-label="Show or hide password"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <a href="#" id="forgot-password-link" class="forgot-password-link"
+                >Forgot password?</a
+              >
+            </div>
+            <button type="submit" class="button button-primary auth-signin-btn">Sign in</button>
+          </form>
+          <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
+          <button id="google-signin-button" class="button button-google">
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google logo"
+              class="google-logo"
+            />
+            Sign in with Google
           </button>
         </div>
-        <button id="cancel-auth-button" class="button button-link">Cancel</button>
+        <div class="auth-signup-row" id="show-signup-row">
+          <span>Don't have an account?</span>
+          <a href="#" id="show-signup-link" class="auth-link">Sign up</a>
+        </div>
+        <form id="signup-form" class="hidden auth-card">
+          <button
+            id="auth-back-to-list-button-signup"
+            class="back-to-list-btn"
+            aria-label="Back to prompt list"
+            type="button"
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to list</span>
+          </button>
+          <h2 class="auth-title signup-title">Create account</h2>
+          <p class="auth-subtext signup-subtext">Enter your information to create a new account</p>
+          <div class="form-group">
+            <label for="signup-display-name" class="signup-label">Display Name</label>
+            <input
+              type="text"
+              id="signup-display-name"
+              placeholder="Enter your display name"
+              required
+              minlength="3"
+            />
+            <span class="signup-hint">This will be shown to other users</span>
+          </div>
+          <div class="form-group">
+            <label for="signup-email" class="signup-label">Email</label>
+            <input type="email" id="signup-email" placeholder="Enter your email" required />
+            <span class="email-privacy-note signup-hint"
+              >We'll never share your email with anyone else</span
+            >
+          </div>
+          <div class="form-group password-group">
+            <label for="signup-password" class="signup-label">Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="signup-password"
+                placeholder="Enter your password"
+                required
+                minlength="8"
+              />
+              <button
+                type="button"
+                id="toggle-signup-password-visibility"
+                tabindex="-1"
+                aria-label="Show or hide password"
+              >
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+            <span class="signup-hint">Must be at least 8 characters long</span>
+          </div>
+          <button type="submit" class="button button-primary auth-signin-btn signup-btn">
+            Create account
+          </button>
+          <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
+          <button
+            type="button"
+            id="google-signup-button"
+            class="button button-google signup-google-btn"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google logo"
+              class="google-logo"
+            />
+            Continue with Google
+          </button>
+          <div class="auth-signup-row signup-bottom-row">
+            <span>Already have an account?</span>
+            <a href="#" id="show-login-link" class="auth-link signup-link">Sign in</a>
+          </div>
+        </form>
       </section>
     </div>
 

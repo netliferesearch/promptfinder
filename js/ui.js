@@ -1,3 +1,135 @@
+// --- Auth view toggle logic ---
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Handle "Back to list" button in auth views
+  const authBackToListBtn = document.getElementById('auth-back-to-list-button');
+  const authBackToListBtnSignup = document.getElementById('auth-back-to-list-button-signup');
+  function handleAuthBackToList() {
+    // Hide auth view, show main content
+    const authView = document.getElementById('auth-view');
+    const mainContent = document.getElementById('main-content');
+    if (authView) authView.classList.add('hidden');
+    if (mainContent) mainContent.classList.remove('hidden');
+  }
+  if (authBackToListBtn) {
+    authBackToListBtn.addEventListener('click', handleAuthBackToList);
+  }
+  if (authBackToListBtnSignup) {
+    authBackToListBtnSignup.addEventListener('click', handleAuthBackToList);
+  }
+  const authView = document.getElementById('auth-view');
+  const loginCard = authView?.querySelector('.auth-card');
+  const signupForm = document.getElementById('signup-form');
+  const showSignupLink = document.getElementById('show-signup-link');
+  const showLoginLink = document.getElementById('show-login-link');
+  const showSignupRow = document.getElementById('show-signup-row');
+  const header = document.querySelector('.pf-header');
+
+  // --- Dynamic Auth Text Injection ---
+  function setAuthTexts() {
+    // Sign in view
+    const signinTitle = document.querySelector('.auth-card .auth-title');
+    if (signinTitle) signinTitle.textContent = getText('SIGNIN_TITLE');
+    const signinSubtext = document.querySelector('.auth-card .auth-subtext');
+    if (signinSubtext) signinSubtext.textContent = getText('SIGNIN_SUBTEXT');
+    const signinEmailLabel = document.querySelector('#login-form label[for="login-email"]');
+    if (signinEmailLabel) signinEmailLabel.textContent = getText('SIGNIN_EMAIL_LABEL');
+    const signinEmailInput = document.getElementById('login-email');
+    if (signinEmailInput) signinEmailInput.placeholder = getText('SIGNIN_EMAIL_PLACEHOLDER');
+    const signinEmailHint = document.querySelector('#login-form .email-privacy-note');
+    if (signinEmailHint) signinEmailHint.textContent = getText('SIGNIN_EMAIL_HINT');
+    const signinPasswordLabel = document.querySelector('#login-form label[for="login-password"]');
+    if (signinPasswordLabel) signinPasswordLabel.textContent = getText('SIGNIN_PASSWORD_LABEL');
+    const signinPasswordInput = document.getElementById('login-password');
+    if (signinPasswordInput)
+      signinPasswordInput.placeholder = getText('SIGNIN_PASSWORD_PLACEHOLDER');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    if (forgotPasswordLink) forgotPasswordLink.textContent = getText('SIGNIN_FORGOT_PASSWORD');
+    const signinButton = document.querySelector('#login-form .auth-signin-btn');
+    if (signinButton) signinButton.textContent = getText('SIGNIN_BUTTON');
+    const signinGoogleButton = document.getElementById('google-signin-button');
+    if (signinGoogleButton)
+      signinGoogleButton.lastChild.textContent = ' ' + getText('SIGNIN_GOOGLE_BUTTON');
+    const signinDivider = document.querySelector('.auth-card .auth-divider span');
+    if (signinDivider) signinDivider.textContent = getText('SIGNIN_OR_CONTINUE_WITH');
+    const signinSignupRow = document.querySelector('#show-signup-row span');
+    if (signinSignupRow) signinSignupRow.textContent = getText('SIGNIN_SIGNUP_ROW');
+    const signinSignupLink = document.getElementById('show-signup-link');
+    if (signinSignupLink) signinSignupLink.textContent = getText('SIGNIN_SIGNUP_LINK');
+
+    // Sign up view
+    const signupTitle = document.querySelector('#signup-form .auth-title');
+    if (signupTitle) signupTitle.textContent = getText('SIGNUP_TITLE');
+    const signupSubtext = document.querySelector('#signup-form .auth-subtext');
+    if (signupSubtext) signupSubtext.textContent = getText('SIGNUP_SUBTEXT');
+    const signupDisplayLabel = document.querySelector(
+      '#signup-form label[for="signup-display-name"]'
+    );
+    if (signupDisplayLabel) signupDisplayLabel.textContent = getText('SIGNUP_DISPLAY_LABEL');
+    const signupDisplayInput = document.getElementById('signup-display-name');
+    if (signupDisplayInput) signupDisplayInput.placeholder = getText('SIGNUP_DISPLAY_PLACEHOLDER');
+    const signupDisplayHint = document.querySelector('#signup-form .signup-hint');
+    if (signupDisplayHint) signupDisplayHint.textContent = getText('SIGNUP_DISPLAY_HINT');
+    const signupEmailLabel = document.querySelector('#signup-form label[for="signup-email"]');
+    if (signupEmailLabel) signupEmailLabel.textContent = getText('SIGNUP_EMAIL_LABEL');
+    const signupEmailInput = document.getElementById('signup-email');
+    if (signupEmailInput) signupEmailInput.placeholder = getText('SIGNUP_EMAIL_PLACEHOLDER');
+    const signupEmailHint = document.querySelector('#signup-form .email-privacy-note.signup-hint');
+    if (signupEmailHint) signupEmailHint.textContent = getText('SIGNUP_EMAIL_HINT');
+    const signupPasswordLabel = document.querySelector('#signup-form label[for="signup-password"]');
+    if (signupPasswordLabel) signupPasswordLabel.textContent = getText('SIGNUP_PASSWORD_LABEL');
+    const signupPasswordInput = document.getElementById('signup-password');
+    if (signupPasswordInput)
+      signupPasswordInput.placeholder = getText('SIGNUP_PASSWORD_PLACEHOLDER');
+    const signupPasswordHint = document.querySelector(
+      '#signup-form .form-group.password-group .signup-hint'
+    );
+    if (signupPasswordHint) signupPasswordHint.textContent = getText('SIGNUP_PASSWORD_HINT');
+    const signupButton = document.querySelector('#signup-form .signup-btn');
+    if (signupButton) signupButton.textContent = getText('SIGNUP_BUTTON');
+    const signupDivider = document.querySelector('#signup-form .auth-divider span');
+    if (signupDivider) signupDivider.textContent = getText('SIGNUP_OR_CONTINUE_WITH');
+    const signupGoogleButton = document.getElementById('google-signup-button');
+    if (signupGoogleButton)
+      signupGoogleButton.lastChild.textContent = ' ' + getText('SIGNUP_GOOGLE_BUTTON');
+    const signupLoginRow = document.querySelector('.signup-bottom-row span');
+    if (signupLoginRow) signupLoginRow.textContent = getText('SIGNUP_LOGIN_ROW');
+    const signupLoginLink = document.getElementById('show-login-link');
+    if (signupLoginLink) signupLoginLink.textContent = getText('SIGNUP_LOGIN_LINK');
+  }
+
+  setAuthTexts();
+
+  function showSignIn() {
+    if (signupForm) signupForm.classList.add('hidden');
+    if (loginCard) loginCard.classList.remove('hidden');
+    if (showSignupRow) showSignupRow.style.display = '';
+    if (header) header.style.display = '';
+  }
+  function showSignUp() {
+    if (loginCard) loginCard.classList.add('hidden');
+    if (signupForm) signupForm.classList.remove('hidden');
+    if (showSignupRow) showSignupRow.style.display = 'none';
+    if (header) header.style.display = '';
+  }
+
+  if (showSignupLink && signupForm && loginCard) {
+    showSignupLink.addEventListener('click', e => {
+      e.preventDefault();
+      showSignUp();
+    });
+  }
+  if (showLoginLink && signupForm && loginCard) {
+    showLoginLink.addEventListener('click', e => {
+      e.preventDefault();
+      showSignIn();
+    });
+  }
+
+  // On load, always show header
+  if (header) header.style.display = '';
+});
+
 // Test helper to set allPrompts for unit tests
 export const _setAllPromptsForTest = v => {
   allPrompts = v;
@@ -1522,6 +1654,12 @@ const showPromptList = () => {
   if (tabsContainerEl) tabsContainerEl.classList.remove('hidden');
   if (addPromptBarEl) addPromptBarEl.classList.remove('hidden');
 
+  // Show main-controls and prompt-counter-row explicitly
+  const mainControls = document.querySelector('section.main-controls');
+  if (mainControls) mainControls.classList.remove('hidden');
+  const promptCounterRow = document.querySelector('.prompt-counter-row');
+  if (promptCounterRow) promptCounterRow.classList.remove('hidden');
+
   // Show category dropdown bar in list view
   const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
   if (categoryDropdownBar) categoryDropdownBar.classList.remove('hidden');
@@ -1535,6 +1673,12 @@ const showPromptDetailsView = () => {
   if (controlsEl) controlsEl.classList.add('hidden');
   if (tabsContainerEl) tabsContainerEl.classList.add('hidden');
   if (addPromptBarEl) addPromptBarEl.classList.add('hidden');
+
+  // Hide main-controls and prompt-counter-row explicitly
+  const mainControls = document.querySelector('section.main-controls');
+  if (mainControls) mainControls.classList.add('hidden');
+  const promptCounterRow = document.querySelector('.prompt-counter-row');
+  if (promptCounterRow) promptCounterRow.classList.add('hidden');
 
   // Hide category dropdown bar in details view
   const categoryDropdownBar = document.querySelector('.category-dropdown-bar');

@@ -2,10 +2,9 @@
 .prompt-card__header-bg {
   background: none;
   border-radius: 0;
-  padding: 1.25em 1.5em 0.75em 1.5em;
+  padding: 1.25em 1.5em 0em 1.5em;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
   box-shadow: none;
 }
 
@@ -15,7 +14,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5em;
-  margin-bottom: 0.7em;
 }
 .prompt-item__category {
   display: inline-block;
@@ -57,7 +55,6 @@
   box-shadow: 0 2px 12px 0 rgba(16, 30, 54, 0.08);
   margin-bottom: 1.25rem;
   cursor: pointer;
-  padding: 1.25em 0 1.25em 0;
   position: relative;
   overflow: hidden;
   transition:
@@ -291,7 +288,6 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: var(--spacing-sm);
-  padding: 0 1.5em; /* Match header padding */
 }
 
 /* Tags */
@@ -300,8 +296,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
   padding: 0 1.5em; /* Match header padding */
 }
 
@@ -348,7 +342,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1.25em;
   gap: 1em;
   padding: 0 1.5em; /* Match header padding */
 }
@@ -392,6 +385,7 @@
   cursor: pointer;
   font: inherit;
   color: inherit;
+  margin-bottom: var(--spacing-md, 16px);
 }
 
 .prompt-card__tag,

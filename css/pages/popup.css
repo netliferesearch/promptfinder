@@ -1,3 +1,24 @@
+/* Hide prompt counter and filter-sort-row when prompt details section is visible */
+#prompt-details-section:not(.hidden) ~ .prompt-counter-row,
+#prompt-details-section:not(.hidden) ~ section.main-controls .filter-sort-row,
+#prompt-details-section:not(.hidden) ~ .main-controls .filter-sort-row,
+#prompt-details-section:not(.hidden) ~ div.prompt-counter-row {
+  display: none !important;
+}
+/* Hide main-controls when prompt details section is visible */
+#prompt-details-section:not(.hidden) ~ .main-controls,
+#prompt-details-section:not(.hidden) + .main-controls,
+#prompt-details-section:not(.hidden) ~ section.main-controls,
+#prompt-details-section:not(.hidden) + section.main-controls,
+#prompt-details-section:not(.hidden) ~ nav.tabs,
+#prompt-details-section:not(.hidden) + nav.tabs {
+  display: none !important;
+}
+
+section.main-controls {
+  /* fallback for normal view */
+  display: flex;
+}
 /* Main content min width */
 .popup-container,
 #main-content {
@@ -48,6 +69,12 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+.category-sort-bar .sort-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.25rem;
+}
 .category-dropdown,
 .sort-dropdown {
   width: 100%;
@@ -58,16 +85,11 @@
   font-size: 1rem;
   box-shadow: 0 1px 4px 0 rgba(16, 30, 54, 0.04);
   appearance: none;
-}
-
-.filter-sort-row {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  flex: 1 1 auto;
 }
 
 .prompt-counter-row {
-  padding: 0 1.5rem 0.5rem 1.5rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
   font-size: var(--font-size-xs);
   color: #3b4252;
   font-weight: 500;
@@ -393,16 +415,20 @@ body.editing-prompt .fab {
   gap: 8px;
 }
 #sort-dir-toggle {
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 4px 8px;
-  font-size: 18px;
-  color: var(--color-primary);
+  margin-left: -1px;
+  border-radius: 0 12px 12px 0;
+  border: 1px solid #e3e8f0;
+  border-left: none;
+  height: 50px;
   display: flex;
   align-items: center;
-  border-radius: var(--border-radius-sm);
+  background: #fff;
+  color: var(--color-primary);
   transition: background 0.2s;
+  cursor: pointer;
+  padding: 0 16px;
+  font-size: 18px;
+  box-shadow: 0 1px 4px 0 rgba(16, 30, 54, 0.04);
 }
 #sort-dir-toggle:hover {
   background: var(--color-gray-200);

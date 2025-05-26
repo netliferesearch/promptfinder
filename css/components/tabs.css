@@ -2,10 +2,9 @@
 nav.tabs {
   display: flex;
   flex-direction: row;
-  padding: var(--spacing-lg);
+  padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
   width: 100%;
   gap: var(--spacing-sm);
-  margin: var(--spacing-sm) 0;
   background-color: transparent;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
