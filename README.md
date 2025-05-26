@@ -28,6 +28,19 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+### UI Cleanup & Sort Controls Refactor (May 2025)
+
+- ✅ **Removed `.filter-sort-row`:** All traces of the legacy `.filter-sort-row` class have been removed from the codebase (HTML, CSS, JS) for clarity and maintainability.
+- ✅ **Sort Controls Modernized:** The sort direction toggle button is now grouped directly with the sort dropdown for a more intuitive and accessible UI.
+- ✅ **Auth View CSS Improved:** Authentication (login/signup) views have improved layout, z-index, and maintainability, with all text i18n-ready and styles centralized in `auth.css`.
+- ✅ **General Code Cleanup:** Related code in `popup.html`, `popup.css`, `auth.css`, and `ui.js` was refactored for clarity and maintainability.
+
+### UI Cleanup & Sort Controls Refactor (May 2025)
+
+- ✅ **Removed `.filter-sort-row`:** All traces of the legacy `.filter-sort-row` class have been removed from the codebase (HTML, CSS, JS) for clarity and maintainability.
+- ✅ **Sort Controls Modernized:** The sort direction toggle button is now grouped directly with the sort dropdown for a more intuitive and accessible UI.
+- ✅ **Auth View CSS Improved:** Authentication (login/signup) views have improved layout, z-index, and maintainability, with all text i18n-ready and styles centralized in `auth.css`.
+- ✅ **General Code Cleanup:** Related code in `popup.html`, `popup.css`, `auth.css`, and `ui.js` was refactored for clarity and maintainability.
 - **Centralized Text Management System (January 2025):**
 
   - ✅ **Text Constants Architecture:** Created comprehensive text management system with 137 organized constants covering all user-facing strings

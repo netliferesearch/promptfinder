@@ -1,6 +1,28 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 24, 2025 (Centralized text management system completed and documented)
+**Last Updated**: May 26, 2025 (UI cleanup, sort controls refactor, and auth view improvements completed)
+
+### UI/UX Cleanup & Sort Controls Refactor (May 2025) - COMPLETED
+
+**Status:** ✅
+
+- Removed all traces of `.filter-sort-row` from HTML, CSS, and JS for a cleaner codebase
+- Refactored sort controls: sort direction toggle is now grouped with the sort dropdown for better UX
+- Improved authentication (login/signup) view CSS, z-index, and maintainability
+- All authentication UI text is now i18n-ready and managed via `js/text-constants.js`
+- Code cleanup in `popup.html`, `popup.css`, `auth.css`, and `ui.js` for maintainability
+
+**Last Updated**: May 26, 2025 (UI cleanup, sort controls refactor, and auth view improvements completed)
+
+### UI/UX Cleanup & Sort Controls Refactor (May 2025) - COMPLETED
+
+**Status:** ✅
+
+- Removed all traces of `.filter-sort-row` from HTML, CSS, and JS for a cleaner codebase
+- Refactored sort controls: sort direction toggle is now grouped with the sort dropdown for better UX
+- Improved authentication (login/signup) view CSS, z-index, and maintainability
+- All authentication UI text is now i18n-ready and managed via `js/text-constants.js`
+- Code cleanup in `popup.html`, `popup.css`, `auth.css`, and `ui.js` for maintainability
 
 **Objective**: Migrate to a more robust backend (Firestore) for prompt storage, enable user accounts, implement advanced features like ratings and favorites, and lay the groundwork for future collaborative capabilities.
 
