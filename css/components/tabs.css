@@ -51,6 +51,7 @@ nav.tabs button {
   transition: all 0.2s;
   cursor: pointer;
   text-align: center;
+  background-color: var(--color-white);
 }
 
 .tab-button:hover,
@@ -61,13 +62,15 @@ nav.tabs button:hover {
 .tab-button.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* Active state for pill-shaped tabs */
 nav.tabs button.active {
-  color: var(--color-white);
-  background-color: var(--color-primary);
-  border-bottom-color: transparent;
+  color: var(--color-primary);
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+  border: 1px solid;
 }
 
 /* Tab content areas */

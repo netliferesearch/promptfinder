@@ -528,8 +528,28 @@ describe('UI Module', () => {
     });
 
     test('should display a list of prompts', () => {
-      const prompts = [{ ...mockPromptForFavoriteTests, id: '1', title: 'Test Prompt Beta' }];
-      UI.displayPrompts(prompts);
+      const prompt = {
+        id: '1',
+        title: 'Test Prompt Beta',
+        text: 'Some text',
+        tags: [],
+        userId: 'ownerUserId',
+        category: 'Test',
+        description: 'Test desc',
+        currentUserIsFavorite: false,
+        favoritesCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        authorDisplayName: 'Author Name',
+        averageRating: 0,
+        totalRatingsCount: 0,
+        usageCount: 0,
+        isPrivate: false,
+        currentUserRating: 0,
+      };
+      // Ensure allPrompts is empty so displayPrompts uses the prompt directly
+      if (UI._setAllPromptsForTest) UI._setAllPromptsForTest([]);
+      UI.displayPrompts([prompt]);
       if (promptsListElForTest) {
         expect(promptsListElForTest.innerHTML).toContain('Test Prompt Beta');
       }

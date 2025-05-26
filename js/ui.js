@@ -1,3 +1,7 @@
+// Test helper to set allPrompts for unit tests
+export const _setAllPromptsForTest = v => {
+  allPrompts = v;
+};
 // (Removed duplicate: Always hide the delete confirmation dialog when entering add mode)
 // Cancel edit handler for in-place editing
 function handleCancelEditPrompt(prompt) {
@@ -855,7 +859,7 @@ async function handlePromptListClick(event) {
   console.log('[UI SUT LOG] handlePromptListClick triggered');
   // Prevent card click from opening details if copy or favorite button is clicked
   const copyBtn = event.target.closest('.copy-prompt');
-  const favBtn = event.target.closest('.prompt-fav-btn');
+  const favBtn = event.target.closest('.toggle-favorite');
   if (copyBtn) {
     event.stopPropagation();
     const promptId = copyBtn.dataset.id;
@@ -1401,8 +1405,11 @@ export const displayPrompts = (prompts, opts = {}) => {
 
   // Generate HTML rows for Clusterize, always using the latest prompt data from allPrompts by ID
   const rows = prompts.map(p => {
-    // Always use the latest prompt object from allPrompts if available
-    const prompt = allPrompts.find(ap => ap.id === p.id) || p;
+    // Use the latest prompt object from allPrompts if available, otherwise use p directly
+    const prompt =
+      Array.isArray(allPrompts) && allPrompts.length > 0
+        ? allPrompts.find(ap => ap.id === p.id) || p
+        : p;
     const isFavoriteDisplay = prompt.currentUserIsFavorite || false;
     const privateIcon = prompt.isPrivate
       ? `<i class="fa-solid fa-lock prompt-private-icon" title="Private" aria-label="Private"></i>`
@@ -1435,19 +1442,27 @@ export const displayPrompts = (prompts, opts = {}) => {
     })();
     // Favorite count
     const favCount = typeof prompt.favoritesCount === 'number' ? prompt.favoritesCount : 0;
+    // --- CATEGORY ROW WITH COPY ICON ---
+    const categoryRow = `
+      <div class="prompt-card__category-row">
+        <span class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</span>
+        <button class="prompt-card__copy-icon copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+      </div>
+    `;
+    // --- NEW STRUCTURE: div.prompt-card-btn as top-level container ---
     return `
-      <button class="prompt-item prompt-card-btn" type="button" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
+      <div class="prompt-card-btn" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
         <div class="prompt-card__header-bg">
-          <div class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</div>
+          ${categoryRow}
           <div class="prompt-item__header">
             <div class="prompt-title-row">
               ${privateIcon ? `<span class="prompt-private-icon">${privateIcon}</span>` : ''}
               <span class="prompt-item__title">${Utils.escapeHTML(prompt.title)}</span>
             </div>
             <div class="prompt-item__actions">
-              <button class="copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
-                <i class="fa-regular fa-copy"></i>
-              </button>
+              <!-- Only favorite button here now -->
             </div>
           </div>
           <div class="prompt-card__description">${descShort}</div>
@@ -1461,11 +1476,11 @@ export const displayPrompts = (prompts, opts = {}) => {
             ${stars}
             <span class="avg-rating">(${avgRating})</span>
           </div>
-          <button class="prompt-fav-btn${isFavoriteDisplay ? ' active' : ''}" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
+          <button class="toggle-favorite${isFavoriteDisplay ? ' active' : ''}" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
             <i class="${isFavoriteDisplay ? 'fas' : 'far'} fa-heart"></i> <span>${favCount}</span>
           </button>
         </div>
-      </button>
+      </div>
     `;
   });
 

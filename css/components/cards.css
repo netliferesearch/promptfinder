@@ -9,19 +9,55 @@
   box-shadow: none;
 }
 
+/* New: Category row with copy icon */
+.prompt-card__category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin-bottom: 0.7em;
+}
+.prompt-item__category {
+  display: inline-block;
+  background: #e3d6ff;
+  color: #7c4dff;
+  font-size: 1em;
+  padding: 0.35em 1.2em;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.prompt-card__copy-icon {
+  margin-left: 0.5em;
+  color: var(--color-gray-700);
+  font-size: 1.15rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+.prompt-card__copy-icon:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 /* Ensure only one background rule for the card */
+/* Prompt card button (list view) - matches detail card style */
 .prompt-card-btn {
-  all: unset;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   background: #fff;
-  border-radius: 18px;
+  border-radius: var(--border-radius-md, 18px);
   box-shadow: 0 2px 12px 0 rgba(16, 30, 54, 0.08);
   margin-bottom: 1.25rem;
   cursor: pointer;
-  padding: 0 0 1.25rem 0;
+  padding: 1.25em 0 1.25em 0;
   position: relative;
   overflow: hidden;
   transition:
@@ -31,33 +67,7 @@
 
 /* Ensure all sections within the card have consistent white background */
 /* Use very specific selectors to override any existing rules */
-.prompt-card-btn,
-.prompt-card-btn > *,
-.prompt-card-btn .prompt-card__content,
-.prompt-card-btn .prompt-card__header,
-.prompt-card-btn .prompt-card__description {
-  background: #fff !important;
-}
 
-.prompt-card-btn .prompt-card__tags,
-.prompt-card-btn .prompt-card__tags.tags,
-.prompt-card-btn .prompt-detail-tools,
-.prompt-card-btn .prompt-detail-tools-label,
-.prompt-card-btn .prompt-card-bottom,
-.prompt-card-btn .community-rating-section {
-  background: #fff !important;
-}
-
-/* Make sure individual tags and tools keep their original styled backgrounds */
-.prompt-card-btn .tags .tag,
-.prompt-card-btn .prompt-card__tag,
-.prompt-card-btn .prompt-card__tag.tag {
-  background: #f1f5fa !important;
-}
-
-.prompt-card-btn .prompt-detail-tools .tool-pill {
-  background: #f1f5fa !important;
-}
 .prompt-card-btn:focus-visible {
   outline: 2px solid #222b45;
   outline-offset: 2px;
@@ -67,19 +77,7 @@
 .prompt-card-btn:hover {
   box-shadow: 0 4px 24px 0 rgba(16, 30, 54, 0.14);
   transform: translateY(-2px);
-  background-color: #fff !important; /* Keep white background on hover */
-}
-.prompt-card-btn:hover > *,
-.prompt-card-btn:hover .prompt-card__content,
-.prompt-card-btn:hover .prompt-card__header,
-.prompt-card-btn:hover .prompt-card__description,
-.prompt-card-btn:hover .prompt-card__tags,
-.prompt-card-btn:hover .prompt-card__tags.tags,
-.prompt-card-btn:hover .prompt-detail-tools,
-.prompt-card-btn:hover .prompt-detail-tools-label,
-.prompt-card-btn:hover .prompt-card-bottom,
-.prompt-card-btn:hover .community-rating-section {
-  background: #fff !important;
+  background-color: #fff;
 }
 /* Layout for actions in header */
 /* Actions: copy and favorite closer together, no extra margin */
@@ -231,18 +229,7 @@
 /* Card header and title */
 
 /* Category pill */
-.prompt-item__category {
-  display: inline-block;
-  background: #e3d6ff;
-  color: #7c4dff;
-  font-size: 1em;
-  padding: 0.35em 1.2em;
-  border-radius: 999px;
-  margin-bottom: 0.7em;
-  margin-right: 0.5em;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
+
 .prompt-item__header {
   display: flex;
   flex-direction: row;
@@ -388,6 +375,7 @@
   border: none;
   cursor: pointer;
   transition: color 0.15s;
+  margin-bottom: var(--spacing-md, 16px);
 }
 
 .prompt-fav-btn[aria-pressed='true'],
@@ -473,29 +461,4 @@
     flex-direction: column;
     align-items: stretch;
   }
-}
-
-/* Additional comprehensive background fixes for prompt cards */
-/* Handle any nested elements that might inherit background */
-.prompt-card-btn *:not(.tag):not(.tool-pill):not(.prompt-card__tag):not(.star):not(i) {
-  background: #fff !important;
-}
-
-/* Ensure star ratings and icons maintain their styling */
-.prompt-card-btn .star-rating,
-.prompt-card-btn .star-rating *,
-.prompt-card-btn .fas,
-.prompt-card-btn .far,
-.prompt-card-btn i {
-  background: transparent !important;
-}
-
-/* Force white background on focus states too */
-.prompt-card-btn:focus,
-.prompt-card-btn:focus-visible {
-  background: #fff !important;
-}
-.prompt-card-btn:focus *:not(.tag):not(.tool-pill):not(.prompt-card__tag),
-.prompt-card-btn:focus-visible *:not(.tag):not(.tool-pill):not(.prompt-card__tag) {
-  background: #fff !important;
 }

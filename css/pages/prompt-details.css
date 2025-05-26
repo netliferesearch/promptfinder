@@ -220,7 +220,6 @@
   font-weight: 600;
   color: var(--color-black);
   font-size: var(--font-size-lg);
-  padding-right: 2.5em;
   /* Show full title in details view, no truncation */
   overflow: visible;
   display: block;
