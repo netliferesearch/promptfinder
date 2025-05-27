@@ -11,7 +11,7 @@
   max-width: 500px;
   box-sizing: border-box;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: var(--shadow-md);
 }
 
