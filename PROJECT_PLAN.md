@@ -17,6 +17,7 @@
 **Fixes Applied**:
 
 1. ✅ **Cross-Browser OAuth Config Module**: Created `config/oauth-config.js` with `getOAuth2Config()` function that:
+
    - First tries to read from Chrome manifest (maintains Chrome compatibility)
    - Falls back to exported config object for Firefox and other browsers
    - Handles browser environment differences gracefully

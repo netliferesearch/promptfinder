@@ -2,8 +2,9 @@
 /* global chrome, console */
 
 // OAuth2 configuration for cross-browser compatibility
-// This file contains OAuth2 settings that would normally be in manifest.json
-// but are Chrome-specific and cause warnings in Firefox
+// Chrome reads OAuth2 from manifest.json (required for chrome.identity API)
+// Firefox shows a warning for manifest oauth2 but uses this fallback config
+// This ensures OAuth authentication works across both browsers
 
 export const OAUTH2_CONFIG = {
   client_id: '1003470911937-your-oauth-client-id.apps.googleusercontent.com',
@@ -17,13 +18,15 @@ export function getOAuth2Config() {
     try {
       const manifest = chrome.runtime.getManifest();
       if (manifest && manifest.oauth2) {
+        console.debug('Using OAuth2 config from manifest (Chrome)');
         return manifest.oauth2;
       }
-    } catch {
-      console.debug('Could not read OAuth2 from manifest, using fallback config');
+    } catch (error) {
+      console.debug('Could not read OAuth2 from manifest, using fallback config:', error);
     }
   }
 
   // Fallback to our config (Firefox and other browsers)
+  console.debug('Using fallback OAuth2 config (Firefox/other browsers)');
   return OAUTH2_CONFIG;
 }

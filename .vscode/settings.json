@@ -1,9 +1,39 @@
 {
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
-  "cSpell.words": [
-    "favorited",
-    "favs",
-    "promptfinder"
-  ]
+
+  // Use Prettier as default formatter
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  // ESLint support for JS/TS
+  "eslint.validate": ["javascript", "javascriptreact", "typescript"],
+
+  // Live Server runs on port 5500 (change if needed)
+  "liveServer.settings.port": 5500,
+
+  // Performance: ignore heavy folders for file watching/search
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+
+  // UI/Navigation
+  "workbench.iconTheme": "material-icon-theme", // Uses vscode-icons
+  "editor.minimap.enabled": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "breadcrumbs.enabled": true,
+
+  // Auto save after 1s pause
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

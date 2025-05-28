@@ -175,6 +175,33 @@ This project has recently undergone a significant migration to Firebase for back
    - Select the **root directory** of the `promptfinder` project (the one containing `manifest.json` and the `dist/` folder).
 6. The PromptFinder extension icon should appear in your browser toolbar.
 
+## Firefox Compatibility
+
+PromptFinder supports both Chrome and Firefox browsers with a cross-browser OAuth configuration system:
+
+### Browser-Specific OAuth Configuration
+
+- **Chrome**: Uses OAuth2 configuration from `manifest.json` (required for `chrome.identity.launchWebAuthFlow()` API)
+- **Firefox**: Shows a console warning about the `oauth2` manifest property but uses fallback configuration from `config/oauth-config.js`
+
+### Firefox Console Warning
+
+When running in Firefox, you may see this warning in the console:
+```
+Reading manifest: Warning processing oauth2: An unexpected property was found in the WebExtension manifest.
+```
+
+This is **expected behavior** and does not affect functionality. The warning occurs because:
+1. Chrome requires `oauth2` in manifest.json for the identity API to work
+2. Firefox doesn't recognize this Chrome-specific property but safely ignores it
+3. Our code automatically falls back to the cross-browser configuration
+
+### Cross-Browser Testing
+
+- **Firefox Development**: Use `npm run dev:firefox` to test in Firefox Developer Edition
+- **Chrome Development**: Build with `npm run build` and load as unpacked extension
+- **Both browsers**: OAuth authentication works correctly with the appropriate configuration source
+
 ## Development Workflow
 
 1. **Make Code Changes:** Edit source files in `js/`, `pages/`, `css/`, etc.

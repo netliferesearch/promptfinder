@@ -7,6 +7,10 @@
     "default_popup": "pages/popup.html"
   },
   "permissions": ["storage", "clipboardWrite", "identity"],
+  "oauth2": {
+    "client_id": "1003470911937-your-oauth-client-id.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",
