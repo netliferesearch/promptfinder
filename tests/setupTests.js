@@ -107,10 +107,7 @@ global.chrome = {
     getManifest: jest.fn(() => ({
       manifest_version: 3,
       name: 'Test Extension',
-      oauth2: {
-        client_id: 'mock_client_id_for_tests.apps.googleusercontent.com',
-        scopes: ['openid', 'email', 'profile'],
-      },
+      // OAuth2 config removed from manifest for cross-browser compatibility
     })),
     getContexts: jest.fn().mockResolvedValue([]),
   },
@@ -135,6 +132,18 @@ global.chrome = {
     }),
   },
 };
+
+// Mock OAuth2 config module for cross-browser compatibility
+jest.mock('../config/oauth-config.js', () => ({
+  OAUTH2_CONFIG: {
+    client_id: 'mock_client_id_for_tests.apps.googleusercontent.com',
+    scopes: ['openid', 'email', 'profile'],
+  },
+  getOAuth2Config: jest.fn(() => ({
+    client_id: 'mock_client_id_for_tests.apps.googleusercontent.com',
+    scopes: ['openid', 'email', 'profile'],
+  })),
+}));
 
 if (typeof navigator !== 'undefined' && !navigator.clipboard) {
   Object.defineProperty(navigator, 'clipboard', {

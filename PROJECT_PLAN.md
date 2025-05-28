@@ -1,6 +1,48 @@
 ## PromptFinder Project Plan
 
-**Last Updated**: May 27, 2025 (Email verification flow fixed - blank verification screen issue resolved)
+**Last Updated**: May 28, 2025 (Firefox cross-browser compatibility implemented - OAuth2 manifest warning resolved)
+
+### Firefox Cross-Browser Compatibility (May 2025) - COMPLETED
+
+**Status:** ✅
+
+**Issue**: Firefox console warning appeared when running `npm run dev:full`: "Reading manifest: Warning processing oauth2: An unexpected property was found in the WebExtension manifest."
+
+**Root Cause Analysis**:
+
+- The `oauth2` property in `manifest.json` is Chrome-specific and not recognized by Firefox
+- This caused cross-browser compatibility issues and console warnings during development
+- OAuth2 configuration was being read directly from manifest via `chrome.runtime.getManifest().oauth2`
+
+**Fixes Applied**:
+
+1. ✅ **Cross-Browser OAuth Config Module**: Created `config/oauth-config.js` with `getOAuth2Config()` function that:
+   - First tries to read from Chrome manifest (maintains Chrome compatibility)
+   - Falls back to exported config object for Firefox and other browsers
+   - Handles browser environment differences gracefully
+
+2. ✅ **Manifest Optimization**: Removed Chrome-specific `oauth2` section from `manifest.json` to eliminate Firefox warnings
+
+3. ✅ **Code Refactoring**: Updated `js/promptData.js` to import and use the new cross-browser configuration system
+
+4. ✅ **Test Suite Updates**: Modified test mocks in `tests/setupTests.js` to work with new OAuth config system
+
+5. ✅ **Build Process Validation**: Ensured all ESLint rules pass and build process works correctly
+
+**Files Modified**:
+
+- `manifest.json` - Removed Chrome-specific `oauth2` section
+- `config/oauth-config.js` - New cross-browser OAuth configuration module
+- `js/promptData.js` - Updated to use cross-browser OAuth config
+- `tests/setupTests.js` - Updated test mocks for new config system
+
+**Final Result**:
+
+- ✅ Firefox loads extension without OAuth2 manifest warnings
+- ✅ Chrome OAuth functionality fully preserved
+- ✅ All tests passing (65/65) confirming no functionality broken
+- ✅ Build process working correctly across browsers
+- ✅ True cross-browser compatibility achieved
 
 ### Email Verification Flow Fix (May 2025) - COMPLETED
 

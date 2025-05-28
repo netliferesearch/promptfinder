@@ -1,3 +1,4 @@
+import { getOAuth2Config } from '../config/oauth-config.js';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -182,17 +183,15 @@ export const signInWithGoogle = async () => {
   }
 
   try {
-    const manifest = chrome.runtime.getManifest();
-    const clientId = manifest.oauth2?.client_id;
-    if (!clientId) {
-      const errMsg = getText('OAUTH_CLIENT_ID_NOT_FOUND');
-      console.error(errMsg);
-      Utils.handleError(errMsg, { userVisible: true });
-      return Promise.reject(new Error(errMsg));
+    // Use cross-browser compatible OAuth2 configuration
+    const oauth2Config = getOAuth2Config();
+
+    if (!oauth2Config) {
+      throw new Error('OAuth2 configuration not found');
     }
 
+    const { client_id: clientId, scopes } = oauth2Config;
     const redirectUri = chrome.identity.getRedirectURL();
-    const scopes = manifest.oauth2?.scopes || ['openid', 'email', 'profile'];
     const nonce = Math.random().toString(36).substring(2, 15);
 
     let authUrl = `https://accounts.google.com/o/oauth2/v2/auth`;

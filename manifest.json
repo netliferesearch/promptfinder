@@ -6,11 +6,7 @@
   "action": {
     "default_popup": "pages/popup.html"
   },
-  "oauth2": {
-    "client_id": "1003470911937-7e1tji24qgc65kdl8h27tl0m1t9ldg01.apps.googleusercontent.com",
-    "scopes": ["openid", "email", "profile"]
-  },
-  "permissions": ["storage", "clipboardWrite", "windows", "identity", "identity.email"],
+  "permissions": ["storage", "clipboardWrite", "identity"],
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",

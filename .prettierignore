@@ -3,7 +3,7 @@ dist/
 build/
 coverage/
 functions/
+.vscode/
 package-lock.json
 *.log
-.vscode/
 .idx/

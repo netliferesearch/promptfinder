@@ -28,19 +28,20 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+### Firefox Cross-Browser Compatibility (May 2025)
+
+- ✅ **Firefox Warning Resolved:** Fixed Firefox console warning "Reading manifest: Warning processing oauth2: An unexpected property was found in the WebExtension manifest."
+- ✅ **Cross-Browser OAuth Config:** Implemented `config/oauth-config.js` module to handle OAuth2 configuration in a browser-agnostic way.
+- ✅ **Manifest Optimization:** Removed Chrome-specific `oauth2` section from `manifest.json` to eliminate Firefox warnings while maintaining Chrome functionality.
+- ✅ **Backward Compatibility:** OAuth functionality preserved for Chrome while adding Firefox support through fallback configuration system.
+- ✅ **Build Process Updated:** All tests passing (65/65) and build process working correctly across browsers.
+
 ### Email Verification Flow Fix (May 2025)
 
 - ✅ **Fixed Blank Email Verification Screen:** Resolved critical issue where email verification screen appeared blank after user registration due to HTML structure problems.
 - ✅ **HTML Structure Refactored:** Moved email verification section from being nested inside the main auth card to being a sibling element, allowing independent show/hide functionality.
 - ✅ **CSS Styling Updated:** Created dedicated `.verification-card` styling to replace `auth-card` class usage for email verification, maintaining visual consistency.
 - ✅ **Authentication Flow Improved:** Email verification now displays correctly after signup, providing proper user guidance for account verification.
-
-### UI Cleanup & Sort Controls Refactor (May 2025)
-
-- ✅ **Removed `.filter-sort-row`:** All traces of the legacy `.filter-sort-row` class have been removed from the codebase (HTML, CSS, JS) for clarity and maintainability.
-- ✅ **Sort Controls Modernized:** The sort direction toggle button is now grouped directly with the sort dropdown for a more intuitive and accessible UI.
-- ✅ **Auth View CSS Improved:** Authentication (login/signup) views have improved layout, z-index, and maintainability, with all text i18n-ready and styles centralized in `auth.css`.
-- ✅ **General Code Cleanup:** Related code in `popup.html`, `popup.css`, `auth.css`, and `ui.js` was refactored for clarity and maintainability.
 
 ### UI Cleanup & Sort Controls Refactor (May 2025)
 
