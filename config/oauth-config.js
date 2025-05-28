@@ -7,7 +7,7 @@
 // This ensures OAuth authentication works across both browsers
 
 export const OAUTH2_CONFIG = {
-  client_id: '1003470911937-your-oauth-client-id.apps.googleusercontent.com',
+  client_id: '1003470911937-7e1tji24qgc65kdl8h27tl0m1t9ldg01.apps.googleusercontent.com',
   scopes: ['openid', 'email', 'profile'],
 };
 

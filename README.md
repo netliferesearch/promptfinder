@@ -187,11 +187,13 @@ PromptFinder supports both Chrome and Firefox browsers with a cross-browser OAut
 ### Firefox Console Warning
 
 When running in Firefox, you may see this warning in the console:
+
 ```
 Reading manifest: Warning processing oauth2: An unexpected property was found in the WebExtension manifest.
 ```
 
 This is **expected behavior** and does not affect functionality. The warning occurs because:
+
 1. Chrome requires `oauth2` in manifest.json for the identity API to work
 2. Firefox doesn't recognize this Chrome-specific property but safely ignores it
 3. Our code automatically falls back to the cross-browser configuration

@@ -17,12 +17,14 @@
 
 **Final Solution Implemented**:
 
-1. ✅ **Hybrid OAuth Configuration**: 
+1. ✅ **Hybrid OAuth Configuration**:
+
    - **Chrome**: Uses OAuth2 configuration from `manifest.json` (required for identity API)
    - **Firefox**: Shows expected warning but uses fallback config from `config/oauth-config.js`
    - Both browsers have fully working OAuth authentication
 
 2. ✅ **Cross-Browser OAuth Config Module**: Enhanced `config/oauth-config.js` with:
+
    - Smart detection of browser environment
    - Prioritizes manifest config when available (Chrome)
    - Graceful fallback to exported config (Firefox/others)
@@ -50,7 +52,7 @@ export function getOAuth2Config() {
 **Files Modified**:
 
 - `manifest.json` - Restored OAuth2 configuration for Chrome compatibility
-- `config/oauth-config.js` - Enhanced cross-browser OAuth configuration module  
+- `config/oauth-config.js` - Enhanced cross-browser OAuth configuration module
 - `js/promptData.js` - Uses cross-browser OAuth config via `getOAuth2Config()`
 - `tests/setupTests.js` - Updated test mocks for new config system
 - `README.md` - Added Firefox compatibility documentation section
@@ -58,7 +60,7 @@ export function getOAuth2Config() {
 **Final Result**:
 
 - ✅ **Chrome**: Full OAuth functionality with manifest configuration
-- ✅ **Firefox**: Working OAuth with expected (harmless) console warning  
+- ✅ **Firefox**: Working OAuth with expected (harmless) console warning
 - ✅ **Cross-browser**: True compatibility without functionality loss
 - ✅ **Testing**: All 65 tests passing, build process working
 - ✅ **Documentation**: Complete Firefox compatibility guide added
