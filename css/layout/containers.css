@@ -10,7 +10,7 @@
   width: 100%;
   max-width: 500px;
   box-sizing: border-box;
-  height: 100%;
+  height: 100vh;
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }

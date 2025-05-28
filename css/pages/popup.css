@@ -24,6 +24,17 @@ section.main-controls {
 #main-content {
   min-width: 400px;
   background: #f7fafd;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Main content structure for flex layout */
+#main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Main controls layout */
@@ -33,6 +44,7 @@ section.main-controls {
   gap: 1rem;
   padding: 1.5rem 1.5rem 0 1.5rem;
   background: #f7fafd;
+  flex-shrink: 0;
 }
 
 .search-bar {
@@ -93,6 +105,7 @@ section.main-controls {
   font-size: var(--font-size-xs);
   color: #3b4252;
   font-weight: 500;
+  flex-shrink: 0;
 }
 /* Prompt list tabs */
 /* Prompt list container */
@@ -102,10 +115,8 @@ section.main-controls {
   min-height: 300px;
   border: none;
   box-shadow: none;
-}
-/* Clusterize.js virtualization container for prompt list */
-#prompts-list-scroll.cards-container {
-  height: 400px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 /* Category dropdown bar above tabs */
