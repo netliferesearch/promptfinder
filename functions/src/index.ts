@@ -371,3 +371,6 @@ export const incrementUsageCount = functions.https.onCall(
     return { success: true };
   }, 'incrementUsageCount')
 );
+
+// Export the searchPrompts Cloud Function for deployment
+export { searchPrompts } from './searchPrompts';

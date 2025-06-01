@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.deletePromptCleanup = void 0;
+exports.searchPrompts = exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.deletePromptCleanup = void 0;
 const functions = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const utils_1 = require("./utils");
@@ -311,4 +311,7 @@ exports.incrementUsageCount = functions.https.onCall({ region: 'europe-west1' },
     });
     return { success: true };
 }, 'incrementUsageCount'));
+// Export the searchPrompts Cloud Function for deployment
+var searchPrompts_1 = require("./searchPrompts");
+Object.defineProperty(exports, "searchPrompts", { enumerable: true, get: function () { return searchPrompts_1.searchPrompts; } });
 //# sourceMappingURL=index.js.map
