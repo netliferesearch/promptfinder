@@ -574,6 +574,52 @@ describe('UI Module', () => {
         expect(hasPrivatePromptWithLock).toBe(true);
       }
     });
+
+    test('should render match annotation badges for matched fields with correct content and accessibility', () => {
+      const prompt = {
+        id: '42',
+        title: 'Searchable Prompt',
+        text: 'Prompt text',
+        tags: ['tag1'],
+        userId: 'user42',
+        category: 'CategoryX',
+        description: 'A prompt for search testing',
+        matchedIn: ['title', 'tags', 'description'],
+        currentUserIsFavorite: false,
+        favoritesCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        authorDisplayName: 'Author X',
+        averageRating: 0,
+        totalRatingsCount: 0,
+        usageCount: 0,
+        isPrivate: false,
+        currentUserRating: 0,
+      };
+      if (UI._setAllPromptsForTest) UI._setAllPromptsForTest([]);
+      UI.displayPrompts([prompt]);
+      const promptsListElForTest = document.getElementById('prompts-list-content');
+      // Check that the matched fields container is present
+      const matchedFields = promptsListElForTest.querySelector('.matched-fields');
+      expect(matchedFields).not.toBeNull();
+      // Check that each matched field badge is present and has correct text and aria-label
+      const badges = matchedFields.querySelectorAll('.matched-field-badge');
+      expect(badges.length).toBe(3);
+      expect(badges[0].textContent).toContain('title');
+      expect(badges[1].textContent).toContain('tags');
+      expect(badges[2].textContent).toContain('description');
+      expect(badges[0].getAttribute('aria-label')).toContain('Matched in title');
+      expect(badges[1].getAttribute('aria-label')).toContain('Matched in tags');
+      expect(badges[2].getAttribute('aria-label')).toContain('Matched in description');
+      // Check visually hidden text for screen readers
+      const visuallyHidden = badges[0].querySelector('.visually-hidden');
+      expect(visuallyHidden).not.toBeNull();
+      expect(visuallyHidden.textContent).toContain('Matched in');
+      // Check the matched-fields-label is present and readable
+      const label = matchedFields.querySelector('.matched-fields-label');
+      expect(label).not.toBeNull();
+      expect(label.textContent).toMatch(/matched/i);
+    });
   });
 
   describe('displayPromptDetails', () => {

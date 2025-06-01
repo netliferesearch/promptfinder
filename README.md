@@ -20,6 +20,27 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 - **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.
 - **Custom Display Names:** Users set a display name upon email/password signup, avoiding email exposure.
 
+## Improved Search System
+
+PromptFinder now features a powerful, server-side search system designed for speed, accuracy, and usability:
+
+- **Field Weighting:** Prioritizes matches in prompt title, description, text, categories, and tags, with title matches ranked highest.
+- **Stemming, Synonyms, and Typo Tolerance:** Uses open-source libraries to handle word variations, common synonyms, and minor typos.
+- **Match Annotations:** Each search result displays badges indicating which fields matched your query, with accessible labels for screen readers.
+- **Exact Match Boost:** Exact matches are always ranked above partial or fuzzy matches.
+- **Multi-Field Boost:** Results matching in multiple fields are ranked higher.
+- **Public & Private Prompts:** Search includes both public prompts and your private prompts (when logged in), respecting all permissions.
+- **Performance:** Optimized to return results within 500ms for up to 1000 prompts. Search timing is displayed in the UI and logged for developers.
+- **Accessibility:** All match indicators and search controls are accessible by keyboard and screen reader.
+
+**Usage:**
+
+- Just type in the main search bar. Results are prioritized and annotated in real time.
+- Search timing and matched fields are shown for each result.
+- Developers can review search performance in the browser console and Cloud Function logs.
+
+**For full technical details, see [`docs/search-system.md`](docs/search-system.md).**
+
 ## Project Status & Roadmap
 
 **For a detailed breakdown of current development status, ongoing tasks, and future plans, please see the [PROJECT_PLAN.md](PROJECT_PLAN.md) file.**
@@ -264,7 +285,7 @@ For detailed test status and future test expansion plans, see the testing sectio
 
 ## Firebase Cloud Functions
 
-The project uses Firebase Cloud Functions for server-side operations, particularly data aggregation:
+The project uses Firebase Cloud Functions for server-side operations, including search, aggregation, and usage tracking:
 
 - `/functions` directory contains its own `package.json` and dependencies (this is by Firebase design)
 - Functions are written in TypeScript in the `/functions/src` directory
@@ -280,7 +301,7 @@ npm install
 # Build functions
 npm run build
 
-# Deploy functions
+# Deploy functions (including the new searchPrompts Cloud Function)
 npm run deploy
 
 # Run functions locally with the Firebase emulator
@@ -289,10 +310,13 @@ npm run serve
 
 The main implemented functions are:
 
+- `searchPrompts`: Prioritized, weighted, typo-tolerant search for prompts (see `src/searchPrompts.ts`)
 - `recalculateRating`: Updates average ratings when a rating changes
 - `updateFavoritesCount`: Maintains accurate favorites counts
 - `incrementUsageCount`: Tracks usage counts when prompts are copied
 - `recalculateAllStats`: Admin function to recalculate all stats
+
+> **Note:** The `searchPrompts` Cloud Function is deployed and updated automatically with the standard deployment command above.
 
 For details on deployment and testing, see:
 

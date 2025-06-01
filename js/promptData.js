@@ -891,3 +891,35 @@ export const filterPrompts = (prompts, filters) => {
 
   return result;
 };
+
+/**
+ * Calls the searchPrompts Cloud Function to perform server-side search.
+ * @param {string} query - The search query string.
+ * @param {number} [limit=20] - Optional: max number of results to return.
+ * @returns {Promise<object>} - The search results from the backend, including annotations.
+ *
+ * Each result in results[] includes:
+ *   - matchedIn: Array of field names where a match occurred (e.g., ['title', 'tags'])
+ *   - isExactMatch: Boolean indicating if any field was an exact match
+ *   - score: The ranking score (lower is better)
+ */
+export async function searchPromptsServer(query, limit = 20) {
+  if (!functions) {
+    const err = new Error('Firebase functions not initialized.');
+    Utils.handleError(err.message, { userVisible: true, originalError: err });
+    return Promise.reject(err);
+  }
+  try {
+    const callable = httpsCallable(functions, 'searchPrompts');
+    const response = await callable({ query, limit });
+    // Response is in response.data
+    // Each result in response.data.results includes 'matchedIn' for downstream use
+    return response.data;
+  } catch (error) {
+    Utils.handleError('Search failed: ' + (error.message || error), {
+      userVisible: true,
+      originalError: error,
+    });
+    return Promise.reject(error);
+  }
+}

@@ -4,8 +4,9 @@ This guide explains how to complete the deployment of the Firebase Cloud Functio
 
 ## What's Been Implemented
 
-1. Cloud Functions have been set up in the `functions/src/index.ts` file:
+1. Cloud Functions have been set up in the `functions/src/` directory:
 
+   - `searchPrompts`: Callable function for prioritized, weighted, typo-tolerant prompt search (see `src/searchPrompts.ts`)
    - `recalculateRating`: Listens for changes to prompt ratings and updates aggregated values
    - `updateFavoritesCount`: Manages favorites count when users favorite/unfavorite prompts
    - `recalculateAllStats`: Admin function to batch update all prompt statistics
@@ -18,6 +19,7 @@ This guide explains how to complete the deployment of the Firebase Cloud Functio
      - `ratePrompt`: Now just sets the rating document and lets cloud functions handle the rest
      - `toggleFavorite`: Simplified to just add/remove favorites documents
      - `copyPromptToClipboard`: Now calls cloud function to increment usage count
+   - `searchPrompts` is called for all main search queries (see `js/promptData.js`)
 
 3. Region Configuration:
    - All functions are deployed to the `europe-west1` region for optimal performance with Firestore
@@ -55,17 +57,23 @@ npx firebase deploy --only functions
 
 After deployment, test the functions to ensure they're working correctly:
 
-1. **Test rating a prompt**
+1. **Test searching for prompts**
+
+   - Use the main search bar in the extension
+   - Verify that results are prioritized, annotated, and returned quickly (see badges and timing info)
+   - Check Cloud Function logs for search timing and query info
+
+2. **Test rating a prompt**
 
    - Add a rating to a prompt
    - Verify that the `averageRating` and `totalRatingsCount` fields are updated properly
 
-2. **Test favoriting a prompt**
+3. **Test favoriting a prompt**
 
    - Favorite and unfavorite a prompt
    - Verify that the `favoritesCount` field is updated properly
 
-3. **Test usage tracking**
+4. **Test usage tracking**
    - Copy a prompt to clipboard
    - Verify that the `usageCount` field increments
 

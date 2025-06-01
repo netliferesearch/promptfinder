@@ -1,6 +1,25 @@
+jest.mock('firebase/functions', () => ({
+  httpsCallable: jest.fn((functions, functionName) => {
+    return jest.fn(data => {
+      if (functionName === 'incrementUsageCount') {
+        const promptId = data.promptId;
+        if (!promptId) return Promise.reject(new Error('Prompt ID is required'));
+        const promptPath = `prompts/${promptId}`;
+        const promptData = global.mockFirestoreDb.getPathData(promptPath);
+        if (!promptData) return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
+        const updatedData = { ...promptData, usageCount: (promptData.usageCount || 0) + 1 };
+        global.mockFirestoreDb.seedData(promptPath, updatedData);
+        return Promise.resolve({ data: { success: true } });
+      }
+      return Promise.resolve({ data: { success: true } });
+    });
+  }),
+}));
+
 // import { jest } from '@jest/globals'; // Already globally available via Jest execution
 import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
+import { httpsCallable } from 'firebase/functions';
 
 // Firebase functions are globally mocked by setupTests.js
 import {
@@ -569,4 +588,30 @@ describe('PromptData Module - Firestore v9', () => {
       expect(promptDoc.updatedAt).toEqual(originalUpdatedAt);
     });
   });
+});
+
+describe('PromptData searchPromptsServer', () => {
+  it('should return annotated results from backend', async () => {
+    const mockResults = [
+      { id: '1', title: 'Test', matchedIn: ['title'], isExactMatch: true, score: 0.1 },
+      { id: '2', title: 'Other', matchedIn: ['description'], isExactMatch: false, score: 0.5 },
+    ];
+    const mockResponse = { data: { results: mockResults, durationMs: 123 } };
+    httpsCallable.mockReturnValue(() => Promise.resolve(mockResponse));
+    const res = await PromptData.searchPromptsServer('Test');
+    expect(res.results).toEqual(mockResults);
+    expect(res.durationMs).toBe(123);
+    expect(res.results[0].matchedIn).toContain('title');
+  });
+
+  it('should handle backend errors gracefully', async () => {
+    httpsCallable.mockReturnValue(() => Promise.reject(new Error('Backend error')));
+    await expect(PromptData.searchPromptsServer('fail')).rejects.toThrow('Backend error');
+    // Optionally, check that handleError was called
+    const Utils = require('../js/utils.js');
+    expect(Utils.handleError).toHaveBeenCalled();
+  });
+
+  // Optionally, test loading state if you have a way to expose it
+  // (This is usually tested in UI integration tests)
 });

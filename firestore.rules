@@ -117,8 +117,9 @@ service cloud.firestore {
     
     // Prompts collection
     match /prompts/{promptId} {
-      // Read access: public prompts visible to all authenticated users,
-      // private prompts only visible to their owners
+      // Read access:
+      // - Public prompts (isPrivate == false) are readable by any authenticated user
+      // - Private prompts (isPrivate == true) are only readable by their owner (userId == request.auth.uid)
       allow read: if isAuthenticated() && 
                    (!resource.data.isPrivate || resource.data.userId == request.auth.uid);
       

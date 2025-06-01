@@ -1583,6 +1583,16 @@ export const displayPrompts = (prompts, opts = {}) => {
         </button>
       </div>
     `;
+    // --- MATCHED FIELDS BADGES ---
+    let matchedFieldsHtml = '';
+    if (Array.isArray(prompt.matchedIn) && prompt.matchedIn.length > 0) {
+      matchedFieldsHtml = `<div class="matched-fields" aria-label="Matched fields: ${prompt.matchedIn.join(', ')}">${prompt.matchedIn
+        .map(
+          f =>
+            `<span class="matched-field-badge" aria-label="Matched in ${Utils.escapeHTML(f)}"><span class="visually-hidden">Matched in </span>${Utils.escapeHTML(f)}</span>`
+        )
+        .join(' ')}<span class="matched-fields-label"> matched</span></div>`;
+    }
     // --- NEW STRUCTURE: div.prompt-card-btn as top-level container ---
     return `
       <div class="prompt-card-btn" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
@@ -1598,6 +1608,7 @@ export const displayPrompts = (prompts, opts = {}) => {
             </div>
           </div>
           <div class="prompt-card__description">${descShort}</div>
+          ${matchedFieldsHtml}
         </div>
         <div class="prompt-card__tags tags">
           ${(prompt.tags || []).map(t => `<span class="prompt-card__tag tag">${Utils.escapeHTML(t)}</span>`).join('')}
@@ -1947,3 +1958,110 @@ export const viewPromptDetails = async promptId => {
 };
 
 export const getStarRatingContainerElementForTest = () => userStarRatingEl;
+
+// Add a spinner element to the DOM if it doesn't exist
+function ensureSearchSpinner() {
+  let spinner = document.getElementById('search-loading-spinner');
+  if (!spinner) {
+    spinner = document.createElement('div');
+    spinner.id = 'search-loading-spinner';
+    spinner.className = 'search-loading-spinner';
+    spinner.innerHTML = '<span class="spinner"></span> Searching...';
+    spinner.style.display = 'none';
+    const searchBar = document.querySelector('.search-bar');
+    if (searchBar) {
+      searchBar.appendChild(spinner);
+    } else {
+      document.body.appendChild(spinner);
+    }
+  }
+  return spinner;
+}
+
+// Show/hide spinner helpers
+function showSearchSpinner() {
+  const spinner = ensureSearchSpinner();
+  spinner.style.display = 'inline-flex';
+}
+function hideSearchSpinner() {
+  const spinner = document.getElementById('search-loading-spinner');
+  if (spinner) spinner.style.display = 'none';
+}
+
+// Show error message in search area
+function showSearchError(message) {
+  let errorEl = document.getElementById('search-error-message');
+  if (!errorEl) {
+    errorEl = document.createElement('div');
+    errorEl.id = 'search-error-message';
+    errorEl.className = 'error-message';
+    const searchBar = document.querySelector('.search-bar');
+    if (searchBar) {
+      searchBar.appendChild(errorEl);
+    } else {
+      document.body.appendChild(errorEl);
+    }
+  }
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+}
+function hideSearchError() {
+  const errorEl = document.getElementById('search-error-message');
+  if (errorEl) errorEl.style.display = 'none';
+}
+
+// Show search timing info
+function showSearchTiming(durationMs) {
+  let timingEl = document.getElementById('search-timing-info');
+  if (!timingEl) {
+    timingEl = document.createElement('div');
+    timingEl.id = 'search-timing-info';
+    timingEl.className = 'search-timing-info';
+    const searchBar = document.querySelector('.search-bar');
+    if (searchBar) {
+      searchBar.appendChild(timingEl);
+    } else {
+      document.body.appendChild(timingEl);
+    }
+  }
+  timingEl.textContent = `Search completed in ${durationMs}ms`;
+  timingEl.style.display = 'block';
+}
+function hideSearchTiming() {
+  const timingEl = document.getElementById('search-timing-info');
+  if (timingEl) timingEl.style.display = 'none';
+}
+
+// Update search input event handler to show timing
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', async e => {
+        const query = e.target.value.trim();
+        if (!query) {
+          hideSearchTiming();
+          return; // Optionally, handle empty search
+        }
+        showSearchSpinner();
+        hideSearchError();
+        try {
+          // Use the new server-side search
+          const { durationMs } = await PromptData.searchPromptsServer(query);
+          // Log search response time for metrics
+          if (typeof durationMs === 'number') {
+            console.log(`[PromptFinder] Search for "${query}" took ${durationMs}ms`);
+            showSearchTiming(durationMs);
+          }
+          // TODO: Pass results to displayPrompts or equivalent
+          // displayPrompts(results);
+        } catch {
+          showSearchError('Search failed. Please try again.');
+          hideSearchTiming();
+        } finally {
+          hideSearchSpinner();
+        }
+      });
+    }
+  });
+}
