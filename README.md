@@ -15,6 +15,7 @@ PromptFinder is a Chrome extension designed to help users efficiently manage, st
 - **Universal Favorites:** Favorite any prompt (public or your own private ones). `favoritesCount` on prompts tracks total favorites.
 - **Usage Count:** Tracks how many times a prompt has been copied.
 - **Search & Filtering:** Search across multiple fields. Filter by tabs (All, Favorites, Private).
+- **Sticky Search Header:** The search field and prompt counter remain visible at the top of the prompt list as you scroll, making it easy to refine searches and see results count. Fully accessible (keyboard, screen reader) and mobile-friendly.
 - **Private Prompts:** Option to keep prompts private to your account.
 - **Private Prompt Indicator:** Private prompts are visually marked with a lock icon next to their title in both the prompt list and details views.
 - **Required Fields:** Ensures essential information (Title, Description, Prompt Text, Category, Target AI Tools) is provided when adding/editing prompts.

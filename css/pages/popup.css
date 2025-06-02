@@ -31,10 +31,21 @@ section.main-controls {
 
 /* Main content structure for flex layout */
 #main-content {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#scrollable-main {
+  flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: #f7fafd;
 }
 
 /* Main controls layout */
@@ -110,14 +121,10 @@ section.main-controls {
 /* Prompt list tabs */
 /* Prompt list container */
 #prompts-list-scroll.cards-container {
-  background: transparent;
-  padding: 0 1.5rem 1.5rem 1.5rem;
-  min-height: 300px;
-  border: none;
-  box-shadow: none;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  height: 200px !important; /* Make it obviously small for testing */
+  overflow-y: auto !important;
+  background: #e3f2fd !important;
+  border: 3px dashed #1976d2 !important;
 }
 /* Category dropdown bar above tabs */
 .category-dropdown-bar {
@@ -682,4 +689,64 @@ body.editing-prompt .fab {
   border: 1px solid var(--color-gray-300);
   border-radius: var(--border-radius-sm);
   background-color: var(--color-white);
+}
+
+/* Sticky search header styles */
+.sticky-search-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(0, 0, 0, 0.04);
+  padding: 0.5rem 0 0.5rem 0;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sticky-search-header .search-bar {
+  max-width: 600px;
+  margin: 0 auto;
+  margin-bottom: 0.25rem;
+}
+
+.sticky-search-header .prompt-counter-row {
+  padding: 0 1.5rem 0.5rem 1.5rem;
+  font-size: var(--font-size-xs);
+  color: #3b4252;
+  font-weight: 500;
+  background: transparent;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .sticky-search-header .search-bar {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+  .sticky-search-header {
+    padding: 0.25rem 0 0.25rem 0;
+    gap: 0.15rem;
+  }
+  .sticky-search-header .prompt-counter-row {
+    padding: 0 0.5rem 0.25rem 0.5rem;
+    font-size: 0.95em;
+  }
+  .main-controls {
+    padding: 0.75rem 0.5rem 0 0.5rem;
+    gap: 0.5rem;
+  }
+  .tabs {
+    font-size: 0.95em;
+  }
+}
+
+#prompts-list-content {
+  flex: 1 1 auto;
+  min-height: 0;
 }

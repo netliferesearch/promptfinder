@@ -1,0 +1,11 @@
+.sticky-search-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  padding-top: 0.5rem;
+  margin-top: 0;
+  /* Ensure no margin breaks stickiness */
+  /* Add box-shadow for separation if needed */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}

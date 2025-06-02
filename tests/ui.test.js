@@ -188,7 +188,15 @@ const _originalQuerySelector = document.querySelector;
 
 const setupMockDOM = () => {
   document.body.innerHTML = `
-    <div id="prompts-list-scroll" class="cards-container">
+    <div id="scrollable-main">
+      <div class="sticky-search-header" role="search">
+        <div class="search-bar">
+          <input id="search-input" />
+        </div>
+        <div class="prompt-counter-row" role="status" aria-live="polite">
+          <span id="prompt-counter">0 prompts found</span>
+        </div>
+      </div>
       <div id="prompts-list-content"></div>
     </div>
     <section id="prompt-details-section" class="hidden">
@@ -400,11 +408,8 @@ describe('UI Module', () => {
       await UI.initializeUI();
       expect(document.getElementById).toHaveBeenCalledWith('tab-all');
       expect(PromptData.loadPrompts).toHaveBeenCalledTimes(1);
-      const promptsListScrollEl = document.getElementById('prompts-list-scroll');
-      expect(promptsListScrollEl.addEventListener).toHaveBeenCalledWith(
-        'click',
-        expect.any(Function)
-      );
+      const scrollableMainEl = document.getElementById('scrollable-main');
+      expect(scrollableMainEl.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
     });
 
     test('should show only private prompts in the Private tab and display lock icons', async () => {
@@ -878,6 +883,55 @@ describe('UI Module', () => {
         call[0].includes('Failed to process copy action')
       );
       expect(errorCalls.length).toBe(0);
+    });
+  });
+
+  describe('Sticky Search Header', () => {
+    beforeEach(() => {
+      setupMockDOM();
+    });
+
+    it('should render the sticky search header and prompt counter', () => {
+      const stickyHeader = document.querySelector('.sticky-search-header');
+      expect(stickyHeader).not.toBeNull();
+      expect(stickyHeader.getAttribute('role')).toBe('search');
+      const searchBar = stickyHeader.querySelector('.search-bar');
+      expect(searchBar).not.toBeNull();
+      const promptCounter = stickyHeader.querySelector('.prompt-counter-row');
+      expect(promptCounter).not.toBeNull();
+      expect(promptCounter.getAttribute('role')).toBe('status');
+      expect(promptCounter.getAttribute('aria-live')).toBe('polite');
+    });
+
+    it('should have the sticky header as the first child of #scrollable-main', () => {
+      const scrollable = document.getElementById('scrollable-main');
+      const stickyHeader = scrollable.querySelector('.sticky-search-header');
+      expect(scrollable.firstElementChild).toBe(stickyHeader);
+    });
+
+    it('should contain the prompt list content after the sticky header', () => {
+      const promptsList = document.getElementById('prompts-list-content');
+      expect(promptsList).not.toBeNull();
+      expect(promptsList.previousElementSibling.classList.contains('sticky-search-header')).toBe(
+        true
+      );
+    });
+
+    it('should update the prompt counter text', () => {
+      const promptCounter = document.querySelector('.prompt-counter-row #prompt-counter');
+      promptCounter.textContent = '42 prompts found';
+      expect(promptCounter.textContent).toBe('42 prompts found');
+    });
+
+    it('should allow scrolling of #scrollable-main', () => {
+      const scrollable = document.getElementById('scrollable-main');
+      scrollable.style.height = '100px';
+      scrollable.style.overflowY = 'auto';
+      const promptsList = document.getElementById('prompts-list-content');
+      promptsList.style.height = '1000px';
+      promptsList.innerHTML = '<div style="height:1000px"></div>';
+      scrollable.scrollTop = 50;
+      expect(scrollable.scrollTop).toBe(50);
     });
   });
 });

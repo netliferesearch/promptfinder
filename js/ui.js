@@ -929,7 +929,7 @@ export const cacheDOMElements = () => {
   dateToEl = document.getElementById('date-to');
   updatedFromEl = document.getElementById('updated-from');
   updatedToEl = document.getElementById('updated-to');
-  promptsListEl = document.getElementById('prompts-list-scroll');
+  promptsListEl = document.getElementById('scrollable-main');
   promptDetailsSectionEl = document.getElementById('prompt-details-section');
 
   promptDetailTitleEl = document.getElementById('prompt-detail-title');
@@ -1040,7 +1040,7 @@ async function handleToggleFavorite(promptId) {
         displayPromptDetails(freshPrompt);
       }
       // Always re-render the list to update favorite count, but preserve scroll position
-      const scrollElem = document.getElementById('prompts-list-scroll');
+      const scrollElem = document.getElementById('scrollable-main');
       const prevScrollTop = scrollElem ? scrollElem.scrollTop : 0;
       showTab(activeTab, { preserveScrollTop: prevScrollTop });
       Utils.showConfirmationMessage(getText('FAVORITE_UPDATED'));
@@ -1520,7 +1520,7 @@ let clusterizeInstance = null;
 
 export const displayPrompts = (prompts, opts = {}) => {
   // Use Clusterize.js for virtualization
-  const scrollElem = document.getElementById('prompts-list-scroll');
+  const scrollElem = document.getElementById('scrollable-main');
   const contentElem = document.getElementById('prompts-list-content');
   if (!scrollElem || !contentElem) return;
 

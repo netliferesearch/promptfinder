@@ -31,50 +31,52 @@
       </header>
 
       <main id="main-content">
-        <section class="main-controls">
-          <div class="search-bar">
-            <label for="search-input" class="visually-hidden">Search Prompts</label>
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Search prompts, tags, or AI tools..."
-              class="form-input search-input"
-            />
-          </div>
-          <div class="category-sort-bar">
-            <select
-              id="main-category-dropdown"
-              class="form-input category-dropdown"
-              aria-label="Filter by category"
-            >
-              <option value="">All Categories</option>
-              <!-- Populated by JS -->
-            </select>
-            <div class="sort-row">
-              <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
-                <!-- Options will be populated by JS for i18n support -->
-              </select>
-              <button
-                id="sort-dir-toggle"
-                class="button button-tertiary button-sm"
-                aria-label="Toggle sort direction"
-                title="Toggle sort direction"
+        <div id="scrollable-main">
+          <section class="main-controls">
+            <div class="category-sort-bar">
+              <select
+                id="main-category-dropdown"
+                class="form-input category-dropdown"
+                aria-label="Filter by category"
               >
-                <i id="sort-dir-icon" class="fas fa-arrow-down-wide-short"></i>
-              </button>
+                <option value="">All Categories</option>
+                <!-- Populated by JS -->
+              </select>
+              <div class="sort-row">
+                <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
+                  <!-- Options will be populated by JS for i18n support -->
+                </select>
+                <button
+                  id="sort-dir-toggle"
+                  class="button button-tertiary button-sm"
+                  aria-label="Toggle sort direction"
+                  title="Toggle sort direction"
+                >
+                  <i id="sort-dir-icon" class="fas fa-arrow-down-wide-short"></i>
+                </button>
+              </div>
+            </div>
+            <div class="filter-sort-row"></div>
+          </section>
+          <nav class="tabs" role="tablist" aria-label="Prompt categories">
+            <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
+            <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
+            <button id="tab-private" role="tab" aria-selected="false">Private</button>
+          </nav>
+          <div class="sticky-search-header" role="search">
+            <div class="search-bar">
+              <label for="search-input" class="visually-hidden">Search Prompts</label>
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Search prompts, tags, or AI tools..."
+                class="form-input search-input"
+              />
+            </div>
+            <div class="prompt-counter-row" role="status" aria-live="polite">
+              <span id="prompt-counter">0 prompts found</span>
             </div>
           </div>
-          <div class="filter-sort-row"></div>
-        </section>
-        <nav class="tabs" role="tablist" aria-label="Prompt categories">
-          <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
-          <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
-          <button id="tab-private" role="tab" aria-selected="false">Private</button>
-        </nav>
-        <div class="prompt-counter-row">
-          <span id="prompt-counter">0 prompts found</span>
-        </div>
-        <div id="prompts-list-scroll" class="cards-container">
           <div id="prompts-list-content"></div>
         </div>
         <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
@@ -109,7 +111,7 @@
             <div id="prompt-detail-static-fields-wrapper">
               <div class="detail-card__main">
                 <label for="prompt-detail-description" class="detail-label"
-                  ><strong>What it’s for</strong></label
+                  ><strong>What it's for</strong></label
                 >
                 <div class="detail-card__description" id="prompt-detail-description"></div>
               </div>
@@ -404,5 +406,6 @@
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
     <script src="../js/toast.js"></script>
+    <script src="../js/debug-sticky.js"></script>
   </body>
 </html>
