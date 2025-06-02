@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PromptFinder</title>
+    <title>DesignPrompts</title>
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/pages/popup.css" />
     <link rel="stylesheet" href="../css/pages/auth.css" />
@@ -19,13 +19,18 @@
   <body>
     <div class="popup-container">
       <header class="pf-header">
-        <h1>PromptFinder</h1>
+        <img
+          src="../icons/icon48.png"
+          alt="DesignPrompts logo"
+          class="pf-header__icon"
+          width="32"
+          height="32"
+          style="vertical-align: middle; margin-right: 0.5em"
+        />
+        <h1>DesignPrompts</h1>
         <div class="header-actions">
           <button id="account-button" class="button button-secondary" aria-label="Account">
             <i class="fas fa-user-circle"></i>
-          </button>
-          <button id="settings-button" class="button button-secondary" aria-label="Settings">
-            <i class="fas fa-cog"></i>
           </button>
         </div>
       </header>
@@ -60,8 +65,17 @@
           </section>
           <nav class="tabs" role="tablist" aria-label="Prompt categories">
             <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
-            <button id="tab-favs" role="tab" aria-selected="false">Favorites</button>
-            <button id="tab-private" role="tab" aria-selected="false">Private</button>
+            <button id="tab-favs" role="tab" aria-selected="false">
+              <i class="fas fa-heart" aria-hidden="true" style="margin-right: 0.4em"></i>Favorites
+            </button>
+            <button id="tab-private" role="tab" aria-selected="false">
+              <i
+                class="fa-solid fa-lock prompt-private-icon"
+                aria-hidden="true"
+                style="margin-right: 0.4em"
+              ></i
+              >Private
+            </button>
           </nav>
           <div class="sticky-search-header" role="search">
             <div class="search-bar">
@@ -99,6 +113,7 @@
               <div class="prompt-item__actions">
                 <button id="copy-prompt-button" aria-label="Copy prompt">
                   <i class="fa-regular fa-copy"></i>
+                  <span id="copy-prompt-label" class="copy-prompt-label"></span>
                 </button>
                 <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
                   <i class="far fa-heart"></i>

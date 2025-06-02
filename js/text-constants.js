@@ -36,7 +36,7 @@ export const TEXT_CONSTANTS = {
   SORT_MOST_FAVORITED: 'Most Favorited',
   SORT_TITLE_AZ: 'Title (A-Z)',
   // App branding
-  APP_NAME: 'PromptFinder',
+  APP_NAME: 'DesignPrompts',
 
   // Navigation & Actions
   BACK_TO_LIST: 'Back to list',
@@ -241,6 +241,8 @@ export const TEXT_CONSTANTS = {
 
   // Required field indicator
   REQUIRED: '*',
+
+  COPY_PROMPT_LABEL: 'Copy Prompt',
 };
 
 // Simple text manager class for future internationalization

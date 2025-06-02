@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PromptFinder",
+  "name": "DesignPrompts",
   "version": "1.0",
   "description": "A community-powered tool for managing and sharing AI prompts.",
   "action": {

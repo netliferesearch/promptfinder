@@ -156,17 +156,14 @@
   max-width: 100%;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   transition:
     box-shadow 0.2s,
     transform 0.2s;
   cursor: default;
-  cursor: default;
-  cursor: default;
-  cursor: default;
-  cursor: default;
-  cursor: default;
-  cursor: default;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 .detail-card:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -436,4 +433,12 @@
 #prompt-details-section:not(.editing) #edit-prompt-buttons,
 #prompt-details-section:not(.editing) #add-prompt-buttons {
   display: none !important;
+}
+
+#prompt-details-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }

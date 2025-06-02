@@ -242,11 +242,17 @@
   min-width: 0;
 }
 .prompt-private-icon {
-  color: #e74c3c;
+  color: #7b8190;
   font-size: 1.1em;
   margin-right: 0.4em;
   display: flex;
   align-items: center;
+  transition: color 0.15s;
+}
+.tabs button#tab-private.active .prompt-private-icon,
+.tabs button#tab-private:focus .prompt-private-icon,
+.tabs button#tab-private:hover .prompt-private-icon {
+  color: #e74c3c;
 }
 .prompt-item__title {
   flex: 1 1 auto;

@@ -1580,6 +1580,7 @@ export const displayPrompts = (prompts, opts = {}) => {
         <span class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</span>
         <button class="prompt-card__copy-icon copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
           <i class="fa-regular fa-copy"></i>
+          <span class="copy-prompt-label">${getText('COPY_PROMPT_LABEL')}</span>
         </button>
       </div>
     `;
@@ -2065,3 +2066,7 @@ if (typeof window !== 'undefined') {
     }
   });
 }
+
+// Set localized label for copy prompt button in details view
+const copyPromptLabelEl = document.getElementById('copy-prompt-label');
+if (copyPromptLabelEl) copyPromptLabelEl.textContent = getText('COPY_PROMPT_LABEL');
