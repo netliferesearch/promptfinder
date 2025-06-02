@@ -30,6 +30,8 @@
 - [x] 5.0 Documentation
 
   - [x] 5.1 Update README and/or docs/search-system.md to describe sticky search header feature, accessibility, and responsive behavior.
+  - [ ] 5.2 Add screenshots or GIFs of sticky header in action (optional).
 
-- [ ] 6.0 Review & Deployment
-  - [ ] 6.1 Commit and push to git.
+- [x] 6.0 Review & Deployment
+
+  - [x] 6.1 Commit and push to git.
