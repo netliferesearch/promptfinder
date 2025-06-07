@@ -8,11 +8,26 @@ The CSS is organized into a modular structure:
 
 ```
 /css
-  /base          # Foundation styles, variables, reset, utilities
-  /components    # Reusable UI components
-  /layout        # Page layout structures
-  /pages         # Page-specific styles
-  global.css     # Main CSS file that imports all base styles
+  /base
+    variables.css
+    reset.css
+    utilities.css
+  /components
+    buttons.css
+    cards.css
+    forms.css
+    sticky-search-header.css
+    tabs.css
+  /layout
+    containers.css
+    header.css
+  /pages
+    auth.css
+    edit-mode.css
+    popup.css
+    prompt-details.css
+  global.css
+  README.md
 ```
 
 ## Key Files
@@ -25,10 +40,11 @@ The CSS is organized into a modular structure:
 
 ### Components
 
-- `forms.css`: Form elements and controls
 - `buttons.css`: Button styles and variations
-- `tabs.css`: Tab navigation and content
 - `cards.css`: Card components and prompts
+- `forms.css`: Form elements and controls
+- `sticky-search-header.css`: Sticky header for search UI
+- `tabs.css`: Tab navigation and content
 
 ### Layout
 
@@ -37,9 +53,10 @@ The CSS is organized into a modular structure:
 
 ### Pages
 
+- `auth.css`: Styles for authentication views
+- `edit-mode.css`: Styles for prompt editing mode
 - `popup.css`: Styles specific to the main popup
-- `add-prompt.css`: Styles for the add prompt page
-- `edit-prompt.css`: Styles for the edit prompt page
+- `prompt-details.css`: Styles for the prompt details view
 
 ## Design System
 
@@ -58,7 +75,7 @@ The CSS architecture follows a design system approach with:
 
 ### Spacing
 
-- Consistent spacing scale: xs, sm, md, lg, xl
+- Consistent spacing scale: xxs, xs, sm, md, lg, xl
 
 ### Shadows
 
