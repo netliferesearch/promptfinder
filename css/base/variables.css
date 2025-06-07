@@ -1,9 +1,10 @@
 /* Base variables for PromptFinder extension */
 :root {
   /* Color variables */
+  --color-bg: #f7fafd;
   --color-primary: #7c4dff;
   --color-primary-dark: #6a3de8;
-  --color-primary-light: rgba(124, 77, 255, 0.2);
+  --color-primary-light: #e3d6ff;
   --color-white: #ffffff;
   --color-black: #333333;
   --color-gray-100: #f8f9fa;
@@ -13,6 +14,8 @@
   --color-gray-500: #999;
   --color-success-bg: #e6f7e6;
   --color-success-text: #2e7d32;
+  --color-rating: #fbbc04;
+  --color-rating-empty: #e0e0e0;
   --color-error-bg: #ffebee;
   --color-error-text: #c62828;
 
@@ -25,6 +28,7 @@
   --font-size-md: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
+  --font-size-xxl: 2rem;
 
   /* Sizing */
   --border-radius-sm: 8px;
@@ -32,6 +36,7 @@
   --border-radius-lg: 24px;
 
   /* Spacing */
+  --spacing-xxs: 0.25rem;
   --spacing-xs: 0.5rem;
   --spacing-sm: 0.75rem;
   --spacing-md: 1rem;

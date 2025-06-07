@@ -81,12 +81,12 @@
 
 /* Favorites button */
 .toggle-favorite {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.25rem;
-  color: #e74c3c;
-  padding: 0;
+  /* background: none; */
+  /* border: none; */
+  /* cursor: pointer; */
+  /* font-size: 1.25rem; */
+  color: #e74c3c !important;
+  /* padding: 0; */
 }
 
 .toggle-favorite i {

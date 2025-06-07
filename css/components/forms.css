@@ -34,8 +34,8 @@
 .form-textarea {
   padding: var(--spacing-sm);
   border: 1px solid var(--color-gray-400);
-  border-radius: var(--border-radius-lg);
-  font-size: 1rem;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-md);
   background-color: var(--color-white);
   transition:
     border-color 0.2s,

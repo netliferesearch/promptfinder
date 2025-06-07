@@ -39,18 +39,24 @@
         <div id="scrollable-main">
           <section class="main-controls">
             <div class="category-sort-bar">
-              <select
-                id="main-category-dropdown"
-                class="form-input category-dropdown"
-                aria-label="Filter by category"
-              >
-                <option value="">All Categories</option>
-                <!-- Populated by JS -->
-              </select>
-              <div class="sort-row">
-                <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
-                  <!-- Options will be populated by JS for i18n support -->
+              <div class="category-dropdown-wrapper">
+                <i class="fas fa-list category-input-icon" aria-hidden="true"></i>
+                <select
+                  id="main-category-dropdown"
+                  class="form-input category-dropdown"
+                  aria-label="Filter by category"
+                >
+                  <option value="">All Categories</option>
+                  <!-- Populated by JS -->
                 </select>
+              </div>
+              <div class="sort-row">
+                <div class="sort-dropdown-wrapper">
+                  <i class="fas fa-filter sort-input-icon" aria-hidden="true"></i>
+                  <select id="sort-by" class="form-input sort-dropdown" aria-label="Sort prompts">
+                    <!-- Options will be populated by JS for i18n support -->
+                  </select>
+                </div>
                 <button
                   id="sort-dir-toggle"
                   class="button button-tertiary button-sm"
@@ -61,24 +67,27 @@
                 </button>
               </div>
             </div>
+            <nav class="tabs" role="tablist" aria-label="Prompt categories">
+              <button id="tab-all" role="tab" aria-selected="true" class="active">
+                All Prompts
+              </button>
+              <button id="tab-favs" role="tab" aria-selected="false">
+                <i class="fas fa-heart" aria-hidden="true" style="margin-right: 0.4em"></i>Favorites
+              </button>
+              <button id="tab-private" role="tab" aria-selected="false">
+                <i
+                  class="fa-solid fa-lock prompt-private-icon"
+                  aria-hidden="true"
+                  style="margin-right: 0.4em"
+                ></i
+                >Private
+              </button>
+            </nav>
             <div class="filter-sort-row"></div>
           </section>
-          <nav class="tabs" role="tablist" aria-label="Prompt categories">
-            <button id="tab-all" role="tab" aria-selected="true" class="active">All Prompts</button>
-            <button id="tab-favs" role="tab" aria-selected="false">
-              <i class="fas fa-heart" aria-hidden="true" style="margin-right: 0.4em"></i>Favorites
-            </button>
-            <button id="tab-private" role="tab" aria-selected="false">
-              <i
-                class="fa-solid fa-lock prompt-private-icon"
-                aria-hidden="true"
-                style="margin-right: 0.4em"
-              ></i
-              >Private
-            </button>
-          </nav>
           <div class="sticky-search-header" role="search">
             <div class="search-bar">
+              <i class="fas fa-search search-input-icon" aria-hidden="true"></i>
               <label for="search-input" class="visually-hidden">Search Prompts</label>
               <input
                 type="text"
@@ -92,6 +101,10 @@
             </div>
           </div>
           <div id="prompts-list-content"></div>
+          <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
+          <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
+            <i class="fas fa-plus" aria-hidden="true"></i>
+          </button>
         </div>
         <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
         <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
@@ -125,16 +138,12 @@
             <div id="prompt-detail-editable-fields-wrapper" class="detail-card__main hidden"></div>
             <div id="prompt-detail-static-fields-wrapper">
               <div class="detail-card__main">
-                <label for="prompt-detail-description" class="detail-label"
-                  ><strong>What it's for</strong></label
-                >
+                <span class="detail-label"><strong>What it's for</strong></span>
                 <div class="detail-card__description" id="prompt-detail-description"></div>
               </div>
               <div class="detail-card__prompt">
                 <div class="prompt-text-container">
-                  <label for="prompt-detail-text" class="detail-label"
-                    ><strong>The actual prompt</strong></label
-                  >
+                  <span class="detail-label"><strong>The actual prompt</strong></span>
                   <div id="prompt-text-wrapper" class="code-block-wrapper">
                     <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
                   </div>
@@ -421,6 +430,5 @@
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
     <script src="../js/toast.js"></script>
-    <script src="../js/debug-sticky.js"></script>
   </body>
 </html>
