@@ -13,8 +13,18 @@ import * as Utils from './js/utils.js';
 import * as UI from './js/ui.js';
 import * as PromptDataModule from './js/promptData.js';
 import { initializeConnectionMonitoring } from './js/firebase-connection-handler.js';
+import { Analytics } from './js/analytics/analytics.js';
+import PageTracker from './js/analytics/page-tracker.js';
 
 window.DebugPromptData = PromptDataModule;
+
+// Initialize analytics and page tracking
+const analytics = new Analytics();
+const pageTracker = new PageTracker(analytics);
+
+// Make analytics available globally for debugging
+window.DebugAnalytics = analytics;
+window.DebugPageTracker = pageTracker;
 
 let mainContentElement, authViewElement, authErrorMessageElement;
 
@@ -35,6 +45,9 @@ function showAuthView() {
   if (authBackToListButton) authBackToListButton.style.display = '';
   if (authTitle) authTitle.style.display = '';
   if (authSubtext) authSubtext.style.display = '';
+
+  // Track page view for auth
+  pageTracker.trackNavigation('auth', { method: 'programmatic', trigger: 'system' });
 }
 window.showAuthViewGlobally = showAuthView;
 
@@ -136,6 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Firebase connection monitoring
   initializeConnectionMonitoring();
 
+  // Initialize analytics and page tracking
+  pageTracker.init().catch(error => {
+    console.warn('Failed to initialize page tracking:', error);
+  });
+
   mainContentElement = document.getElementById('main-content');
   authViewElement = document.getElementById('auth-view');
   authErrorMessageElement = document.getElementById('auth-error-message');
@@ -152,6 +170,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupDisplayNameInput = document.getElementById('signup-display-name');
   const signupEmailInput = document.getElementById('signup-email');
   const signupPasswordInput = document.getElementById('signup-password');
+
+  // Track form start times for funnel analysis
+  if (loginEmailInput) {
+    loginEmailInput.addEventListener('focus', () => {
+      if (!window.loginFormStartTime) {
+        window.loginFormStartTime = Date.now();
+        // Track registration funnel - login form started
+        analytics.trackRegistrationFunnel({
+          step: 'login_started',
+          stepNumber: 1,
+          method: 'email',
+        });
+      }
+    });
+  }
+
+  if (signupDisplayNameInput) {
+    signupDisplayNameInput.addEventListener('focus', () => {
+      if (!window.signupFormStartTime) {
+        window.signupFormStartTime = Date.now();
+        // Track registration funnel - signup form started
+        analytics.trackRegistrationFunnel({
+          step: 'signup_started',
+          stepNumber: 1,
+          method: 'email',
+        });
+      }
+    });
+  }
   const googleSignInButton = document.getElementById('google-signin-button');
 
   // Email verification elements
@@ -170,6 +217,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPromptFabEl = document.getElementById('add-prompt-fab');
     if (addPromptFabEl && window.firebaseAuthCurrentUser) {
       addPromptFabEl.hidden = false;
+    }
+
+    // Track page view for main content
+    pageTracker.trackNavigation('main', { method: 'programmatic', trigger: 'system' });
+
+    // Track onboarding funnel - popup opened (if logged in)
+    if (window.firebaseAuthCurrentUser) {
+      analytics.trackOnboardingFunnel({
+        step: 'popup_opened',
+        stepNumber: 2,
+        userId: window.firebaseAuthCurrentUser.uid,
+        sessionNumber: 1, // This would ideally track actual session count
+      });
     }
   }
 
@@ -195,6 +255,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hide FAB if present
     const addPromptFabEl = document.getElementById('add-prompt-fab');
     if (addPromptFabEl) addPromptFabEl.hidden = true;
+
+    // Track page view for email verification
+    pageTracker.trackNavigation('email_verification', {
+      method: 'programmatic',
+      trigger: 'system',
+    });
   }
 
   function hideAllAuthForms() {
@@ -292,6 +358,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (accountButton) {
     accountButton.addEventListener('click', () => {
       if (currentUser) {
+        // Track logout action
+        const sessionDuration = pageTracker.getStatus().sessionDuration;
+        const promptsViewed = pageTracker.navigationHistory.filter(
+          h => h.page === 'prompt_details'
+        ).length;
+
+        analytics.trackLogout({
+          userId: currentUser.uid,
+          sessionDuration: sessionDuration,
+          actionsPerformed: pageTracker.getStatus().navigationHistory,
+          promptsViewed: promptsViewed,
+          context: 'popup',
+        });
+
         logoutUser().catch(err => console.error('Logout failed via account button:', err));
       } else {
         showAuthView();
@@ -311,9 +391,49 @@ document.addEventListener('DOMContentLoaded', () => {
       if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
       const email = loginEmailInput.value;
       const password = loginPasswordInput.value;
+      const loginStartTime = Date.now();
+
+      // Track registration funnel - login attempted
+      analytics.trackRegistrationFunnel({
+        step: 'login_attempted',
+        stepNumber: 1,
+        method: 'email',
+        formTime: Date.now() - (window.loginFormStartTime || Date.now()),
+      });
+
       try {
         const userCredential = await loginUser(email, password);
         if (userCredential && userCredential.user) {
+          const loginDuration = Date.now() - loginStartTime;
+
+          // Track successful login
+          analytics.trackLogin({
+            method: 'email',
+            userId: userCredential.user.uid,
+            emailVerified: userCredential.user.emailVerified,
+            displayName: userCredential.user.displayName || '',
+            duration: loginDuration,
+            isReturningUser: true, // Email/password logins are typically returning users
+            context: 'popup',
+          });
+
+          // Track registration funnel - login completed
+          analytics.trackRegistrationFunnel({
+            step: 'login_completed',
+            stepNumber: 2,
+            userId: userCredential.user.uid,
+            method: 'email',
+            formTime: loginDuration,
+          });
+
+          // Track onboarding funnel - first login (for returning users this marks re-engagement)
+          analytics.trackOnboardingFunnel({
+            step: 'login_success',
+            stepNumber: 1,
+            userId: userCredential.user.uid,
+            sessionNumber: 1, // This would ideally be tracked across sessions
+          });
+
           loginForm.reset();
 
           // Check if email is verified
@@ -336,6 +456,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (error) {
+        const loginDuration = Date.now() - loginStartTime;
+
+        // Track failed login attempt
+        analytics.trackError({
+          error_type: 'login_failed',
+          error_message: error.message || 'Login failed',
+          method: 'email',
+          duration: loginDuration,
+          context: 'popup',
+        });
+
         // Show toast message instead of inline error to avoid duplication
         if (typeof window.showToast === 'function') {
           const errorMessage = error.message || getText('AUTH_LOGIN_FAILED');
@@ -361,12 +492,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const displayName = signupDisplayNameInput.value.trim();
       const email = signupEmailInput.value;
       const password = signupPasswordInput.value;
+      const signupStartTime = Date.now();
+
+      // Track registration funnel - signup form submitted
+      analytics.trackRegistrationFunnel({
+        step: 'signup_submitted',
+        stepNumber: 1,
+        method: 'email',
+        formTime: Date.now() - (window.signupFormStartTime || Date.now()),
+      });
 
       if (!displayName) {
+        // Track registration funnel - validation error
+        analytics.trackRegistrationFunnel({
+          step: 'validation_error',
+          stepNumber: 1,
+          method: 'email',
+          validationErrors: ['display_name_required'],
+          exitPoint: 'display_name_validation',
+        });
         Utils.displayAuthError(getText('FORM_DISPLAY_NAME_REQUIRED'), authErrorMessageElement);
         return;
       }
       if (displayName.includes('@') || displayName.includes('.')) {
+        // Track registration funnel - validation error
+        analytics.trackRegistrationFunnel({
+          step: 'validation_error',
+          stepNumber: 1,
+          method: 'email',
+          validationErrors: ['display_name_invalid'],
+          exitPoint: 'display_name_validation',
+        });
         Utils.displayAuthError(getText('FORM_DISPLAY_NAME_INVALID'), authErrorMessageElement);
         return;
       }
@@ -374,6 +530,36 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const userCredential = await signupUser(email, password, displayName);
         if (userCredential && userCredential.user) {
+          const signupDuration = Date.now() - signupStartTime;
+
+          // Track successful signup
+          analytics.trackSignup({
+            method: 'email',
+            userId: userCredential.user.uid,
+            displayName: displayName,
+            duration: signupDuration,
+            emailVerificationSent: true,
+            context: 'popup',
+          });
+
+          // Track registration funnel - signup completed
+          analytics.trackRegistrationFunnel({
+            step: 'signup_completed',
+            stepNumber: 2,
+            userId: userCredential.user.uid,
+            method: 'email',
+            formTime: signupDuration,
+          });
+
+          // Track activation funnel - new user signup
+          analytics.trackActivationFunnel({
+            step: 'signup',
+            stepNumber: 1,
+            userId: userCredential.user.uid,
+            trigger: 'user_intent',
+            userSegment: 'new_user',
+          });
+
           signupForm.reset();
 
           // Log out the user immediately after signup to ensure they must verify email
@@ -396,6 +582,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (error) {
+        const signupDuration = Date.now() - signupStartTime;
+
+        // Track failed signup attempt
+        analytics.trackError({
+          error_type: 'signup_failed',
+          error_message: error.message || 'Signup failed',
+          method: 'email',
+          duration: signupDuration,
+          context: 'popup',
+        });
+
         Utils.displayAuthError(
           error.message || getText('AUTH_SIGNUP_FAILED'),
           authErrorMessageElement
@@ -407,9 +604,59 @@ document.addEventListener('DOMContentLoaded', () => {
   if (googleSignInButton) {
     googleSignInButton.addEventListener('click', async () => {
       if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
+      const googleSigninStartTime = Date.now();
+
       try {
-        await signInWithGoogle();
+        const result = await signInWithGoogle();
+        if (result && result.user) {
+          const googleSigninDuration = Date.now() - googleSigninStartTime;
+
+          // Track successful Google signin/signup
+          const isNewUser = result.additionalUserInfo?.isNewUser || false;
+
+          if (isNewUser) {
+            // Track as signup for new Google users
+            analytics.trackSignup({
+              method: 'google',
+              userId: result.user.uid,
+              displayName: result.user.displayName || '',
+              duration: googleSigninDuration,
+              emailVerificationSent: false, // Google accounts are pre-verified
+              context: 'popup',
+            });
+          } else {
+            // Track as login for existing Google users
+            analytics.trackLogin({
+              method: 'google',
+              userId: result.user.uid,
+              emailVerified: result.user.emailVerified,
+              displayName: result.user.displayName || '',
+              duration: googleSigninDuration,
+              isReturningUser: true,
+              context: 'popup',
+            });
+          }
+        }
       } catch (error) {
+        // Don't track cancelled authentications as errors
+        if (
+          error &&
+          error.message &&
+          !error.message.includes('cancelled') &&
+          !error.message.includes('popup_closed')
+        ) {
+          const googleSigninDuration = Date.now() - googleSigninStartTime;
+
+          // Track failed Google signin attempt
+          analytics.trackError({
+            error_type: 'google_signin_failed',
+            error_message: error.message || 'Google signin failed',
+            method: 'google',
+            duration: googleSigninDuration,
+            context: 'popup',
+          });
+        }
+
         Utils.displayAuthError(
           error.message || getText('AUTH_GOOGLE_SIGNIN_FAILED'),
           authErrorMessageElement
@@ -424,6 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const isVerified = await checkEmailVerified();
         if (isVerified) {
+          // Track successful email verification
+          analytics.trackCustomEvent('email_verification_success', {
+            context: 'popup',
+            verification_method: 'manual_check',
+          });
+
           if (typeof window.showToast === 'function') {
             window.showToast(getText('EMAIL_VERIFICATION_SUCCESS'), {
               type: 'success',
@@ -444,6 +697,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 2000);
           }
         } else {
+          // Track email verification still pending
+          analytics.trackCustomEvent('email_verification_pending', {
+            context: 'popup',
+            verification_method: 'manual_check',
+          });
+
           if (typeof window.showToast === 'function') {
             window.showToast(getText('EMAIL_NOT_VERIFIED_YET'), {
               type: 'warning',
@@ -452,6 +711,13 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (error) {
+        // Track email verification check error
+        analytics.trackError({
+          error_type: 'email_verification_check_failed',
+          error_message: error.message || 'Email verification check failed',
+          context: 'popup',
+        });
+
         if (typeof window.showToast === 'function') {
           const errorMessage = textManager.format('EMAIL_VERIFICATION_CHECK_ERROR', {
             message: error.message,

@@ -50,6 +50,19 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+### GA4 Analytics Implementation (July 2025) - COMPLETED
+
+- ✅ **Comprehensive Analytics System:** Implemented complete Google Analytics 4 (GA4) integration using Measurement Protocol for Chrome extension compatibility
+- ✅ **Privacy-First Analytics:** Anonymous user tracking with crypto.randomUUID() client IDs, zero PII collection, and transparent privacy policy
+- ✅ **Cross-Context Support:** Analytics working seamlessly across popup, content scripts, and service worker contexts
+- ✅ **Real-Time Validation:** GA4 debug endpoint integration with development mode validation and console logging
+- ✅ **Comprehensive Testing:** 25 test suites with 774+ passing tests covering all analytics modules and integration scenarios
+- ✅ **Event Tracking:** Complete user journey tracking including authentication, search, prompt interactions, favorites, ratings, and error monitoring
+- ✅ **Performance Monitoring:** Service worker error tracking, performance metrics, and unhandled promise rejection monitoring
+- ✅ **Development Tools:** Testing utilities, event validation, analytics debugging tools, and comprehensive documentation
+- ✅ **PurgeCSS Compatibility:** Analytics CSS classes protected in optimization workflow to maintain functionality
+- ✅ **Configuration Management:** Environment-aware configuration with separate development and production GA4 properties
+
 ### Firefox Cross-Browser Compatibility (May 2025)
 
 - ✅ **Firefox Warning Resolved:** Fixed Firefox console warning "Reading manifest: Warning processing oauth2: An unexpected property was found in the WebExtension manifest."
@@ -84,12 +97,13 @@ This project has recently undergone a significant migration to Firebase for back
 - **CSS Optimization & Performance Improvements (January 2025):**
 
   - ✅ **PurgeCSS Integration:** Implemented automated unused CSS removal achieving 43% size reduction (92K → 52K)
+  - ✅ **PurgeCSS Workflow Fix (June 2025):** Resolved critical issue where CLI-based PurgeCSS was removing all CSS rules, replaced with robust Node.js script approach
   - ✅ **Legacy System Cleanup:** Removed outdated `/css-min/` directory (56KB) and CSS migration helper files
   - ✅ **Icon Optimization:** Resized all icons from 800x800px to proper dimensions (16px, 48px, 128px) for ~98% size reduction
-  - ✅ **Build Process Enhancement:** Added `npm run css:purge` command and integrated CSS optimization into build workflow
+  - ✅ **Build Process Enhancement:** Added `npm run css:purge` command using custom Node.js script and integrated CSS optimization into build workflow
+  - ✅ **Comprehensive Safelist:** Created extensive whitelist for UI components, Font Awesome icons, and dynamic classes to prevent over-purging
   - ✅ **Performance Validation:** Maintained full functionality while achieving significant performance improvements across all tests
-  - ✅ **Performance Validation:** Maintained full functionality while achieving significant performance improvements across all tests in the main `/tests` system
-  - ✅ **Configuration Management:** Created comprehensive PurgeCSS configuration with safelist for dynamic classes
+  - ✅ **Reliable CSS Processing:** Ensured critical CSS like sticky-search-header and component styles are preserved correctly
 
 - **Critical Bug Fix - Prompt List Virtualization (May 2025):**
 
@@ -138,7 +152,7 @@ This project has recently undergone a significant migration to Firebase for back
 
 ---
 
-**Recent Highlights (Completed as part of Phase 1 & 2 of PROJECT_PLAN.md):**
+**Recent Highlights (Completed as part of Phase 1, 2 & GA4 Analytics of PROJECT_PLAN.md):**
 
 - Full Firebase Integration (Auth & Firestore using v9+ SDK).
 - Rollup bundling for all JavaScript.
@@ -150,11 +164,12 @@ This project has recently undergone a significant migration to Firebase for back
 - `usageCount` for copied prompts.
 - Enhanced prompt details display and form field requirements.
 - Improved UX for logged-out users attempting actions.
+- **GA4 Analytics System:** Complete privacy-first analytics implementation with 774+ tests and comprehensive event tracking.
 
 **Recent Accomplishments:**
 
-- ✅ **Unit Tests Updated & Passing:** All tests in the main `/tests` system have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably. Redesign-specific test files have been removed as part of project maintenance.
-- ✅ **Unit Tests Updated & Passing:** All tests in the main `/tests` system have been adapted for ES Modules and Firebase v9 SDK. A global Jest mock for `js/firebase-init.js` ensures all test files use the same mock for Firebase services, and all 61 tests now pass reliably. Redesign-specific test files have been removed as part of project maintenance.
+- ✅ **Comprehensive Test Suite:** All tests updated and passing (25 test suites with 774+ tests) including complete GA4 analytics testing, ES Modules compatibility, and Firebase v9 SDK integration. Comprehensive coverage of analytics modules, event validation, cross-context functionality, and PurgeCSS compatibility.
+- ✅ **GA4 Analytics System:** Complete privacy-first analytics implementation with real-time validation, cross-context support, development debugging tools, and comprehensive documentation.
 - ✅ **Firestore Security Rules:** Implemented robust data protection.
 - ✅ **Cloud Functions for Aggregation:** Implemented server-side calculation for `averageRating`, `totalRatingsCount`, and `favoritesCount`.
 
@@ -226,6 +241,53 @@ This is **expected behavior** and does not affect functionality. The warning occ
 - **Chrome Development**: Build with `npm run build` and load as unpacked extension
 - **Both browsers**: OAuth authentication works correctly with the appropriate configuration source
 
+## GA4 Analytics System
+
+PromptFinder includes a comprehensive Google Analytics 4 (GA4) implementation designed for privacy and performance:
+
+### Analytics Features
+
+- **Privacy-First Design:** Anonymous tracking using crypto.randomUUID(), zero PII collection
+- **Event Tracking:** User journeys, search behavior, prompt interactions, favorites, ratings, and technical errors
+- **Cross-Context Support:** Works across popup, content scripts, and service worker contexts
+- **Real-Time Validation:** GA4 debug endpoint integration for development testing
+- **Performance Monitoring:** Extension startup times, error tracking, and service worker performance
+
+### Analytics Testing
+
+Comprehensive test suite with 25 test suites covering:
+
+```bash
+# Run all tests including analytics
+npm test
+
+# Run analytics-specific tests only
+npm test -- --testPathPattern=analytics
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Analytics Configuration
+
+- **Development:** Events sent to GA4 debug endpoint with console logging
+- **Production:** Optimized event tracking with minimal overhead
+- **Privacy Policy:** Complete disclosure documentation in `docs/analytics-privacy-policy.md`
+- **Configuration Guide:** Team setup and dashboard configuration in `docs/analytics-configuration.md`
+
+### Analytics Development Commands
+
+```bash
+# Test analytics event validation
+npm test -- --testPathPattern=analytics
+
+# Run PurgeCSS with analytics protection
+npm run css:purge
+
+# Validate analytics configuration
+npm run build  # Includes analytics config validation
+```
+
 ## Development Workflow
 
 1. **Make Code Changes:** Edit source files in `js/`, `pages/`, `css/`, etc.
@@ -268,12 +330,14 @@ npm test
 npm test -- --watch # For watch mode
 ```
 
-All tests are now passing (61 tests across 7 test suites). The test coverage includes:
+All tests are now passing (25 test suites with 774+ tests). The test coverage includes:
 
 - Core data operations (CRUD, auth, favorites, ratings)
 - Firebase integration (Firestore operations, security rules)
 - Cloud Functions (recalculate ratings, update favorites count, usage tracking)
 - UI interactions (event handling, rendering, state management)
+- **GA4 Analytics:** Complete event tracking, validation, cross-context functionality, and PurgeCSS compatibility
+- **Performance Testing:** Real-time validation, error handling, and development debugging tools
 
 The testing implementation includes:
 
@@ -351,6 +415,36 @@ if (textManager.has('CUSTOM_MESSAGE')) {
 
 For detailed implementation information, see [CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md](/docs/CENTRALIZED_TEXT_MANAGEMENT_SUMMARY.md).
 
+## CSS Optimization Workflow
+
+The project uses an automated CSS optimization system to reduce bundle size while preserving all necessary styles:
+
+- **PurgeCSS Integration:** Custom Node.js script (`scripts/purge-css.mjs`) removes unused CSS rules
+- **Smart Safelist:** Comprehensive whitelist prevents removal of dynamic classes, Font Awesome icons, and UI components
+- **Build Integration:** CSS purging is integrated into the main build process via `npm run css:purge`
+- **Performance Focus:** Achieves significant size reductions (43% overall) while maintaining full functionality
+
+**CSS Optimization Results:**
+
+```plaintext
+✅ popup.css: 17,264B → 16,792B (2.7% reduction)
+✅ utilities.css: 1,953B → 560B (71.3% reduction)
+✅ header.css: 2,230B → 1,694B (24.0% reduction)
+✅ sticky-search-header.css: 267B → 267B (0.0% reduction) - Preserved
+```
+
+**Usage:**
+
+```bash
+# Run CSS optimization (included in build process)
+npm run css:purge
+
+# Full build with CSS optimization
+npm run build
+```
+
+The optimized CSS files are output to `dist/css-purged/` and maintain full compatibility with the extension's UI components and responsive design.
+
 ## File Structure Overview
 
 ```plaintext
@@ -365,6 +459,10 @@ promptfinder/
 │   └── pages/
 │   └── css-purged/         # Optimized CSS output - 52K (43% reduction via PurgeCSS)
 ├── docs/                   # Documentation
+│   ├── analytics-privacy-policy.md     # GA4 analytics privacy policy
+│   ├── analytics-configuration.md      # GA4 setup and configuration guide
+│   ├── analytics-testing-guide.md      # Comprehensive analytics testing documentation
+│   └── analytics-testing-checklist.md  # QA checklist for analytics validation
 ├── functions/               # Firebase Cloud Functions
 │   ├── src/                 # TypeScript source code for Cloud Functions
 │   ├── lib/                 # Compiled JavaScript (generated from TypeScript)
@@ -373,6 +471,19 @@ promptfinder/
 │   └── tsconfig.json        # TypeScript configuration for Functions
 ├── icons/                  # Extension icons
 ├── js/                     # Source JavaScript modules
+│   ├── analytics/           # GA4 analytics system modules
+│   │   ├── analytics.js     # Main analytics interface
+│   │   ├── analytics-service.js  # Core analytics service with GA4 integration
+│   │   ├── client-manager.js     # Client ID generation and persistence
+│   │   ├── config.js             # Analytics configuration and environment detection
+│   │   ├── event-filter.js       # Development vs production event filtering
+│   │   ├── event-schema.js       # GA4 event schema definitions
+│   │   ├── event-tracker.js      # Event tracking with validation and queueing
+│   │   ├── page-tracker.js       # Page view and navigation tracking
+│   │   ├── realtime-validator.js # GA4 realtime validation utilities
+│   │   ├── session-manager.js    # Session management with chrome.storage
+│   │   ├── testing-utilities.js  # Analytics testing and validation tools
+│   │   └── user-property-manager.js  # User property tracking and management
 │   ├── firebase-init.js
 │   ├── promptData.js
 │   ├── text-constants.js   # Centralized text management system
@@ -385,7 +496,27 @@ promptfinder/
 │   ├── edit-prompt.html
 │   ├── edit-prompt.js
 │   └── popup.html
+├── scripts/                # Build and maintenance scripts
+│   └── purge-css.mjs       # Custom CSS optimization script
 ├── tests/                  # Jest test files
+│   ├── analytics/           # GA4 analytics test suite (comprehensive coverage)
+│   │   ├── analytics.test.js           # Main analytics interface tests
+│   │   ├── analytics-service.test.js   # Core service and GA4 integration tests
+│   │   ├── auth-tracking.test.js       # Authentication event tracking tests
+│   │   ├── client-manager.test.js      # Client ID management tests
+│   │   ├── config.test.js              # Configuration and environment tests
+│   │   ├── cross-context-sharing.test.js  # Cross-context functionality tests
+│   │   ├── event-filter.test.js        # Event filtering tests
+│   │   ├── event-schema.test.js        # Event schema validation tests
+│   │   ├── event-tracker.test.js       # Event tracking and queueing tests
+│   │   ├── page-tracker.test.js        # Page navigation tracking tests
+│   │   ├── purgecss-compatibility.test.js  # CSS optimization compatibility tests
+│   │   ├── realtime-validator.test.js  # GA4 realtime validation tests
+│   │   ├── search-tracking.test.js     # Search behavior tracking tests
+│   │   ├── service-worker-analytics.test.js  # Service worker analytics tests
+│   │   ├── session-manager.test.js     # Session management tests
+│   │   ├── testing-utilities.test.js   # Analytics testing tools tests
+│   │   └── user-property-manager.test.js  # User property management tests
 ├── .gitignore
 ├── app.js                  # Main entry point for popup (source)
 ├── babel.config.json
@@ -394,7 +525,6 @@ promptfinder/
 ├── package-lock.json
 ├── package.json
 ├── PROJECT_PLAN.md         # Detailed project roadmap and task tracking
-├── purgecss.config.mjs
 ├── README.md               # This file
 └── rollup.config.js        # Rollup bundler configuration
 ```

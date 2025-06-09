@@ -90,6 +90,26 @@ async function purgeCSSFiles() {
         'active',
         'visually-hidden',
 
+        // Analytics-related classes
+        'analytics-status',
+        'debug-panel',
+        'console-output',
+        'validation-result',
+        'error-message',
+        'warning-message',
+        'success-message',
+        'info-message',
+        'analytics-enabled',
+        'analytics-disabled',
+        'realtime-status',
+        'performance-metrics',
+        'event-status',
+        'ga4-debug',
+        'validation-score',
+        'test-mode',
+        'analytics-error',
+        'tracking-disabled',
+
         // Font Awesome classes
         'fa',
         'fas',
@@ -139,6 +159,24 @@ async function purgeCSSFiles() {
         /^toggle/, // All toggle classes
         /^back/, // All back classes
         /^language-/, // Prism.js syntax highlighting
+
+        // Analytics-related classes
+        /^analytics/, // Analytics UI elements
+        /^debug/, // Debug UI elements
+        /^console/, // Console-related UI
+        /^tracker/, // Tracker UI elements
+        /^ga4/, // GA4-specific classes
+        /^validation/, // Validation UI elements
+        /^error/, // Error display classes
+        /^warning/, // Warning display classes
+        /^success/, // Success display classes
+        /^info/, // Info display classes
+        /^realtime/, // Realtime validation UI
+        /^performance/, // Performance monitoring UI
+        /^testing/, // Testing utility UI
+        /^event/, // Event-related UI classes
+        /^metrics/, // Metrics display classes
+        /^status/, // Status indicator classes
       ],
     },
     fontFace: true,

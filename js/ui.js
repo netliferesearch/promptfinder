@@ -193,6 +193,19 @@ function showAddPromptInline() {
   // Get draft storage to retrieve any previously entered data
   const draftStorage = getDraftStorage();
 
+  // Track prompt creation start time for analytics
+  window.promptCreateStartTime = Date.now();
+
+  // Track content creation funnel - form opened
+  if (window.DebugAnalytics && window.firebaseAuthCurrentUser) {
+    window.DebugAnalytics.trackContentCreationFunnel({
+      step: 'form_opened',
+      stepNumber: 2,
+      userId: window.firebaseAuthCurrentUser.uid,
+      trigger: 'fab_button',
+    });
+  }
+
   // Retrieve any existing draft
   draftStorage.get(ADD_DRAFT_KEY).then(draft => {
     // Set up edit view similar to showEditMode but for a new prompt
@@ -499,6 +512,55 @@ async function handleSaveAddPrompt() {
       if (newPrompt && newPrompt.id) {
         // If you want to always reload from DB, use: await viewPromptDetails(newPrompt.id);
         displayPromptDetails(newPrompt);
+
+        // Track content selection for prompt creation
+        if (window.DebugAnalytics) {
+          window.DebugAnalytics.trackContentSelection({
+            contentType: 'prompt',
+            contentId: newPrompt.id,
+            promptId: newPrompt.id,
+            promptCategory: newPrompt.category || 'unknown',
+            source: 'prompt_form',
+            method: 'create',
+            userRating: 0,
+            isFavorite: false,
+          });
+
+          // Track custom prompt creation event
+          window.DebugAnalytics.trackPromptCreate({
+            id: newPrompt.id,
+            category: newPrompt.category,
+            type: 'text',
+            content: newPrompt.text,
+            isPrivate: newPrompt.isPrivate,
+            tags: newPrompt.tags,
+            targetAiTools: newPrompt.targetAiTools,
+            creationMethod: 'form',
+            timeToCreate: Date.now() - (window.promptCreateStartTime || Date.now()),
+          });
+
+          // Track content creation funnel - saved
+          window.DebugAnalytics.trackContentCreationFunnel({
+            step: 'saved',
+            stepNumber: 6,
+            userId: window.firebaseAuthCurrentUser?.uid || '',
+            trigger: 'form_submit',
+            timeSpent: Date.now() - (window.promptCreateStartTime || Date.now()),
+            draftSaved: false, // No draft needed since it was completed
+          });
+
+          // Track activation funnel - major value moment (created first prompt)
+          if (window.firebaseAuthCurrentUser) {
+            window.DebugAnalytics.trackActivationFunnel({
+              step: 'value_moment',
+              stepNumber: 4,
+              userId: window.firebaseAuthCurrentUser.uid,
+              trigger: 'prompt_creation',
+              valueMomentsAchieved: ['prompt_created'],
+              actionsCompleted: 2,
+            });
+          }
+        }
       }
     } else {
       Utils.handleError('Failed to add prompt. Please check details or try again.', {
@@ -606,6 +668,9 @@ function renderPromptEditForm(prompt, draft) {
 
 function showEditMode(prompt) {
   if (!promptDetailsSectionEl) return;
+
+  // Track prompt edit start time for analytics
+  window.promptEditStartTime = Date.now();
   if (!promptDetailEditableFieldsWrapperEl)
     promptDetailEditableFieldsWrapperEl = document.getElementById(
       'prompt-detail-editable-fields-wrapper'
@@ -789,6 +854,33 @@ async function handleSaveEditPrompt(prompt) {
       await getDraftStorage().remove(editDraftKey(prompt.id));
       Utils.showConfirmationMessage(getText('PROMPT_UPDATED_SUCCESS'));
       displayPromptDetails(updatedPrompt);
+
+      // Track content selection for edit action
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackContentSelection({
+          contentType: 'prompt',
+          contentId: updatedPrompt.id,
+          promptId: updatedPrompt.id,
+          promptCategory: updatedPrompt.category || 'unknown',
+          source: 'prompt_details',
+          method: 'edit',
+          userRating: updatedPrompt.currentUserRating || 0,
+          isFavorite: updatedPrompt.currentUserIsFavorite || false,
+        });
+
+        // Track custom prompt edit event
+        const originalPrompt = allPrompts.find(p => p.id === prompt.id);
+        window.DebugAnalytics.trackPromptEdit({
+          id: updatedPrompt.id,
+          category: updatedPrompt.category,
+          type: 'text',
+          changesMade: [], // Could be enhanced to track specific field changes
+          contentLengthBefore: originalPrompt?.text?.length || 0,
+          contentLengthAfter: updatedPrompt.text?.length || 0,
+          editDuration: Date.now() - (window.promptEditStartTime || Date.now()),
+          version: 1,
+        });
+      }
     } else {
       Utils.handleError('Failed to update prompt. Please check details or try again.', {
         userVisible: true,
@@ -1044,6 +1136,54 @@ async function handleToggleFavorite(promptId) {
       const prevScrollTop = scrollElem ? scrollElem.scrollTop : 0;
       showTab(activeTab, { preserveScrollTop: prevScrollTop });
       Utils.showConfirmationMessage(getText('FAVORITE_UPDATED'));
+
+      // Track content selection for favorite action
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackContentSelection({
+          contentType: 'prompt',
+          contentId: updatedPrompt.id,
+          promptId: updatedPrompt.id,
+          promptCategory: updatedPrompt.category || 'unknown',
+          source:
+            promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden')
+              ? 'prompt_details'
+              : 'prompt_list',
+          method: updatedPrompt.currentUserIsFavorite ? 'favorite_add' : 'favorite_remove',
+          userRating: updatedPrompt.currentUserRating || 0,
+          isFavorite: updatedPrompt.currentUserIsFavorite || false,
+        });
+
+        // Track custom favorite action event
+        window.DebugAnalytics.trackFavoriteAction({
+          promptId: updatedPrompt.id,
+          action: updatedPrompt.currentUserIsFavorite ? 'add' : 'remove',
+          category: updatedPrompt.category,
+          totalFavorites: updatedPrompt.favoritesCount,
+        });
+
+        // Track prompt engagement funnel - favorited
+        window.DebugAnalytics.trackPromptEngagementFunnel({
+          step: 'favorited',
+          stepNumber: 4,
+          promptId: updatedPrompt.id,
+          promptCategory: updatedPrompt.category || 'unknown',
+          isFavorite: updatedPrompt.currentUserIsFavorite || false,
+          userRating: updatedPrompt.currentUserRating || 0,
+          engagementDepth: 'deep',
+        });
+
+        // Track activation funnel - value moment (successful favorite)
+        if (window.firebaseAuthCurrentUser) {
+          window.DebugAnalytics.trackActivationFunnel({
+            step: 'value_moment',
+            stepNumber: 3,
+            userId: window.firebaseAuthCurrentUser.uid,
+            trigger: 'prompt_favorite',
+            valueMomentsAchieved: ['prompt_favorited'],
+            actionsCompleted: 1,
+          });
+        }
+      }
     }
   } catch (error) {
     Utils.handleError('Error toggling favorite status in UI', {
@@ -1069,6 +1209,32 @@ async function handleRatePrompt(promptId, rating) {
         displayPromptDetails(updatedPromptWithNewRating);
       }
       Utils.showConfirmationMessage(textManager.format('RATING_SUCCESS', { rating }));
+
+      // Track content selection for rating action
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackContentSelection({
+          contentType: 'prompt',
+          contentId: updatedPromptWithNewRating.id,
+          promptId: updatedPromptWithNewRating.id,
+          promptCategory: updatedPromptWithNewRating.category || 'unknown',
+          source:
+            promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden')
+              ? 'prompt_details'
+              : 'prompt_list',
+          method: 'rating',
+          userRating: rating,
+          isFavorite: updatedPromptWithNewRating.currentUserIsFavorite || false,
+        });
+
+        // Track custom rating action event
+        const currentPrompt = allPrompts.find(p => p.id === promptId);
+        window.DebugAnalytics.trackRatingAction({
+          promptId: updatedPromptWithNewRating.id,
+          rating: rating,
+          previousRating: currentPrompt?.currentUserRating || 0,
+          category: updatedPromptWithNewRating.category,
+        });
+      }
     } else {
       Utils.handleError('Failed to submit rating. Please try again.', { userVisible: true });
     }
@@ -1097,6 +1263,56 @@ async function handleCopyPrompt(promptId) {
           promptDetailsSectionEl.dataset.currentPromptId === promptId
         ) {
           displayPromptDetails(result.prompt);
+        }
+
+        // Track content selection for copy action
+        if (window.DebugAnalytics) {
+          window.DebugAnalytics.trackContentSelection({
+            contentType: 'prompt',
+            contentId: result.prompt.id,
+            promptId: result.prompt.id,
+            promptCategory: result.prompt.category || 'unknown',
+            source:
+              promptDetailsSectionEl && !promptDetailsSectionEl.classList.contains('hidden')
+                ? 'prompt_details'
+                : 'prompt_list',
+            method: 'copy',
+            userRating: result.prompt.currentUserRating || 0,
+            isFavorite: result.prompt.currentUserIsFavorite || false,
+          });
+
+          // Track custom prompt copy event
+          window.DebugAnalytics.trackPromptCopy({
+            id: result.prompt.id,
+            category: result.prompt.category,
+            copyMethod: 'button',
+            content: result.prompt.text,
+            isFavorite: result.prompt.currentUserIsFavorite,
+          });
+
+          // Track prompt engagement funnel - copied
+          window.DebugAnalytics.trackPromptEngagementFunnel({
+            step: 'copied',
+            stepNumber: 3,
+            promptId: result.prompt.id,
+            promptCategory: result.prompt.category || 'unknown',
+            promptLength: result.prompt.text?.length || 0,
+            isFavorite: result.prompt.currentUserIsFavorite || false,
+            userRating: result.prompt.currentUserRating || 0,
+            engagementDepth: 'deep',
+          });
+
+          // Track activation funnel - value moment (successful prompt copy)
+          if (window.firebaseAuthCurrentUser) {
+            window.DebugAnalytics.trackActivationFunnel({
+              step: 'value_moment',
+              stepNumber: 3,
+              userId: window.firebaseAuthCurrentUser.uid,
+              trigger: 'prompt_copy',
+              valueMomentsAchieved: ['prompt_copied'],
+              actionsCompleted: 1,
+            });
+          }
         }
       }
     } else {
@@ -1136,9 +1352,45 @@ async function handleCopyPrompt(promptId) {
 
 async function handleDeletePrompt(promptId) {
   try {
+    // Get prompt details before deleting for analytics
+    const promptBeforeDelete = allPrompts.find(p => p.id === promptId);
+
     const success = await PromptData.deletePrompt(promptId);
     if (success) {
       Utils.showConfirmationMessage(getText('PROMPT_DELETED_SUCCESS'));
+
+      // Track content selection for delete action
+      if (window.DebugAnalytics && promptBeforeDelete) {
+        window.DebugAnalytics.trackContentSelection({
+          contentType: 'prompt',
+          contentId: promptBeforeDelete.id,
+          promptId: promptBeforeDelete.id,
+          promptCategory: promptBeforeDelete.category || 'unknown',
+          source: 'prompt_details',
+          method: 'delete',
+          userRating: promptBeforeDelete.currentUserRating || 0,
+          isFavorite: promptBeforeDelete.currentUserIsFavorite || false,
+        });
+
+        // Track custom prompt delete event
+        const promptAge = promptBeforeDelete.createdAt
+          ? Math.floor(
+              (Date.now() - new Date(promptBeforeDelete.createdAt).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
+          : 0;
+        window.DebugAnalytics.trackPromptDelete({
+          id: promptBeforeDelete.id,
+          category: promptBeforeDelete.category,
+          ageDays: promptAge,
+          usageCount: promptBeforeDelete.usageCount || 0,
+          favoritesCount: promptBeforeDelete.favoritesCount || 0,
+          userRating: promptBeforeDelete.currentUserRating || 0,
+          deleteReason: 'user_choice',
+          contentLength: promptBeforeDelete.text?.length || 0,
+        });
+      }
+
       await loadAndDisplayData();
       showPromptList();
     }
@@ -1224,12 +1476,32 @@ const setupEventListeners = () => {
   if (sortBySelectEl) {
     sortBySelectEl.addEventListener('change', () => {
       currentSortBy = sortBySelectEl.value;
+
+      // Track sort usage
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackCustomEvent('sort_usage', {
+          sort_by: currentSortBy,
+          sort_dir: currentSortDir,
+          context: 'popup',
+        });
+      }
+
       showTab(activeTab);
     });
   }
   if (sortDirToggleEl && sortDirIconEl) {
     sortDirToggleEl.addEventListener('click', () => {
       currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+
+      // Track sort direction change
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackCustomEvent('sort_direction_change', {
+          sort_by: currentSortBy,
+          sort_dir: currentSortDir,
+          context: 'popup',
+        });
+      }
+
       // Update icon
       sortDirIconEl.className =
         currentSortDir === 'asc' ? 'fas fa-arrow-up-wide-short' : 'fas fa-arrow-down-wide-short';
@@ -1248,38 +1520,110 @@ const setupEventListeners = () => {
     });
   }
   minRatingSelectEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && minRatingSelectEl.value > 0) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'min_rating',
+        value: minRatingSelectEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   minUserRatingSelectEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && minUserRatingSelectEl.value > 0) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'min_user_rating',
+        value: minUserRatingSelectEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   yourPromptsOnlyEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && yourPromptsOnlyEl.checked) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'your_prompts_only',
+        value: 'enabled',
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   usedByYouEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && usedByYouEl.checked) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'used_by_you',
+        value: 'enabled',
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   categoryFilterEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && categoryFilterEl.value && categoryFilterEl.value !== 'all') {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'category',
+        value: categoryFilterEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   tagFilterEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && tagFilterEl.value && tagFilterEl.value !== 'all') {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'tag',
+        value: tagFilterEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   aiToolFilterEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && aiToolFilterEl.value && aiToolFilterEl.value !== 'all') {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'ai_tool',
+        value: aiToolFilterEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   dateFromEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && dateFromEl.value) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'date_from',
+        value: dateFromEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
   dateToEl?.addEventListener('change', () => {
+    // Track filter usage
+    if (window.DebugAnalytics && dateToEl.value) {
+      window.DebugAnalytics.trackFilterUsage({
+        type: 'date_to',
+        value: dateToEl.value,
+        context: 'popup',
+      });
+    }
     showTab(activeTab);
     updateResetFiltersButtonVisibility();
   });
@@ -1373,6 +1717,24 @@ const setupEventListeners = () => {
         }
         if (window.Prism && promptDetailTextEl) {
           Prism.highlightElement(promptDetailTextEl);
+        }
+
+        // Track content selection for view more/less action
+        if (window.DebugAnalytics) {
+          const promptId = promptDetailsSectionEl.dataset.currentPromptId;
+          const currentPrompt = allPrompts.find(p => p.id === promptId);
+          if (currentPrompt) {
+            window.DebugAnalytics.trackContentSelection({
+              contentType: 'prompt',
+              contentId: currentPrompt.id,
+              promptId: currentPrompt.id,
+              promptCategory: currentPrompt.category || 'unknown',
+              source: 'prompt_details',
+              method: isExpanded ? 'expand_text' : 'collapse_text',
+              userRating: currentPrompt.currentUserRating || 0,
+              isFavorite: currentPrompt.currentUserIsFavorite || false,
+            });
+          }
         }
       }
     });
@@ -1470,10 +1832,19 @@ export const initializeUI = async () => {
 };
 
 export const showTab = (which, opts = {}) => {
+  const previousTab = activeTab;
   activeTab = which;
   if (tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
   if (tabFavsEl) tabFavsEl.classList.toggle('active', which === 'favs');
   if (tabPrivateEl) tabPrivateEl.classList.toggle('active', which === 'private');
+
+  // Track tab switching
+  if (previousTab !== which && window.DebugPageTracker) {
+    window.DebugPageTracker.trackTabSwitch(which, {
+      previousTab: previousTab,
+      method: opts.method || 'click',
+    });
+  }
 
   if (
     promptsListEl &&
@@ -1486,6 +1857,8 @@ export const showTab = (which, opts = {}) => {
     if (controlsEl) controlsEl.classList.remove('hidden');
     if (tabsContainerEl) tabsContainerEl.classList.remove('hidden');
   }
+
+  const searchStartTime = Date.now();
 
   const filters = {
     tab: which,
@@ -1511,6 +1884,37 @@ export const showTab = (which, opts = {}) => {
   };
   const promptsToFilter = Array.isArray(allPrompts) ? allPrompts : [];
   const filtered = PromptData.filterPrompts(promptsToFilter, filters);
+
+  // Track search event if search term is provided
+  if (filters.searchTerm && filters.searchTerm.trim() && window.DebugAnalytics) {
+    const searchDuration = Date.now() - searchStartTime;
+    const filtersUsed = [];
+
+    // Collect active filters for analytics
+    if (filters.category && filters.category !== 'all') filtersUsed.push('category');
+    if (filters.tag && filters.tag !== 'all') filtersUsed.push('tag');
+    if (filters.aiTool && filters.aiTool !== 'all') filtersUsed.push('aiTool');
+    if (filters.minRating > 0) filtersUsed.push('minRating');
+    if (filters.minUserRating > 0) filtersUsed.push('minUserRating');
+    if (filters.yourPromptsOnly) filtersUsed.push('yourPromptsOnly');
+    if (filters.usedByYou) filtersUsed.push('usedByYou');
+    if (filters.dateFrom) filtersUsed.push('dateFrom');
+    if (filters.dateTo) filtersUsed.push('dateTo');
+    if (filters.updatedFrom) filtersUsed.push('updatedFrom');
+    if (filters.updatedTo) filtersUsed.push('updatedTo');
+
+    window.DebugAnalytics.trackPromptSearch({
+      query: filters.searchTerm.trim(),
+      resultsCount: filtered.length,
+      searchType: 'client_filter',
+      filtersUsed: filtersUsed,
+      duration: searchDuration,
+      activeTab: which,
+      sortBy: filters.sortBy,
+      sortDir: filters.sortDir,
+    });
+  }
+
   displayPrompts(filtered, opts);
   updateResetFiltersButtonVisibility();
 };
@@ -1532,6 +1936,21 @@ export const displayPrompts = (prompts, opts = {}) => {
     contentElem.innerHTML = `<div class="empty-state"><p>${getText('NO_PROMPTS_FOUND')}</p></div>`;
     // Reset scroll position
     scrollElem.scrollTop = 0;
+
+    // Track empty search results
+    if (window.DebugAnalytics) {
+      const searchInput = document.getElementById('search-input');
+      const searchTerm = searchInput ? searchInput.value.trim() : '';
+
+      if (searchTerm) {
+        window.DebugAnalytics.trackCustomEvent('search_no_results', {
+          search_term: searchTerm,
+          active_tab: activeTab,
+          context: 'popup',
+        });
+      }
+    }
+
     return;
   }
 
@@ -1675,6 +2094,14 @@ const showPromptList = () => {
   // Show category dropdown bar in list view
   const categoryDropdownBar = document.querySelector('.category-dropdown-bar');
   if (categoryDropdownBar) categoryDropdownBar.classList.remove('hidden');
+
+  // Track navigation back to main list
+  if (window.DebugPageTracker) {
+    window.DebugPageTracker.trackNavigation('main', {
+      method: 'click',
+      trigger: 'user',
+    });
+  }
 
   showTab(activeTab);
 };
@@ -1947,6 +2374,62 @@ export const viewPromptDetails = async promptId => {
     if (prompt) {
       console.log('[UI SUT LOG] viewPromptDetails: Prompt found, calling displayPromptDetails.'); // Log before call
       displayPromptDetails(prompt);
+
+      // Track page view for prompt details
+      if (window.DebugPageTracker) {
+        window.DebugPageTracker.trackNavigation('prompt_details', {
+          method: 'click',
+          trigger: 'user',
+        });
+      }
+
+      // Track prompt view analytics
+      if (window.DebugAnalytics) {
+        window.DebugAnalytics.trackPromptView({
+          id: prompt.id,
+          category: prompt.category,
+          type: prompt.type || 'text',
+          content: prompt.promptText,
+          source: 'prompt_list',
+          isFavorite: prompt.currentUserIsFavorite,
+          userRating: prompt.currentUserRating || 0,
+        });
+
+        // Track content selection for prompt details view
+        window.DebugAnalytics.trackContentSelection({
+          contentType: 'prompt',
+          contentId: prompt.id,
+          promptId: prompt.id,
+          promptCategory: prompt.category || 'unknown',
+          source: 'prompt_list',
+          method: 'click',
+          userRating: prompt.currentUserRating || 0,
+          isFavorite: prompt.currentUserIsFavorite || false,
+        });
+
+        // Track prompt engagement funnel - viewed
+        window.DebugAnalytics.trackPromptEngagementFunnel({
+          step: 'viewed',
+          stepNumber: 1,
+          promptId: prompt.id,
+          promptCategory: prompt.category || 'unknown',
+          promptLength: prompt.promptText?.length || 0,
+          isFavorite: prompt.currentUserIsFavorite || false,
+          userRating: prompt.currentUserRating || 0,
+          engagementDepth: 'surface',
+        });
+
+        // Track onboarding funnel - first interaction (if this is early in user journey)
+        if (window.firebaseAuthCurrentUser) {
+          window.DebugAnalytics.trackOnboardingFunnel({
+            step: 'first_interaction',
+            stepNumber: 3,
+            userId: window.firebaseAuthCurrentUser.uid,
+            interactionType: 'view',
+            promptsAvailable: allPrompts?.length || 0,
+          });
+        }
+      }
     } else {
       throw new Error(`Prompt with ID ${promptId} not found`);
     }
@@ -2038,30 +2521,88 @@ if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
+      let searchTimeout;
+
       searchInput.addEventListener('input', async e => {
         const query = e.target.value.trim();
+
+        // Clear previous timeout to debounce search requests
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+
         if (!query) {
           hideSearchTiming();
-          return; // Optionally, handle empty search
+          hideSearchError();
+          // Trigger normal filtering when search is cleared
+          showTab(activeTab);
+          return;
         }
-        showSearchSpinner();
-        hideSearchError();
-        try {
-          // Use the new server-side search
-          const { durationMs } = await PromptData.searchPromptsServer(query);
-          // Log search response time for metrics
-          if (typeof durationMs === 'number') {
-            console.log(`[PromptFinder] Search for "${query}" took ${durationMs}ms`);
-            showSearchTiming(durationMs);
+
+        // Debounce server search calls (500ms delay)
+        searchTimeout = setTimeout(async () => {
+          showSearchSpinner();
+          hideSearchError();
+          const searchStartTime = Date.now();
+
+          try {
+            // Use the new server-side search
+            const searchResult = await PromptData.searchPromptsServer(query, 50);
+            const searchDuration = Date.now() - searchStartTime;
+
+            if (searchResult && searchResult.results) {
+              // Log search response time for metrics
+              if (typeof searchResult.durationMs === 'number') {
+                console.log(
+                  `[PromptFinder] Server search for "${query}" took ${searchResult.durationMs}ms`
+                );
+                showSearchTiming(searchResult.durationMs);
+              }
+
+              // Track server-side search analytics
+              if (window.DebugAnalytics) {
+                window.DebugAnalytics.trackPromptSearch({
+                  query: query,
+                  resultsCount: searchResult.results.length,
+                  searchType: 'server_search',
+                  filtersUsed: [], // Server search doesn't use client filters
+                  duration: searchDuration,
+                  serverDuration: searchResult.durationMs || 0,
+                  totalResults: searchResult.total || searchResult.results.length,
+                  activeTab: activeTab,
+                });
+              }
+
+              // Display the server search results
+              displayPrompts(searchResult.results);
+
+              // Update counter for server search results
+              const counter = document.getElementById('prompt-counter');
+              if (counter) {
+                counter.textContent = `${searchResult.results.length} prompt${searchResult.results.length === 1 ? '' : 's'} found (server search)`;
+              }
+            }
+          } catch (error) {
+            const searchDuration = Date.now() - searchStartTime;
+
+            // Track failed search
+            if (window.DebugAnalytics) {
+              window.DebugAnalytics.trackError({
+                error_type: 'server_search_failed',
+                error_message: error.message || 'Server search failed',
+                search_query: query,
+                duration: searchDuration,
+                context: 'search_input',
+              });
+            }
+
+            showSearchError('Search failed. Please try again.');
+            hideSearchTiming();
+            console.error('[PromptFinder] Server search failed:', error);
+          } finally {
+            hideSearchSpinner();
           }
-          // TODO: Pass results to displayPrompts or equivalent
-          // displayPrompts(results);
-        } catch {
-          showSearchError('Search failed. Please try again.');
-          hideSearchTiming();
-        } finally {
-          hideSearchSpinner();
-        }
+        }, 500); // 500ms debounce delay
       });
     }
   });
