@@ -10,6 +10,7 @@ const commonPlugins = isProd =>
   [
     resolve({
       browser: true,
+      preferBuiltins: false,
     }),
     commonjs(),
     replace({
@@ -25,33 +26,35 @@ const commonPlugins = isProd =>
     isProd &&
       terser({
         compress: {
-          drop_console: false, // Keep console.log for analytics but remove debug
+          drop_console: false, // Keep console logs for debugging
           drop_debugger: true,
-          pure_funcs: ['console.debug', 'console.trace', 'console.table'],
-          // Fix Chrome extension compatibility
-          unsafe: false,
-          unsafe_comps: false,
-          unsafe_Function: false,
-          unsafe_math: false,
-          unsafe_symbols: false,
-          unsafe_methods: false,
-          unsafe_proto: false,
-          unsafe_regexp: false,
-          unsafe_undefined: false,
+          pure_funcs: ['console.debug'],
         },
         mangle: {
-          // Disable mangling for Chrome extension compatibility
-          reserved: ['import', 'export', 'require', 'module', 'exports'],
+          // Don't mangle these important identifiers
+          reserved: ['textManager', 'getText', 'TEXT_CONSTANTS'],
         },
         format: {
           comments: false,
-          // Ensure ES5 compatibility for Chrome extensions
-          ecma: 2018, // Changed from 5 to 2018 to support dynamic imports
         },
       }),
   ].filter(Boolean);
 
-const entryPoints = [
+export default [
+  // Main app bundle - inline all dynamic imports to avoid external references
+  {
+    input: 'app.js',
+    output: {
+      file: 'dist/js/app.js',
+      format: 'iife',
+      name: 'PromptFinderApp',
+      sourcemap: !isProduction,
+      inlineDynamicImports: true, // This will bundle all dynamic imports inline
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  // Firebase init bundle
   {
     input: 'js/firebase-init.js',
     output: {
@@ -60,40 +63,90 @@ const entryPoints = [
       name: 'FirebaseInit',
       sourcemap: !isProduction,
     },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  // Individual JS modules for dynamic imports - use ES format
+  {
+    input: 'js/ui.js',
+    output: {
+      file: 'dist/js/js/ui.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
   },
   {
-    input: 'app.js',
+    input: 'js/promptData.js',
     output: {
-      file: 'dist/js/app.js',
-      format: 'iife',
+      file: 'dist/js/js/promptData.js',
+      format: 'es',
       sourcemap: !isProduction,
-      // Preserve dynamic imports for Chrome extension environment
-      inlineDynamicImports: false,
     },
+    plugins: commonPlugins(isProduction),
+    external: [],
   },
-  // Removed add-prompt.js entry as the file has been deleted and functionality integrated into main UI
-  // Removed edit-prompt.js entry as the file has been deleted
+  {
+    input: 'js/utils.js',
+    output: {
+      file: 'dist/js/js/utils.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  {
+    input: 'js/text-constants.js',
+    output: {
+      file: 'dist/js/js/text-constants.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  {
+    input: 'js/firebase-connection-handler.js',
+    output: {
+      file: 'dist/js/js/firebase-connection-handler.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  // Analytics modules
+  {
+    input: 'js/analytics/analytics.js',
+    output: {
+      file: 'dist/js/js/analytics/analytics.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  {
+    input: 'js/analytics/page-tracker.js',
+    output: {
+      file: 'dist/js/js/analytics/page-tracker.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
+  // Vendor modules
+  {
+    input: 'js/vendor/prism.js',
+    output: {
+      file: 'dist/js/js/vendor/prism.js',
+      format: 'es',
+      sourcemap: !isProduction,
+    },
+    plugins: commonPlugins(isProduction),
+    external: [],
+  },
 ];
-
-export default entryPoints.map(entry => ({
-  input: entry.input,
-  output: entry.output,
-  plugins: commonPlugins(isProduction),
-  external: id => {
-    // For app.js, preserve dynamic imports as external to avoid bundling issues
-    if (entry.input === 'app.js') {
-      // Keep dynamic imports external to preserve them in the output
-      if (id.startsWith('./js/')) {
-        return true;
-      }
-    }
-    // Bundle prismjs instead of keeping it external
-    if (id.includes('prismjs')) {
-      return false;
-    }
-    return false;
-  },
-  watch: {
-    clearScreen: false,
-  },
-}));
