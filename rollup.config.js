@@ -28,10 +28,25 @@ const commonPlugins = isProd =>
           drop_console: false, // Keep console.log for analytics but remove debug
           drop_debugger: true,
           pure_funcs: ['console.debug', 'console.trace', 'console.table'],
+          // Fix Chrome extension compatibility
+          unsafe: false,
+          unsafe_comps: false,
+          unsafe_Function: false,
+          unsafe_math: false,
+          unsafe_symbols: false,
+          unsafe_methods: false,
+          unsafe_proto: false,
+          unsafe_regexp: false,
+          unsafe_undefined: false,
         },
-        mangle: true,
+        mangle: {
+          // Disable mangling for Chrome extension compatibility
+          reserved: ['import', 'export', 'require', 'module', 'exports'],
+        },
         format: {
           comments: false,
+          // Ensure ES5 compatibility for Chrome extensions
+          ecma: 2018, // Changed from 5 to 2018 to support dynamic imports
         },
       }),
   ].filter(Boolean);
@@ -52,6 +67,8 @@ const entryPoints = [
       file: 'dist/js/app.js',
       format: 'iife',
       sourcemap: !isProduction,
+      // Preserve dynamic imports for Chrome extension environment
+      inlineDynamicImports: false,
     },
   },
   // Removed add-prompt.js entry as the file has been deleted and functionality integrated into main UI
@@ -63,14 +80,12 @@ export default entryPoints.map(entry => ({
   output: entry.output,
   plugins: commonPlugins(isProduction),
   external: id => {
-    // For app.js, mark dynamic imports as external to preserve code-splitting
-    if (
-      entry.input === 'app.js' &&
-      (id.includes('./js/ui.js') ||
-        id.includes('./js/analytics/') ||
-        id.includes('./js/firebase-connection-handler.js'))
-    ) {
-      return true;
+    // For app.js, preserve dynamic imports as external to avoid bundling issues
+    if (entry.input === 'app.js') {
+      // Keep dynamic imports external to preserve them in the output
+      if (id.startsWith('./js/')) {
+        return true;
+      }
     }
     // Bundle prismjs instead of keeping it external
     if (id.includes('prismjs')) {
