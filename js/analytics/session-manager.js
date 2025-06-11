@@ -340,7 +340,7 @@ class SessionManager {
    */
   _log(message, data = null) {
     // Only log in development environments
-    // This could be enhanced to check config.enableConsoleLogging if needed
+    // Browser-safe logging - avoid process.env which doesn't exist in browsers
     if (typeof console !== 'undefined' && console.log) {
       const prefix = '[GA4 Session Manager]';
       if (data) {

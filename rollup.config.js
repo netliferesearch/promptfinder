@@ -22,7 +22,18 @@ const commonPlugins = isProd =>
       exclude: 'node_modules/**',
       presets: [['@babel/preset-env', { modules: false }]],
     }),
-    isProd && terser(),
+    isProd &&
+      terser({
+        compress: {
+          drop_console: false, // Keep console.log for analytics but remove debug
+          drop_debugger: true,
+          pure_funcs: ['console.debug', 'console.trace', 'console.table'],
+        },
+        mangle: true,
+        format: {
+          comments: false,
+        },
+      }),
   ].filter(Boolean);
 
 const entryPoints = [
@@ -31,6 +42,7 @@ const entryPoints = [
     output: {
       file: 'dist/js/firebase-init.js',
       format: 'iife',
+      name: 'FirebaseInit',
       sourcemap: !isProduction,
     },
   },
@@ -50,6 +62,22 @@ export default entryPoints.map(entry => ({
   input: entry.input,
   output: entry.output,
   plugins: commonPlugins(isProduction),
+  external: id => {
+    // For app.js, mark dynamic imports as external to preserve code-splitting
+    if (
+      entry.input === 'app.js' &&
+      (id.includes('./js/ui.js') ||
+        id.includes('./js/analytics/') ||
+        id.includes('./js/firebase-connection-handler.js'))
+    ) {
+      return true;
+    }
+    // Bundle prismjs instead of keeping it external
+    if (id.includes('prismjs')) {
+      return false;
+    }
+    return false;
+  },
   watch: {
     clearScreen: false,
   },

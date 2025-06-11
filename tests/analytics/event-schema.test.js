@@ -16,7 +16,7 @@ describe('GA4 Event Schema', () => {
       expect(GA4_EVENTS.PAGE_VIEW).toBe('page_view');
       expect(GA4_EVENTS.SEARCH).toBe('search');
       expect(GA4_EVENTS.SELECT_CONTENT).toBe('select_content');
-      expect(GA4_EVENTS.USER_ENGAGEMENT).toBe('user_engagement');
+      expect(GA4_EVENTS.USER_ENGAGEMENT).toBe('custom_user_engagement');
       expect(GA4_EVENTS.LOGIN).toBe('login');
       expect(GA4_EVENTS.SIGN_UP).toBe('sign_up');
       expect(GA4_EVENTS.EXCEPTION).toBe('exception');

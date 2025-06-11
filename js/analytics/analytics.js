@@ -100,7 +100,10 @@ class Analytics {
       this._initializeGlobalErrorHandlers();
 
       this.initialized = true;
-      console.log('[Analytics] Initialized successfully');
+      // Browser-safe logging - avoid process.env which doesn't exist in browsers
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('[Analytics] Initialized successfully');
+      }
       return true;
     } catch (error) {
       console.error('[Analytics] Initialization failed:', error);
@@ -150,7 +153,10 @@ class Analytics {
       });
 
       this._errorHandlersInitialized = true;
-      console.log('[Analytics] Global error handlers initialized');
+      // Browser-safe logging - avoid process.env which doesn't exist in browsers
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('[Analytics] Global error handlers initialized');
+      }
     } catch (initError) {
       console.error('[Analytics] Failed to initialize global error handlers:', initError);
     }

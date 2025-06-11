@@ -409,6 +409,10 @@ describe('Client Manager', () => {
   describe('Logging', () => {
     test('should log messages to console', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const originalNodeEnv = process.env.NODE_ENV;
+
+      // Temporarily override NODE_ENV to allow logging during this test
+      process.env.NODE_ENV = 'development';
 
       clientManager._log('Test message', { data: 'test' });
 
@@ -416,6 +420,8 @@ describe('Client Manager', () => {
         data: 'test',
       });
 
+      // Restore original NODE_ENV
+      process.env.NODE_ENV = originalNodeEnv;
       consoleSpy.mockRestore();
     });
 

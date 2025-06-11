@@ -24,12 +24,19 @@ export default [
       'coverage/',
       'scripts/',
       'functions/',
+      'chrome-store-package/',
+      'css-minified/',
       'purgecss.config.mjs',
       'rollup.config.js',
       'babel.config.json',
       'js/clusterize.min.js',
+      'js/vendor/',
       '.vscode/',
       '.idx/',
+      '**/*.min.js',
+      '**/*.bundle.js',
+      '**/dist/**/*.js',
+      '**/build/**/*.js',
     ],
   },
 
@@ -39,6 +46,7 @@ export default [
   // Configuration for main source code (extension code)
   {
     files: ['app.js', 'js/**/*.js', 'pages/**/*.js'],
+    ignores: ['js/analytics/**/*.js'], // Analytics files handled separately
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -46,6 +54,24 @@ export default [
         ...sanitizeGlobals(globals.browser),
         ...sanitizeGlobals(globals.webextensions),
         Prism: 'readonly', // Added Prism global
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+    },
+  },
+
+  // Configuration for analytics files (need process global for environment detection)
+  {
+    files: ['js/analytics/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...sanitizeGlobals(globals.browser),
+        ...sanitizeGlobals(globals.webextensions),
+        process: 'readonly', // Allow access to process.env.NODE_ENV
       },
     },
     rules: {

@@ -918,8 +918,8 @@ import { getText, textManager } from './text-constants.js';
 import { handleConnectionError } from './firebase-connection-handler.js';
 
 // Import Prism.js
-import 'prismjs'; // Core
-import 'prismjs/components/prism-markdown.min.js'; // Markdown language support
+import './vendor/prism.js'; // Core
+import './vendor/prism-markdown.min.js'; // Markdown language support
 
 let allPrompts = [];
 let activeTab = 'all';

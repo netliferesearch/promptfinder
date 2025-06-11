@@ -195,7 +195,7 @@ class EventTracker {
       ...engagementData.customParameters,
     };
 
-    return this.trackEvent('user_engagement', parameters, options);
+    return this.trackEvent('custom_user_engagement', parameters, options);
   }
 
   /**

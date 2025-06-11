@@ -8,14 +8,43 @@
     "lint": "npx eslint . --ext .js,.mjs",
     "lint:fix": "npx eslint . --ext .js,.mjs --fix",
     "format": "prettier --write \"**/*.{js,mjs,html,css,md,json}\"",
-    "test": "jest",
-    "build:js:dev": "rollup -c --environment NODE_ENV:development",
-    "build:js:prod": "rollup -c --environment NODE_ENV:production",
+    "test": "jest --verbose",
+    "test:dev": "jest --watch --verbose",
+    "test:coverage": "jest --coverage --verbose",
+    "test:ci": "jest --verbose --ci --maxWorkers=4",
+    "test:production": "node scripts/test-production-build.mjs",
+    "test:ga4-production": "node scripts/test-ga4-analytics-production.mjs",
+    "build:js:dev": "rollup -c --environment NODE_ENV:development && node scripts/copy-external-modules.mjs",
+    "build:js:prod": "rollup -c --environment NODE_ENV:production && node scripts/copy-external-modules.mjs",
     "watch:js": "rollup -c --watch --environment NODE_ENV:development",
     "css:purge": "node scripts/purge-css.mjs",
     "css:switch": "bash ./scripts/switch-css-env.sh",
+    "icons:optimize": "node scripts/optimize-icons.mjs",
+    "css:analyze": "node scripts/analyze-css-optimization.mjs",
+    "css:consolidate": "node scripts/consolidate-css.mjs",
+    "performance:lazy-loading": "node scripts/measure-lazy-loading-performance.mjs",
+    "performance:benchmark": "node scripts/performance-benchmarks.mjs",
+    "performance:report": "node scripts/generate-benchmark-report.mjs",
+    "security:audit-auth": "node scripts/security-audit-auth.mjs",
+    "security:audit-xss": "node scripts/xss-vulnerability-audit-simple.mjs",
+    "security:audit-csp": "node scripts/csp-validation-audit.mjs",
+    "security:audit-accessibility": "node scripts/accessibility-compliance-audit.mjs",
+    "security:test-keyboard": "node scripts/keyboard-navigation-test.mjs",
+    "security:audit-wcag": "node scripts/wcag-compliance-audit.mjs",
+    "security:test-error-handling": "node scripts/error-handling-test.mjs",
+    "security:audit-data": "node scripts/data-security-audit.mjs",
+    "deps:audit": "node scripts/dependency-audit.mjs",
+    "build:audit": "node scripts/build-output-audit.mjs",
+    "build:check": "node scripts/build-production-check.mjs",
+    "assets:optimize": "node scripts/asset-optimization.mjs",
+    "css:minify": "node scripts/advanced-css-minification.mjs",
+    "git:audit-ignore": "node scripts/gitignore-audit.mjs",
+    "package:prod": "node scripts/create-production-package.mjs",
+    "test:prod-build": "node scripts/test-production-build.mjs",
+    "validate:prod-build": "node scripts/production-functionality-validation.mjs",
+    "git:verify-ignore": "node scripts/gitignore-verification.mjs",
     "build": "npm run lint && npm run format && npm run build:js:dev && npm run css:purge && echo \"Development build complete (JS bundled, CSS purged)\"",
-    "build:prod": "npm run lint && npm run format && npm run build:js:prod && npm run css:purge && echo \"Production build complete (JS bundled & minified, CSS purged)\"",
+    "build:prod": "npm run lint && npm run format && npm run build:js:prod && npm run css:purge && npm run build:check && echo \"Production build complete and verified!\"",
     "build:firefox": "npm run build && npm run firefox:run",
     "build:prod:firefox": "npm run build:prod && npm run firefox:run",
     "dev:firefox": "npm run css:switch -- dev && npm run build:js:dev && npm run firefox:run",
@@ -24,7 +53,13 @@
     "dev": "npm run css:switch -- dev && npm run watch:js",
     "dev:full": "bash ./scripts/dev-with-firefox.sh",
     "firefox:run": "web-ext run --keep-profile-changes --firefox='/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox' --devtools --browser-console --start-url=about:debugging#/runtime/this-firefox",
-    "firefox:build": "web-ext build --overwrite-dest"
+    "firefox:build": "web-ext build --overwrite-dest",
+    "deps:update": "./update-deps.sh",
+    "deps:check": "npm outdated",
+    "serve": "serve .",
+    "clean": "rm -rf dist chrome-store-package",
+    "audit": "node scripts/audit-dependencies.mjs",
+    "optimize": "node scripts/optimize-assets.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
@@ -44,13 +79,17 @@
     "firebase": "^11.8.0",
     "globals": "^16.1.0",
     "identity-obj-proxy": "^3.0.0",
+    "imagemin": "^9.0.1",
+    "imagemin-optipng": "^8.0.0",
+    "imagemin-pngquant": "^10.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.2.5",
     "prismjs": "^1.29.0",
     "purgecss": "^7.0.2",
     "rollup": "^4.41.0",
-    "web-ext": "^8.7.1"
+    "web-ext": "^8.7.1",
+    "firebase-admin": "^13.4.0"
   },
   "browserslist": [
     "last 2 Chrome versions"
@@ -74,8 +113,5 @@
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "identity-obj-proxy"
     }
-  },
-  "dependencies": {
-    "firebase-admin": "^13.4.0"
   }
 }

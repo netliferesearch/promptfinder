@@ -69,7 +69,10 @@ class PromiseRejectionTracker {
 
       this.isInitialized = true;
 
-      console.log(`[Promise Rejection Tracker] Initialized in ${this.context} context`);
+      // Browser-safe logging - avoid process.env which doesn't exist in browsers
+      if (typeof console !== 'undefined' && console.log) {
+        console.log(`[Promise Rejection Tracker] Initialized in ${this.context} context`);
+      }
     } catch (initError) {
       console.error('[Promise Rejection Tracker] Initialization failed:', initError);
     }

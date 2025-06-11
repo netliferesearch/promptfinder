@@ -10,25 +10,129 @@ import {
 } from './js/promptData.js';
 
 import * as Utils from './js/utils.js';
-import * as UI from './js/ui.js';
-import * as PromptDataModule from './js/promptData.js';
-import { initializeConnectionMonitoring } from './js/firebase-connection-handler.js';
-import { Analytics } from './js/analytics/analytics.js';
-import PageTracker from './js/analytics/page-tracker.js';
+// Lazy load these heavy modules
+// import * as UI from './js/ui.js';
+// import * as PromptDataModule from './js/promptData.js';
+// import { initializeConnectionMonitoring } from './js/firebase-connection-handler.js';
+// import { Analytics } from './js/analytics/analytics.js';
+// import PageTracker from './js/analytics/page-tracker.js';
 
-window.DebugPromptData = PromptDataModule;
+// Module cache for lazy loading
+const lazyModules = {
+  UI: null,
+  PromptDataModule: null,
+  Analytics: null,
+  PageTracker: null,
+  ConnectionMonitoring: null,
+};
 
-// Initialize analytics and page tracking
-const analytics = new Analytics();
-const pageTracker = new PageTracker(analytics);
+/**
+ * Lazy load UI module when needed
+ */
+async function loadUI() {
+  if (!lazyModules.UI) {
+    console.log('🔄 Lazy loading UI module...');
+    lazyModules.UI = await import('./js/ui.js');
+    console.log('✅ UI module loaded');
+  }
+  return lazyModules.UI;
+}
 
-// Make analytics available globally for debugging
-window.DebugAnalytics = analytics;
-window.DebugPageTracker = pageTracker;
+/**
+ * Lazy load PromptData module when needed
+ */
+async function loadPromptDataModule() {
+  if (!lazyModules.PromptDataModule) {
+    console.log('🔄 Lazy loading PromptData module...');
+    lazyModules.PromptDataModule = await import('./js/promptData.js');
+    console.log('✅ PromptData module loaded');
+  }
+  return lazyModules.PromptDataModule;
+}
+
+/**
+ * Lazy load Analytics when user starts interacting
+ */
+async function loadAnalytics() {
+  if (!lazyModules.Analytics) {
+    console.log('🔄 Lazy loading Analytics modules...');
+    const [analyticsModule, pageTrackerModule] = await Promise.all([
+      import('./js/analytics/analytics.js'),
+      import('./js/analytics/page-tracker.js'),
+    ]);
+
+    lazyModules.Analytics = new analyticsModule.Analytics();
+    lazyModules.PageTracker = new pageTrackerModule.default(lazyModules.Analytics);
+
+    // Make analytics available globally for debugging
+    window.DebugAnalytics = lazyModules.Analytics;
+    window.DebugPageTracker = lazyModules.PageTracker;
+
+    console.log('✅ Analytics modules loaded');
+  }
+  return {
+    analytics: lazyModules.Analytics,
+    pageTracker: lazyModules.PageTracker,
+  };
+}
+
+/**
+ * Lazy load Firebase connection monitoring
+ */
+async function loadConnectionMonitoring() {
+  if (!lazyModules.ConnectionMonitoring) {
+    console.log('🔄 Lazy loading Firebase connection monitoring...');
+    lazyModules.ConnectionMonitoring = await import('./js/firebase-connection-handler.js');
+    console.log('✅ Firebase connection monitoring loaded');
+  }
+  return lazyModules.ConnectionMonitoring;
+}
+
+// Initialize with minimal overhead
+let analytics = null;
+let pageTracker = null;
+
+// Delay analytics initialization until first user interaction
+function initializeAnalyticsOnDemand() {
+  if (!analytics) {
+    loadAnalytics()
+      .then(({ analytics: a, pageTracker: pt }) => {
+        analytics = a;
+        pageTracker = pt;
+
+        // Initialize page tracking
+        pageTracker.init().catch(error => {
+          console.warn('Failed to initialize page tracking:', error);
+        });
+      })
+      .catch(error => {
+        console.warn('Failed to lazy load analytics:', error);
+      });
+  }
+}
+
+// Early PromptData access for debugging (keep minimal)
+loadPromptDataModule().then(module => {
+  window.DebugPromptData = module;
+});
+
+/**
+ * Safely track analytics events with lazy loading
+ */
+async function trackAnalyticsEvent(trackingFunction, ...args) {
+  try {
+    initializeAnalyticsOnDemand();
+    if (analytics && typeof analytics[trackingFunction] === 'function') {
+      analytics[trackingFunction](...args);
+    }
+  } catch (error) {
+    console.warn(`Failed to track ${trackingFunction}:`, error);
+  }
+}
 
 let mainContentElement, authViewElement, authErrorMessageElement;
 
-function showAuthView() {
+async function showAuthView() {
   if (mainContentElement) mainContentElement.classList.add('hidden');
   if (authViewElement) authViewElement.classList.remove('hidden');
   if (authErrorMessageElement) {
@@ -46,8 +150,11 @@ function showAuthView() {
   if (authTitle) authTitle.style.display = '';
   if (authSubtext) authSubtext.style.display = '';
 
-  // Track page view for auth
-  pageTracker.trackNavigation('auth', { method: 'programmatic', trigger: 'system' });
+  // Track page view for auth (lazy load analytics)
+  initializeAnalyticsOnDemand();
+  if (pageTracker) {
+    pageTracker.trackNavigation('auth', { method: 'programmatic', trigger: 'system' });
+  }
 }
 window.showAuthViewGlobally = showAuthView;
 
@@ -126,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
+        const PromptDataModule = await loadPromptDataModule();
         await PromptDataModule.sendResetPasswordEmail(email);
         if (typeof window.showToast === 'function') {
           window.showToast(getText('RESET_PASSWORD_SUCCESS'), { type: 'success', duration: 10000 });
@@ -146,13 +254,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
 
-  // Initialize Firebase connection monitoring
-  initializeConnectionMonitoring();
-
-  // Initialize analytics and page tracking
-  pageTracker.init().catch(error => {
-    console.warn('Failed to initialize page tracking:', error);
-  });
+  // Initialize Firebase connection monitoring lazily
+  loadConnectionMonitoring()
+    .then(connectionModule => {
+      connectionModule.initializeConnectionMonitoring();
+    })
+    .catch(error => {
+      console.warn('Failed to initialize connection monitoring:', error);
+    });
 
   mainContentElement = document.getElementById('main-content');
   authViewElement = document.getElementById('auth-view');
@@ -176,8 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loginEmailInput.addEventListener('focus', () => {
       if (!window.loginFormStartTime) {
         window.loginFormStartTime = Date.now();
-        // Track registration funnel - login form started
-        analytics.trackRegistrationFunnel({
+        // Track registration funnel - login form started (lazy load analytics)
+        trackAnalyticsEvent('trackRegistrationFunnel', {
           step: 'login_started',
           stepNumber: 1,
           method: 'email',
@@ -190,8 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
     signupDisplayNameInput.addEventListener('focus', () => {
       if (!window.signupFormStartTime) {
         window.signupFormStartTime = Date.now();
-        // Track registration funnel - signup form started
-        analytics.trackRegistrationFunnel({
+        // Track registration funnel - signup form started (lazy load analytics)
+        trackAnalyticsEvent('trackRegistrationFunnel', {
           step: 'signup_started',
           stepNumber: 1,
           method: 'email',
@@ -219,12 +328,15 @@ document.addEventListener('DOMContentLoaded', () => {
       addPromptFabEl.hidden = false;
     }
 
-    // Track page view for main content
-    pageTracker.trackNavigation('main', { method: 'programmatic', trigger: 'system' });
+    // Track page view for main content (lazy load analytics)
+    initializeAnalyticsOnDemand();
+    if (pageTracker) {
+      pageTracker.trackNavigation('main', { method: 'programmatic', trigger: 'system' });
+    }
 
     // Track onboarding funnel - popup opened (if logged in)
     if (window.firebaseAuthCurrentUser) {
-      analytics.trackOnboardingFunnel({
+      trackAnalyticsEvent('trackOnboardingFunnel', {
         step: 'popup_opened',
         stepNumber: 2,
         userId: window.firebaseAuthCurrentUser.uid,
@@ -234,11 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadAndRenderPrompts() {
-    if (UI && UI.loadAndDisplayData) {
-      console.log('Calling UI.loadAndDisplayData from app.js (v9 modular)');
-      await UI.loadAndDisplayData();
-    } else {
-      console.warn('UI.loadAndDisplayData function not found. UI may not update.');
+    try {
+      console.log('Loading UI module for data display...');
+      const UIModule = await loadUI();
+      if (UIModule && UIModule.loadAndDisplayData) {
+        console.log('Calling UI.loadAndDisplayData from app.js (v9 modular)');
+        await UIModule.loadAndDisplayData();
+      } else {
+        console.warn('UI.loadAndDisplayData function not found. UI may not update.');
+      }
+    } catch (error) {
+      console.error('Failed to load UI module for rendering prompts:', error);
+      Utils.handleError('Failed to load interface components', {
+        userVisible: true,
+        type: 'error',
+        timeout: 5000,
+      });
     }
   }
 
@@ -256,11 +379,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPromptFabEl = document.getElementById('add-prompt-fab');
     if (addPromptFabEl) addPromptFabEl.hidden = true;
 
-    // Track page view for email verification
-    pageTracker.trackNavigation('email_verification', {
-      method: 'programmatic',
-      trigger: 'system',
-    });
+    // Track page view for email verification (lazy load analytics)
+    initializeAnalyticsOnDemand();
+    if (pageTracker) {
+      pageTracker.trackNavigation('email_verification', {
+        method: 'programmatic',
+        trigger: 'system',
+      });
+    }
   }
 
   function hideAllAuthForms() {
@@ -340,12 +466,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (addPromptButtonMain) {
-    addPromptButtonMain.addEventListener('click', () => {
+    addPromptButtonMain.addEventListener('click', async () => {
       if (currentUser) {
-        if (UI && UI.openDetachedAddPromptWindow) {
-          UI.openDetachedAddPromptWindow();
-        } else {
-          console.error('UI.openDetachedAddPromptWindow is not available.');
+        try {
+          const UIModule = await loadUI();
+          if (UIModule && UIModule.openDetachedAddPromptWindow) {
+            UIModule.openDetachedAddPromptWindow();
+          } else {
+            console.error('UI.openDetachedAddPromptWindow is not available.');
+          }
+        } catch (error) {
+          console.error('Failed to load UI module for add prompt:', error);
+          Utils.handleError('Failed to load interface for adding prompts', {
+            userVisible: true,
+            type: 'error',
+            timeout: 5000,
+          });
         }
       } else {
         if (window.handleAuthRequiredAction) {
@@ -356,25 +492,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (accountButton) {
-    accountButton.addEventListener('click', () => {
+    accountButton.addEventListener('click', async () => {
       if (currentUser) {
-        // Track logout action
-        const sessionDuration = pageTracker.getStatus().sessionDuration;
-        const promptsViewed = pageTracker.navigationHistory.filter(
-          h => h.page === 'prompt_details'
-        ).length;
+        // Track logout action (lazy load analytics)
+        initializeAnalyticsOnDemand();
+        if (analytics && pageTracker) {
+          try {
+            const sessionDuration = pageTracker.getStatus().sessionDuration;
+            const promptsViewed = pageTracker.navigationHistory.filter(
+              h => h.page === 'prompt_details'
+            ).length;
 
-        analytics.trackLogout({
-          userId: currentUser.uid,
-          sessionDuration: sessionDuration,
-          actionsPerformed: pageTracker.getStatus().navigationHistory,
-          promptsViewed: promptsViewed,
-          context: 'popup',
-        });
+            analytics.trackLogout({
+              userId: currentUser.uid,
+              sessionDuration: sessionDuration,
+              actionsPerformed: pageTracker.getStatus().navigationHistory,
+              promptsViewed: promptsViewed,
+              context: 'popup',
+            });
+          } catch (error) {
+            console.warn('Failed to track logout analytics:', error);
+          }
+        }
 
         logoutUser().catch(err => console.error('Logout failed via account button:', err));
       } else {
-        showAuthView();
+        await showAuthView();
       }
     });
   }
@@ -393,13 +536,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = loginPasswordInput.value;
       const loginStartTime = Date.now();
 
-      // Track registration funnel - login attempted
-      analytics.trackRegistrationFunnel({
-        step: 'login_attempted',
-        stepNumber: 1,
-        method: 'email',
-        formTime: Date.now() - (window.loginFormStartTime || Date.now()),
-      });
+      // Track registration funnel - login attempted (lazy load analytics)
+      initializeAnalyticsOnDemand();
+      if (analytics) {
+        analytics.trackRegistrationFunnel({
+          step: 'login_attempted',
+          stepNumber: 1,
+          method: 'email',
+          formTime: Date.now() - (window.loginFormStartTime || Date.now()),
+        });
+      }
 
       try {
         const userCredential = await loginUser(email, password);
@@ -808,9 +954,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (UI && UI.initializeUI) {
-    UI.initializeUI();
-  } else {
-    console.error('UI.initializeUI module/function not found.');
-  }
+  // Initialize UI lazily when needed
+  loadUI()
+    .then(UIModule => {
+      if (UIModule && UIModule.initializeUI) {
+        UIModule.initializeUI();
+      } else {
+        console.error('UI.initializeUI module/function not found.');
+      }
+    })
+    .catch(error => {
+      console.error('Failed to lazy load UI module during initialization:', error);
+    });
 });

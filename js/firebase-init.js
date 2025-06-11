@@ -1,8 +1,36 @@
 // Firebase v9 Modular SDK Initialization
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, enableNetwork, disableNetwork } from 'firebase/firestore';
-import { getFunctions } from 'firebase/functions';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential,
+  updateProfile,
+  sendPasswordResetEmail,
+  sendEmailVerification as firebaseSendEmailVerification,
+  reload as firebaseReload,
+} from 'firebase/auth';
+import {
+  getFirestore,
+  enableNetwork,
+  disableNetwork,
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  serverTimestamp,
+  Timestamp,
+} from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // TODO: Replace with your actual Firebase project config
 const firebaseConfig = {
@@ -45,4 +73,36 @@ const handleFirestoreConnection = async () => {
 // Initialize connection when module loads
 handleFirestoreConnection();
 
-export { auth, db, functions, enableNetwork, disableNetwork };
+export {
+  auth,
+  db,
+  functions,
+  enableNetwork,
+  disableNetwork,
+  // Auth functions
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  firebaseSignOut,
+  firebaseOnAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential,
+  updateProfile,
+  sendPasswordResetEmail,
+  firebaseSendEmailVerification,
+  firebaseReload,
+  // Firestore functions
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  serverTimestamp,
+  Timestamp,
+  // Functions
+  httpsCallable,
+};

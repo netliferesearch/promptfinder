@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "DesignPrompts",
+  "version": "1.0",
+  "description": "A community-powered tool for managing and sharing AI prompts.",
+  "action": {
+    "default_popup": "pages/popup.html"
+  },
+  "permissions": ["storage", "clipboardWrite", "identity"],
+  "oauth2": {
+    "client_id": "1003470911937-7e1tji24qgc65kdl8h27tl0m1t9ldg01.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "host_permissions": [
+    "https://*.firebaseapp.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.firebaseio.com/*",
+    "https://*.cloudfunctions.net/*",
+    "https://www.google-analytics.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://europe-west1-promptfinder-2a095.cloudfunctions.net https://*.cloudfunctions.net wss://*.firebaseio.com https://firebasestorage.googleapis.com https://firebase.googleapis.com wss://firestore.googleapis.com https://www.google-analytics.com;"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

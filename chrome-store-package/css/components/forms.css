@@ -1,0 +1,142 @@
+/* Form components for PromptFinder extension */
+
+/* === FORM LAYOUT === */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group--row {
+  flex-direction: row;
+  align-items: center;
+}
+
+/* === FORM ELEMENTS === */
+.form-label {
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+  color: var(--color-black);
+}
+
+.form-label--fancy {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input,
+.form-textarea {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-400);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-md);
+  background-color: var(--color-white);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.form-textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* Style for textareas intended for code/prompt text input */
+.code-input-textarea {
+  font-family: var(--font-family-monospace, monospace);
+  font-size: var(--font-size-sm, 0.875rem); /* Slightly smaller for code */
+  color: var(--color-code-text, #333); /* Ensure good contrast */
+  background-color: var(--color-gray-100, #f8f9fa); /* Light background like code blocks */
+  border: 1px solid var(--color-gray-300, #e0e0e0);
+  line-height: 1.5; /* Improve readability for code */
+  white-space: pre; /* Preserve whitespace like tabs and multiple spaces */
+  overflow-wrap: normal; /* Allow horizontal scrolling for long lines */
+  overflow-x: auto; /* Enable horizontal scrollbar */
+}
+
+.form-checkbox {
+  margin-right: var(--spacing-xs);
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+/* Form validation */
+.form-input.is-invalid,
+.form-textarea.is-invalid {
+  border-color: var(--color-error-text);
+  background-color: var(--color-error-bg);
+}
+
+.form-error {
+  color: var(--color-error-text);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+}
+
+/* === FORM MESSAGES === */
+.form-message,
+.success-message,
+.confirmation-message {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+}
+
+.success-message,
+#confirmation-message:not(.hidden) {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.error-message,
+#error-message:not(.hidden) {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Icon in messages */
+.form-message i,
+.success-message i,
+.error-message i {
+  margin-right: var(--spacing-sm);
+}
+
+/* === SEARCH AND FILTER CONTROLS === */
+
+/* Search input styles are now handled in popup.css for pixel-perfect match. Remove legacy/duplicate styles. */
+
+.filter-panel {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background-color: var(--color-gray-100);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.filter-panel select {
+  padding: 4px var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-white);
+}

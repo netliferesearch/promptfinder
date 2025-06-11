@@ -1,9 +1,48 @@
-/node_modules/
+# PromptFinder Chrome Extension - .gitignore
+# Comprehensive exclusions for Chrome Web Store preparation
+
+# Dependencies
+node_modules/
 functions/node_modules/
-/dist/
+package-lock.json
+
+# Build outputs and generated files
+dist/
+build/
+css-min/
+css-minified/
+css-purged/
+icons-optimized/
+package.json.optimized
+
+# Reports and audit results (development tools)
+*-report.json
+*-report.md
+*-audit-results.json
+*-results.json
+benchmark-report.json
+performance-report.json
+security-audit-results.json
+xss-audit-results*.json
+csp-audit-results.json
+data-security-audit-results.json
+
+# System files
 .DS_Store
+Thumbs.db
 *.log
-coverage/
+
+# IDE and editor files
+.vscode/
+!.vscode/settings.json
+.idea/
+.cursor/
+.idx/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Firebase
 .firebase/
@@ -11,24 +50,24 @@ firestore-debug.log
 firebase-debug.log
 ui-debug.log
 
-# Environment files
+# Environment files and secrets
 .env
 .env.*
-!/.env.example
+!.env.example
+*.key
+*.pem
+secrets.json
 
-# IDE specific
-.vscode/
-!.vscode/settings.json # Keep if you want to share some settings
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Testing
+coverage/
+test-results/
+*.lcov
 
-# Optional: If you have a build directory for other things
-/build/
+# Chrome Extension packages
+*.crx
+*.zip
+extension.zip
 
-# Optional: PurgeCSS output if not in dist
-# /css-purged/
-.DS_Store
+# Temporary files
+*.tmp
+*.temp

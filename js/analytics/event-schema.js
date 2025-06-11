@@ -22,7 +22,7 @@ export const GA4_EVENTS = {
   PAGE_VIEW: 'page_view',
   SEARCH: 'search',
   SELECT_CONTENT: 'select_content',
-  USER_ENGAGEMENT: 'user_engagement',
+  USER_ENGAGEMENT: 'custom_user_engagement',
 
   // Authentication events
   LOGIN: 'login',

@@ -1,0 +1,110 @@
+/* Button components for PromptFinder extension */
+
+/* Base button */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: var(--font-size-md);
+}
+
+/* Button variants */
+.button-primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.button-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.button-secondary {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.button-secondary:hover {
+  background-color: var(--color-primary-light);
+}
+
+.button-cancel {
+  background-color: var(--color-gray-200);
+  color: var(--color-black);
+}
+
+.button-cancel:hover {
+  background-color: var(--color-gray-300);
+}
+
+.button-danger {
+  background-color: var(--color-error-text);
+  color: var(--color-white);
+}
+
+.button-danger:hover {
+  background-color: #b71c1c; /* Darker red */
+}
+
+/* Button sizes */
+.button-sm {
+  padding: calc(var(--spacing-xs) * 0.75) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.button-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+}
+
+/* Icon buttons */
+.button-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.button-icon:hover {
+  background-color: var(--color-gray-200);
+}
+
+/* Favorites button */
+.toggle-favorite {
+  /* background: none; */
+  /* border: none; */
+  /* cursor: pointer; */
+  /* font-size: 1.25rem; */
+  color: #e74c3c !important;
+  /* padding: 0; */
+}
+
+.toggle-favorite i {
+  pointer-events: none;
+}
+
+/* Disabled state styling for buttons */
+.button-disabled,
+button[disabled].button-icon, /* More specific for icon buttons that use the disabled attribute */
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-gray-300, #ccc); /* Optional: change background for disabled */
+  border-color: var(--color-gray-300, #ccc); /* Optional: change border for disabled */
+  color: var(--color-gray-500, #999); /* Optional: change text color for disabled */
+}
+
+/* Ensure disabled icon buttons don't show hover effects */
+button[disabled].button-icon:hover {
+  background-color: transparent;
+}

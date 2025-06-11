@@ -113,7 +113,10 @@ export class GA4EventFilter {
    */
   setFilteringEnabled(enabled) {
     this.filteringEnabled = enabled;
-    console.log(`🔄 [GA4 Event Filter] Filtering ${enabled ? 'enabled' : 'disabled'}`);
+    // Browser-safe logging - avoid process.env which doesn't exist in browsers
+    if (typeof console !== 'undefined' && console.log) {
+      console.log(`🔄 [GA4 Event Filter] Filtering ${enabled ? 'enabled' : 'disabled'}`);
+    }
   }
 
   /**
@@ -123,7 +126,10 @@ export class GA4EventFilter {
    */
   addCustomRule(ruleName, filterFunction) {
     this.customRules.set(ruleName, filterFunction);
-    console.log(`✅ [GA4 Event Filter] Added custom rule: ${ruleName}`);
+    // Browser-safe logging - avoid process.env which doesn't exist in browsers
+    if (typeof console !== 'undefined' && console.log) {
+      console.log(`✅ [GA4 Event Filter] Added custom rule: ${ruleName}`);
+    }
   }
 
   /**
@@ -133,7 +139,10 @@ export class GA4EventFilter {
   removeCustomRule(ruleName) {
     const removed = this.customRules.delete(ruleName);
     if (removed) {
-      console.log(`🗑️ [GA4 Event Filter] Removed custom rule: ${ruleName}`);
+      // Browser-safe logging - avoid process.env which doesn't exist in browsers
+      if (typeof console !== 'undefined' && console.log) {
+        console.log(`🗑️ [GA4 Event Filter] Removed custom rule: ${ruleName}`);
+      }
     }
   }
 
@@ -363,7 +372,10 @@ export class GA4EventFilter {
           };
         }
       } catch (error) {
-        console.error(`🚨 [GA4 Event Filter] Error in custom rule '${ruleName}':`, error);
+        // Browser-safe logging - avoid process.env which doesn't exist in browsers
+        if (typeof console !== 'undefined' && console.error) {
+          console.error(`🚨 [GA4 Event Filter] Error in custom rule '${ruleName}':`, error);
+        }
         // Continue with other rules if one fails
       }
     }

@@ -130,7 +130,7 @@ describe('EventTracker', () => {
       // Valid event names
       expect(eventTracker._isValidEventName('page_view')).toBe(true);
       expect(eventTracker._isValidEventName('prompt_copy')).toBe(true);
-      expect(eventTracker._isValidEventName('user_engagement')).toBe(true);
+      expect(eventTracker._isValidEventName('custom_user_engagement')).toBe(true);
       expect(eventTracker._isValidEventName('a')).toBe(true);
       expect(eventTracker._isValidEventName('event_with_numbers_123')).toBe(true);
 
@@ -428,7 +428,7 @@ describe('EventTracker', () => {
       await eventTracker.trackEngagement(engagementData);
 
       expect(trackEventSpy).toHaveBeenCalledWith(
-        'user_engagement',
+        'custom_user_engagement',
         {
           engagement_time_msec: 5000,
           engagement_type: 'prompt_interaction',

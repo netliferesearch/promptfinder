@@ -1,23 +1,15 @@
-/* Tab components for PromptFinder extension */
-
-/* Tab container */
-.tabs {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
 /* Support for simplified tab structure in popup.html */
 nav.tabs {
   display: flex;
   flex-direction: row;
-  padding: 0;
+  padding: var(--spacing-sm) var(--spacing-lg) 0 var(--spacing-lg);
   width: 100%;
-  gap: var(--spacing-md);
-  margin: var(--spacing-md) 0;
+  gap: var(--spacing-sm);
   background-color: transparent;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
 }
 
 /* Tab navigation */
@@ -35,7 +27,7 @@ nav.tabs {
 
 /* Tab buttons */
 .tab-button {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-sm);
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -49,16 +41,17 @@ nav.tabs {
 /* Support for simplified tabs in popup.html - pill-shaped style */
 nav.tabs button {
   flex: 1;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-xs);
   background: none;
-  border: none;
-  border-radius: 24px;
+  border: 1px solid var(--color-gray-400);
+  border-radius: var(--border-radius-lg);
   font-weight: 500;
   color: var(--color-gray-500);
   white-space: nowrap;
   transition: all 0.2s;
   cursor: pointer;
   text-align: center;
+  background-color: var(--color-white);
 }
 
 .tab-button:hover,
@@ -69,18 +62,20 @@ nav.tabs button:hover {
 .tab-button.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* Active state for pill-shaped tabs */
 nav.tabs button.active {
-  color: var(--color-white);
-  background-color: var(--color-primary);
-  border-bottom-color: transparent;
+  color: var(--color-primary);
+  background-color: var(--color-white);
+  border-color: var(--color-primary);
+  border: 1px solid;
 }
 
 /* Tab content areas */
 .tab-content {
-  padding: var(--spacing-md);
+  padding: var(--spacing-xs);
   background-color: var(--color-white);
   flex-grow: 1;
   overflow-y: auto;
@@ -98,13 +93,13 @@ nav.tabs button.active {
 .tabs-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
   background-color: var(--color-white);
 }
 
 .tab-pill {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-xs);
   border-radius: var(--border-radius-lg);
   background-color: var(--color-gray-200);
   color: var(--color-black);
