@@ -1,51 +1,6 @@
 import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
-import { httpsCallable } from 'firebase/functions';
-// functions is imported but not used directly in this file
-// it's used indirectly through the httpsCallable function
-
-// Create mocks for Firebase functions
-const mockFunctionsCallResults = {
-  incrementUsageCount: { success: true },
-  recalculateAllStats: { success: true, promptsUpdated: 5 },
-};
-
-// Mock Firebase Functions
-jest.mock('firebase/functions', () => ({
-  getFunctions: jest.fn(() => ({ mockName: 'MockFunctionsInstance' })),
-  httpsCallable: jest.fn((functions, functionName) => {
-    return jest.fn(data => {
-      // Simulate the behavior of each Cloud Function
-      if (functionName === 'incrementUsageCount') {
-        const promptId = data.promptId;
-        if (!promptId) {
-          return Promise.reject(new Error('Prompt ID is required'));
-        }
-        const promptPath = `prompts/${promptId}`;
-        const promptData = global.mockFirestoreDb.getPathData(promptPath);
-        if (!promptData) {
-          return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
-        }
-
-        // Increment the usage count - use the existing data to preserve other fields
-        const updatedData = {
-          ...promptData,
-          usageCount: (promptData.usageCount || 0) + 1,
-        };
-        global.mockFirestoreDb.seedData(promptPath, updatedData);
-
-        return Promise.resolve({ data: mockFunctionsCallResults.incrementUsageCount });
-      } else if (functionName === 'recalculateAllStats') {
-        // For admin function, we just return a success result
-        return Promise.resolve({ data: mockFunctionsCallResults.recalculateAllStats });
-      }
-
-      // Default behavior for unknown functions
-      return Promise.resolve({ data: { success: true } });
-    });
-  }),
-  connectFunctionsEmulator: jest.fn(),
-}));
+import { httpsCallable } from '../js/firebase-init.js';
 
 jest.mock('../js/utils.js', () => ({
   ...jest.requireActual('../js/utils.js'),

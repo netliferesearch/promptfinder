@@ -1,44 +1,6 @@
 import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
-import { httpsCallable } from 'firebase/functions';
-
-// Mock Firebase Functions
-const mockFunctionsCallResults = {
-  incrementUsageCount: { success: true },
-  recalculateAllStats: { success: true, promptsUpdated: 5 },
-};
-
-jest.mock('firebase/functions', () => ({
-  getFunctions: jest.fn(() => ({ mockName: 'MockFunctionsInstance' })),
-  httpsCallable: jest.fn((functions, functionName) => {
-    return jest.fn(data => {
-      if (functionName === 'incrementUsageCount') {
-        const promptId = data.promptId;
-        if (!promptId) {
-          return Promise.reject(new Error('Prompt ID is required'));
-        }
-        const promptPath = `prompts/${promptId}`;
-        const promptData = global.mockFirestoreDb.getPathData(promptPath);
-        if (!promptData) {
-          return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
-        }
-
-        // Increment the usage count
-        const updatedData = {
-          ...promptData,
-          usageCount: (promptData.usageCount || 0) + 1,
-        };
-        global.mockFirestoreDb.seedData(promptPath, updatedData);
-
-        return Promise.resolve({ data: mockFunctionsCallResults.incrementUsageCount });
-      } else if (functionName === 'recalculateAllStats') {
-        return Promise.resolve({ data: mockFunctionsCallResults.recalculateAllStats });
-      }
-      return Promise.resolve({ data: { success: true } });
-    });
-  }),
-  connectFunctionsEmulator: jest.fn(),
-}));
+import { httpsCallable } from '../js/firebase-init.js';
 
 jest.mock('../js/utils.js', () => ({
   ...jest.requireActual('../js/utils.js'),

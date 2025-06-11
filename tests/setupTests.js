@@ -1,17 +1,198 @@
+import { jest } from '@jest/globals';
+
+// Mock Firebase Functions (must be at the top to be available for other mocks)
+const mockFunctionsCallResults = {
+  incrementUsageCount: { success: true },
+  recalculateAllStats: { success: true, promptsUpdated: 5 },
+};
+
+const mockUser = {
+  uid: 'testUserId',
+  email: 'test@example.com',
+  displayName: 'Test User',
+  photoURL: null,
+};
+const mockUserCredential = { user: mockUser };
+
+let mockCurrentAuthUser = null;
+let mockAuthStateChangedCallback = null;
+
 // --- Global mock for firebase-init.js for all tests ---
-// Remove duplicate declaration of mockCurrentAuthUser (already declared at the top for global mock)
-jest.mock('../js/firebase-init.js', () => ({
-  app: {},
-  get auth() {
-    return {
+jest.mock('../js/firebase-init.js', () => {
+  // Import the mocked firestore functions
+  const {
+    getFirestore,
+    collection,
+    doc,
+    setDoc,
+    addDoc,
+    getDoc,
+    getDocs,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    serverTimestamp,
+    Timestamp,
+    enableNetwork,
+    disableNetwork,
+  } = jest.requireActual('firebase/firestore');
+
+  return {
+    auth: {
       get currentUser() {
         return mockCurrentAuthUser;
       },
-    };
-  },
-  db: {},
-  functions: {},
-}));
+    },
+    db: {},
+    functions: {},
+    // Auth functions
+    createUserWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
+    signInWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
+    firebaseSignOut: jest.fn(() => {
+      mockCurrentAuthUser = null;
+      if (mockAuthStateChangedCallback) mockAuthStateChangedCallback(null);
+      return Promise.resolve();
+    }),
+    firebaseOnAuthStateChanged: jest.fn((authInstance, callback) => {
+      mockAuthStateChangedCallback = callback;
+      Promise.resolve().then(() => callback(mockCurrentAuthUser));
+      return jest.fn();
+    }),
+    signInWithCredential: jest.fn().mockResolvedValue(mockUserCredential),
+    GoogleAuthProvider: {
+      credential: jest.fn(idToken => ({ idToken, providerId: 'google.com' })),
+    },
+    updateProfile: jest.fn().mockResolvedValue(undefined),
+    sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+    firebaseSendEmailVerification: jest.fn().mockResolvedValue(undefined),
+    firebaseReload: jest.fn().mockResolvedValue(undefined),
+    // Firestore functions - use the mocked implementations from firebase/firestore
+    collection: jest.fn((db, path, ...subPaths) => {
+      const fullPath = [path, ...subPaths].join('/');
+      return {
+        path: fullPath,
+        type: 'collectionRef',
+      };
+    }),
+    doc: jest.fn((db, collectionPath, ...documentIdSegments) => {
+      const idPathPart = documentIdSegments.join('/');
+      const actualId = documentIdSegments[documentIdSegments.length - 1];
+      const path = `${collectionPath}/${idPathPart}`;
+      return {
+        id: actualId || 'mockDocId',
+        path: path,
+        type: 'docRef',
+      };
+    }),
+    setDoc: jest.fn().mockImplementation(async (docRef, data, options) => {
+      const path = docRef && docRef.path ? docRef.path : 'UNKNOWN_PATH_IN_SETDOC';
+      if (path !== 'UNKNOWN_PATH_IN_SETDOC') {
+        global.mockFirestoreDb.seedData(path, data);
+      }
+      return Promise.resolve();
+    }),
+    addDoc: jest.fn(async (collectionRef, data) => {
+      let mockAddDocIdCounter = global.mockAddDocIdCounter || 0;
+      mockAddDocIdCounter++;
+      global.mockAddDocIdCounter = mockAddDocIdCounter;
+      const newId = `mockGeneratedId_${mockAddDocIdCounter}`;
+      const path = `${collectionRef.path}/${newId}`;
+      global.mockFirestoreDb.seedData(path, data);
+      return Promise.resolve({ id: newId, path: path, type: 'docRef' });
+    }),
+    getDoc: jest.fn(async docRef => {
+      const data = global.mockFirestoreDb.getPathData(docRef.path);
+      return Promise.resolve({
+        id: docRef.id,
+        exists: () => data !== undefined,
+        data: () => data,
+      });
+    }),
+    getDocs: jest.fn(async queryMock => {
+      let collectionData = global.mockFirestoreDb.getPathData(queryMock.path);
+      let results = [];
+      if (collectionData && typeof collectionData === 'object') {
+        results = Object.entries(collectionData).map(([id, data]) => ({
+          id,
+          data: () => data,
+          exists: () => true,
+        }));
+      }
+      if (queryMock.constraints) {
+        queryMock.constraints.forEach(constraint => {
+          results = results.filter(doc => {
+            const val = doc.data()?.[constraint.field];
+            if (constraint.op === '==') return val === constraint.value;
+            if (constraint.op === '!=') return val !== constraint.value;
+            return true;
+          });
+        });
+      }
+      return Promise.resolve({
+        docs: results,
+        empty: results.length === 0,
+        forEach: cb => results.forEach(cb),
+      });
+    }),
+    updateDoc: jest.fn(async (docRef, data) => {
+      const existingData = global.mockFirestoreDb.getPathData(docRef.path);
+      if (!existingData) return Promise.reject(new Error('Mock: Document not found for update'));
+      global.mockFirestoreDb.seedData(docRef.path, { ...existingData, ...data });
+      return Promise.resolve();
+    }),
+    deleteDoc: jest.fn(async docRef => {
+      // Implementation for deleteDoc if needed
+      return Promise.resolve();
+    }),
+    query: jest.fn((collectionRef, ...constraints) => {
+      return { path: collectionRef.path, constraints: constraints, type: 'query' };
+    }),
+    where: jest.fn((field, op, value) => ({ type: 'where', field, op, value })),
+    serverTimestamp: jest.fn(() => ({ _methodName: 'serverTimestamp' })),
+    Timestamp: {
+      fromDate: jest.fn(date => ({ toDate: () => date })),
+      now: jest.fn(() => ({ toDate: () => new Date() })),
+    },
+    enableNetwork: jest.fn().mockResolvedValue(undefined),
+    disableNetwork: jest.fn().mockResolvedValue(undefined),
+    // Functions
+    httpsCallable: jest.fn((functions, functionName) => {
+      return jest.fn(data => {
+        // Simulate the behavior of each Cloud Function
+        if (functionName === 'incrementUsageCount') {
+          const promptId = data.promptId;
+          if (!promptId) {
+            return Promise.reject(new Error('Prompt ID is required'));
+          }
+
+          // Get the current prompt data
+          const promptPath = `prompts/${promptId}`;
+          const promptData = global.mockFirestoreDb.getPathData(promptPath);
+
+          if (!promptData) {
+            return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
+          }
+
+          // Increment the usage count - properly update the data
+          const updatedData = {
+            ...promptData,
+            usageCount: (promptData.usageCount || 0) + 1,
+          };
+          global.mockFirestoreDb.seedData(promptPath, updatedData);
+
+          return Promise.resolve({ data: mockFunctionsCallResults.incrementUsageCount });
+        } else if (functionName === 'recalculateAllStats') {
+          // For admin function, we just return a success result
+          return Promise.resolve({ data: mockFunctionsCallResults.recalculateAllStats });
+        }
+
+        // Default behavior for unknown functions
+        return Promise.resolve({ data: { success: true } });
+      });
+    }),
+  };
+});
 
 global.simulateLogin = (
   user = {
@@ -26,52 +207,6 @@ global.simulateLogin = (
 global.simulateLogout = () => {
   mockCurrentAuthUser = null;
 };
-import { jest } from '@jest/globals';
-
-// Mock Firebase Functions (must be at the top to be available for other mocks)
-const mockFunctionsCallResults = {
-  incrementUsageCount: { success: true },
-  recalculateAllStats: { success: true, promptsUpdated: 5 },
-};
-
-jest.mock('firebase/functions', () => ({
-  getFunctions: jest.fn(() => ({ mockName: 'MockFunctionsInstance' })),
-  httpsCallable: jest.fn((functions, functionName) => {
-    return jest.fn(data => {
-      // Simulate the behavior of each Cloud Function
-      if (functionName === 'incrementUsageCount') {
-        const promptId = data.promptId;
-        if (!promptId) {
-          return Promise.reject(new Error('Prompt ID is required'));
-        }
-
-        // Get the current prompt data
-        const promptPath = `prompts/${promptId}`;
-        const promptData = global.mockFirestoreDb.getPathData(promptPath);
-
-        if (!promptData) {
-          return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
-        }
-
-        // Increment the usage count - properly update the data
-        const updatedData = {
-          ...promptData,
-          usageCount: (promptData.usageCount || 0) + 1,
-        };
-        global.mockFirestoreDb.seedData(promptPath, updatedData);
-
-        return Promise.resolve({ data: mockFunctionsCallResults.incrementUsageCount });
-      } else if (functionName === 'recalculateAllStats') {
-        // For admin function, we just return a success result
-        return Promise.resolve({ data: mockFunctionsCallResults.recalculateAllStats });
-      }
-
-      // Default behavior for unknown functions
-      return Promise.resolve({ data: { success: true } });
-    });
-  }),
-  connectFunctionsEmulator: jest.fn(),
-}));
 
 // Mock chrome APIs
 global.chrome = {
@@ -158,44 +293,6 @@ if (typeof navigator !== 'undefined' && !navigator.clipboard) {
   };
 }
 
-const mockUser = {
-  uid: 'testUserId',
-  email: 'test@example.com',
-  displayName: 'Test User',
-  photoURL: null,
-};
-const mockUserCredential = { user: mockUser };
-
-let mockCurrentAuthUser = null;
-let mockAuthStateChangedCallback = null;
-
-jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(() => ({
-    get currentUser() {
-      return mockCurrentAuthUser;
-    },
-  })),
-  createUserWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
-  signInWithEmailAndPassword: jest.fn().mockResolvedValue(mockUserCredential),
-  signInWithCredential: jest.fn().mockResolvedValue(mockUserCredential),
-  GoogleAuthProvider: {
-    credential: jest.fn(idToken => ({ idToken, providerId: 'google.com' })),
-  },
-  signOut: jest.fn(() => {
-    mockCurrentAuthUser = null;
-    if (mockAuthStateChangedCallback) mockAuthStateChangedCallback(null);
-    return Promise.resolve();
-  }),
-  onAuthStateChanged: jest.fn((authInstance, callback) => {
-    mockAuthStateChangedCallback = callback;
-    Promise.resolve().then(() => callback(mockCurrentAuthUser));
-    return jest.fn();
-  }),
-  updateProfile: jest.fn().mockResolvedValue(undefined),
-}));
-
-// simulateLogin and simulateLogout are already defined globally at the top for the global mock
-
 const mockFirestoreData = {};
 let mockAddDocIdCounter = 0;
 
@@ -276,130 +373,6 @@ const deletePathData = path => {
   }
   delete current[parts[parts.length - 1]];
 };
-
-jest.mock('firebase/firestore', () => {
-  const actualFirestore = jest.requireActual('firebase/firestore');
-  return {
-    ...actualFirestore,
-    getFirestore: jest.fn(() => ({ mockName: 'MockFirestoreDBInstance' })),
-    doc: jest.fn((db, collectionPath, ...documentIdSegments) => {
-      const idPathPart = documentIdSegments.join('/');
-      const actualId = documentIdSegments[documentIdSegments.length - 1];
-      const path = `${collectionPath}/${idPathPart}`;
-      return {
-        id: actualId || 'mockDocId',
-        path: path,
-        type: 'docRef',
-      };
-    }),
-    collection: jest.fn((db, path, ...subPaths) => {
-      const fullPath = [path, ...subPaths].join('/');
-      return {
-        path: fullPath,
-        type: 'collectionRef',
-      };
-    }),
-    setDoc: jest.fn().mockImplementation(async (docRef, data, options) => {
-      const path = docRef && docRef.path ? docRef.path : 'UNKNOWN_PATH_IN_SETDOC';
-      if (path !== 'UNKNOWN_PATH_IN_SETDOC') {
-        setPathData(path, data, options?.merge);
-      }
-      return Promise.resolve();
-    }),
-    addDoc: jest.fn(async (collectionRef, data) => {
-      mockAddDocIdCounter++;
-      const newId = `mockGeneratedId_${mockAddDocIdCounter}`;
-      const path = `${collectionRef.path}/${newId}`;
-      setPathData(path, data, false);
-      return Promise.resolve({ id: newId, path: path, type: 'docRef' });
-    }),
-    getDoc: jest.fn(async docRef => {
-      const data = getPathData(docRef.path);
-      return Promise.resolve({
-        id: docRef.id,
-        exists: () => data !== undefined,
-        data: () => data,
-      });
-    }),
-    getDocs: jest.fn(async queryMock => {
-      let collectionData = getPathData(queryMock.path);
-      let results = [];
-      if (collectionData && typeof collectionData === 'object') {
-        results = Object.entries(collectionData).map(([id, data]) => ({
-          id,
-          data: () => data,
-          exists: () => true,
-        }));
-      }
-      if (queryMock.constraints) {
-        queryMock.constraints.forEach(constraint => {
-          results = results.filter(doc => {
-            const val = doc.data()?.[constraint.field];
-            if (constraint.op === '==') return val === constraint.value;
-            if (constraint.op === '!=') return val !== constraint.value;
-            return true;
-          });
-        });
-      }
-      return Promise.resolve({
-        docs: results,
-        empty: results.length === 0,
-        forEach: cb => results.forEach(cb),
-      });
-    }),
-    updateDoc: jest.fn(async (docRef, data) => {
-      const existingData = getPathData(docRef.path);
-      if (!existingData) return Promise.reject(new Error('Mock: Document not found for update'));
-      setPathData(docRef.path, data, true);
-      return Promise.resolve();
-    }),
-    deleteDoc: jest.fn(async docRef => {
-      deletePathData(docRef.path);
-      return Promise.resolve();
-    }),
-    query: jest.fn((collectionRef, ...constraints) => {
-      return { path: collectionRef.path, constraints: constraints, type: 'query' };
-    }),
-    where: jest.fn((field, op, value) => ({ type: 'where', field, op, value })),
-    increment: jest.fn(value => ({ _methodName: 'increment', value: value })),
-    writeBatch: jest.fn(() => {
-      const operations = [];
-      const batch = {
-        set: (docRef, data, options) => {
-          operations.push({ type: 'set', ref: docRef, data, options });
-          return batch;
-        },
-        update: (docRef, data) => {
-          operations.push({ type: 'update', ref: docRef, data });
-          return batch;
-        },
-        delete: docRef => {
-          operations.push({ type: 'delete', ref: docRef });
-          return batch;
-        },
-        commit: jest.fn(async () => {
-          for (const op of operations) {
-            const existingDoc = getPathData(op.ref.path);
-            if (op.type === 'set') {
-              setPathData(op.ref.path, op.data, op.options?.merge);
-            } else if (op.type === 'update') {
-              if (!existingDoc) {
-                // In a real Firestore batch, an update to a non-existent doc would typically fail the batch.
-                // For this mock, we'll log and allow setPathData to handle it (which might create it if merge acts like set).
-                // console.error(`[Mock Batch Commit] Document not found for update: ${op.ref.path}`);
-              }
-              setPathData(op.ref.path, op.data, true);
-            } else if (op.type === 'delete') {
-              deletePathData(op.ref.path);
-            }
-          }
-          return Promise.resolve();
-        }),
-      };
-      return batch;
-    }),
-  };
-});
 
 global.mockFirestoreDb = {
   clear: () => {
@@ -509,56 +482,19 @@ global.mockFirestoreDb.updateFavoritesCount = async promptId => {
   // Get the prompt after the original function ran
   const promptData = global.mockFirestoreDb.getPathData(`prompts/${promptId}`);
   if (promptData) {
-    // Check if the favorite data exists
-    const favoritesPath = `prompts/${promptId}/favoritedBy/${global.mockUser.uid}`;
-    const isFavorited = !!global.mockFirestoreDb.getPathData(favoritesPath);
+    // Get all favorites for this prompt
+    const favoritesPath = `prompts/${promptId}/favoritedBy`;
+    const favorites = global.mockFirestoreDb.getPathData(favoritesPath) || {};
 
-    // Override the count based on the favorite status
-    promptData.favoritesCount = isFavorited ? 1 : 0;
+    // Count the favorites
+    const favoritesCount = Object.keys(favorites).length;
 
-    // Update the prompt data
-    global.mockFirestoreDb.seedData(`prompts/${promptId}`, promptData);
-  }
-
-  return true;
-};
-
-// Fix the updateFavoritesCount function to not rely on global.mockUser
-global.mockFirestoreDb.updateFavoritesCount = async promptId => {
-  // Get all favorites for this prompt
-  const favoritesPath = `prompts/${promptId}/favoritedBy`;
-  const favorites = global.mockFirestoreDb.getPathData(favoritesPath) || {};
-
-  // Count the favorites
-  const favoritesCount = Object.keys(favorites).length;
-
-  // Update the prompt
-  const promptPath = `prompts/${promptId}`;
-  const promptData = global.mockFirestoreDb.getPathData(promptPath);
-
-  if (promptData) {
+    // Update the prompt data with the correct count
     const updatedData = {
       ...promptData,
       favoritesCount: favoritesCount,
     };
-    global.mockFirestoreDb.seedData(promptPath, updatedData);
-  }
-
-  // Get the prompt after the function ran
-  const updatedPromptData = global.mockFirestoreDb.getPathData(`prompts/${promptId}`);
-  if (updatedPromptData) {
-    // Get the favoritedBy collection
-    const favoritedByPath = `prompts/${promptId}/favoritedBy`;
-    const favoritedBy = global.mockFirestoreDb.getPathData(favoritedByPath) || {};
-
-    // Count the favorites (keys in the object)
-    const favoritesCount = Object.keys(favoritedBy).length;
-
-    // Override the count
-    promptData.favoritesCount = favoritesCount;
-
-    // Update the prompt data
-    global.mockFirestoreDb.seedData(`prompts/${promptId}`, promptData);
+    global.mockFirestoreDb.seedData(`prompts/${promptId}`, updatedData);
   }
 
   return true;

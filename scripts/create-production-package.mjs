@@ -235,6 +235,9 @@ async function createPackage() {
     'css/',
     'icons/',
     'js/clusterize.min.js', // Keep specific JS files that are referenced directly
+    'js/toast.js', // Required for toast notifications
+    'js/analytics/popup-analytics.js', // Required for popup analytics
+    'js/analytics/consent-dialog.js', // Required for analytics consent dialog
   ];
 
   let totalFiles = 0;

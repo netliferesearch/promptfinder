@@ -1,40 +1,18 @@
-jest.mock('firebase/functions', () => ({
-  httpsCallable: jest.fn((functions, functionName) => {
-    return jest.fn(data => {
-      if (functionName === 'incrementUsageCount') {
-        const promptId = data.promptId;
-        if (!promptId) return Promise.reject(new Error('Prompt ID is required'));
-        const promptPath = `prompts/${promptId}`;
-        const promptData = global.mockFirestoreDb.getPathData(promptPath);
-        if (!promptData) return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
-        const updatedData = { ...promptData, usageCount: (promptData.usageCount || 0) + 1 };
-        global.mockFirestoreDb.seedData(promptPath, updatedData);
-        return Promise.resolve({ data: { success: true } });
-      }
-      return Promise.resolve({ data: { success: true } });
-    });
-  }),
-}));
-
 // import { jest } from '@jest/globals'; // Already globally available via Jest execution
 import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
-import { httpsCallable } from 'firebase/functions';
 
-// Firebase functions are globally mocked by setupTests.js
+// Import Firebase functions from our firebase-init module instead of direct Firebase imports
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
+  firebaseSignOut as signOut,
+  firebaseOnAuthStateChanged as onAuthStateChanged,
   updateProfile,
-} from 'firebase/auth';
-import {
-  addDoc, // Used in addPrompt tests
-  serverTimestamp, // Used for equality checks in toggleFavorite, addPrompt
-  // increment is used by SUT, not directly in test assertions for it here.
-  // getDoc, getDocs, setDoc, updateDoc, writeBatch are not directly controlled/verified here.
-} from 'firebase/firestore';
+  addDoc,
+  serverTimestamp,
+  httpsCallable,
+} from '../js/firebase-init.js';
 
 jest.mock('../js/utils.js', () => ({
   ...jest.requireActual('../js/utils.js'),
