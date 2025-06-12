@@ -8,6 +8,13 @@ body {
   overflow: hidden;
 }
 
+/* Allow scrolling when auth view is active */
+body:has(#auth-view:not(.hidden)) {
+  overflow-y: auto;
+  height: auto;
+  min-height: 600px;
+}
+
 /* Hide prompt counter and filter-sort-row when prompt details section is visible */
 #prompt-details-section:not(.hidden) ~ .prompt-counter-row,
 #prompt-details-section:not(.hidden) ~ section.main-controls .filter-sort-row,

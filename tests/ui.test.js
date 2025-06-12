@@ -580,7 +580,7 @@ describe('UI Module', () => {
       }
     });
 
-    test('should render match annotation badges for matched fields with correct content and accessibility', () => {
+    test('should render match annotation badges for matched fields with correct content and accessibility', async () => {
       const prompt = {
         id: '42',
         title: 'Searchable Prompt',
@@ -602,7 +602,7 @@ describe('UI Module', () => {
         currentUserRating: 0,
       };
       if (UI._setAllPromptsForTest) UI._setAllPromptsForTest([]);
-      UI.displayPrompts([prompt]);
+      await UI.displayPrompts([prompt]);
       const promptsListElForTest = document.getElementById('prompts-list-content');
       // Check that the matched fields container is present
       const matchedFields = promptsListElForTest.querySelector('.matched-fields');

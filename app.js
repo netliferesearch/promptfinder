@@ -139,6 +139,12 @@ async function showAuthView() {
     authErrorMessageElement.textContent = '';
     authErrorMessageElement.classList.add('hidden');
   }
+
+  // Enable scrolling for auth view (fix for sign-up link accessibility)
+  document.body.style.overflowY = 'auto';
+  document.body.style.height = 'auto';
+  document.body.style.minHeight = '600px';
+
   // Hide FAB if present
   const addPromptFabEl = document.getElementById('add-prompt-fab');
   if (addPromptFabEl) addPromptFabEl.hidden = true;
@@ -322,6 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function showMainContentView() {
     if (authViewElement) authViewElement.classList.add('hidden');
     if (mainContentElement) mainContentElement.classList.remove('hidden');
+
+    // Restore original popup constraints when returning to main content
+    document.body.style.overflowY = 'hidden';
+    document.body.style.height = '600px';
+    document.body.style.minHeight = '';
+
     // Show FAB if user is logged in
     const addPromptFabEl = document.getElementById('add-prompt-fab');
     if (addPromptFabEl && window.firebaseAuthCurrentUser) {

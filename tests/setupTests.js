@@ -19,25 +19,7 @@ let mockAuthStateChangedCallback = null;
 
 // --- Global mock for firebase-init.js for all tests ---
 jest.mock('../js/firebase-init.js', () => {
-  // Import the mocked firestore functions
-  const {
-    getFirestore,
-    collection,
-    doc,
-    setDoc,
-    addDoc,
-    getDoc,
-    getDocs,
-    updateDoc,
-    deleteDoc,
-    query,
-    where,
-    serverTimestamp,
-    Timestamp,
-    enableNetwork,
-    disableNetwork,
-  } = jest.requireActual('firebase/firestore');
-
+  // Note: We don't need to import the actual Firebase functions since we're mocking them
   return {
     auth: {
       get currentUser() {
@@ -85,7 +67,7 @@ jest.mock('../js/firebase-init.js', () => {
         type: 'docRef',
       };
     }),
-    setDoc: jest.fn().mockImplementation(async (docRef, data, options) => {
+    setDoc: jest.fn().mockImplementation(async (docRef, data, _options) => {
       const path = docRef && docRef.path ? docRef.path : 'UNKNOWN_PATH_IN_SETDOC';
       if (path !== 'UNKNOWN_PATH_IN_SETDOC') {
         global.mockFirestoreDb.seedData(path, data);
@@ -93,10 +75,10 @@ jest.mock('../js/firebase-init.js', () => {
       return Promise.resolve();
     }),
     addDoc: jest.fn(async (collectionRef, data) => {
-      let mockAddDocIdCounter = global.mockAddDocIdCounter || 0;
-      mockAddDocIdCounter++;
-      global.mockAddDocIdCounter = mockAddDocIdCounter;
-      const newId = `mockGeneratedId_${mockAddDocIdCounter}`;
+      let addDocIdCounter = global.mockAddDocIdCounter || 0;
+      addDocIdCounter++;
+      global.mockAddDocIdCounter = addDocIdCounter;
+      const newId = `mockGeneratedId_${addDocIdCounter}`;
       const path = `${collectionRef.path}/${newId}`;
       global.mockFirestoreDb.seedData(path, data);
       return Promise.resolve({ id: newId, path: path, type: 'docRef' });
@@ -121,12 +103,14 @@ jest.mock('../js/firebase-init.js', () => {
       }
       if (queryMock.constraints) {
         queryMock.constraints.forEach(constraint => {
-          results = results.filter(doc => {
-            const val = doc.data()?.[constraint.field];
-            if (constraint.op === '==') return val === constraint.value;
-            if (constraint.op === '!=') return val !== constraint.value;
-            return true;
-          });
+          if (constraint.type === 'where') {
+            results = results.filter(doc => {
+              const val = doc.data()?.[constraint.field];
+              if (constraint.op === '==') return val === constraint.value;
+              if (constraint.op === '!=') return val !== constraint.value;
+              return true;
+            });
+          }
         });
       }
       return Promise.resolve({
@@ -142,7 +126,32 @@ jest.mock('../js/firebase-init.js', () => {
       return Promise.resolve();
     }),
     deleteDoc: jest.fn(async docRef => {
-      // Implementation for deleteDoc if needed
+      // Actually delete the document from the mock data
+      const parts = docRef.path.split('/');
+      if (parts.length === 0) return Promise.resolve();
+
+      let current = mockFirestoreData;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (
+          !current ||
+          typeof current !== 'object' ||
+          !Object.prototype.hasOwnProperty.call(current, part)
+        ) {
+          return Promise.resolve(); // Path doesn't exist, nothing to delete
+        }
+        current = current[part];
+      }
+
+      const docId = parts[parts.length - 1];
+      if (
+        current &&
+        typeof current === 'object' &&
+        Object.prototype.hasOwnProperty.call(current, docId)
+      ) {
+        delete current[docId];
+      }
+
       return Promise.resolve();
     }),
     query: jest.fn((collectionRef, ...constraints) => {
@@ -150,15 +159,26 @@ jest.mock('../js/firebase-init.js', () => {
     }),
     where: jest.fn((field, op, value) => ({ type: 'where', field, op, value })),
     serverTimestamp: jest.fn(() => ({ _methodName: 'serverTimestamp' })),
-    Timestamp: {
-      fromDate: jest.fn(date => ({ toDate: () => date })),
-      now: jest.fn(() => ({ toDate: () => new Date() })),
-    },
+    Timestamp: (() => {
+      const TimestampMock = jest.fn().mockImplementation(function (seconds, nanoseconds) {
+        // Mock Timestamp constructor
+        this.seconds = seconds;
+        this.nanoseconds = nanoseconds;
+        this.toDate = () => new Date(seconds * 1000 + nanoseconds / 1000000);
+      });
+
+      // Add static methods
+      TimestampMock.fromDate = jest.fn(date => ({ toDate: () => date }));
+      TimestampMock.now = jest.fn(() => ({ toDate: () => new Date() }));
+
+      return TimestampMock;
+    })(),
     enableNetwork: jest.fn().mockResolvedValue(undefined),
     disableNetwork: jest.fn().mockResolvedValue(undefined),
     // Functions
     httpsCallable: jest.fn((functions, functionName) => {
-      return jest.fn(data => {
+      // Create a mock function that can be overridden by individual tests
+      const mockFunction = jest.fn(data => {
         // Simulate the behavior of each Cloud Function
         if (functionName === 'incrementUsageCount') {
           const promptId = data.promptId;
@@ -190,6 +210,10 @@ jest.mock('../js/firebase-init.js', () => {
         // Default behavior for unknown functions
         return Promise.resolve({ data: { success: true } });
       });
+
+      // Store the function name for debugging
+      mockFunction._functionName = functionName;
+      return mockFunction;
     }),
   };
 });
@@ -294,7 +318,6 @@ if (typeof navigator !== 'undefined' && !navigator.clipboard) {
 }
 
 const mockFirestoreData = {};
-let mockAddDocIdCounter = 0;
 
 const getPathData = path => {
   if (!path) return undefined;
@@ -357,21 +380,11 @@ const setPathData = (path, data, isMerge = false) => {
     currentRef[docId] = mergedData;
   } else {
     const dataToSet = {};
-    for (const keyInInputData in data) {
-      dataToSet[keyInInputData] = processFieldValue(undefined, data[keyInInputData]);
+    for (const key in data) {
+      dataToSet[key] = processFieldValue(undefined, data[key]);
     }
     currentRef[docId] = dataToSet;
   }
-};
-
-const deletePathData = path => {
-  const parts = path.split('/');
-  let current = mockFirestoreData;
-  for (let i = 0; i < parts.length - 1; i++) {
-    current = current[parts[i]];
-    if (!current) return;
-  }
-  delete current[parts[parts.length - 1]];
 };
 
 global.mockFirestoreDb = {
@@ -379,7 +392,7 @@ global.mockFirestoreDb = {
     for (const key in mockFirestoreData) {
       delete mockFirestoreData[key];
     }
-    mockAddDocIdCounter = 0;
+    global.mockAddDocIdCounter = 0;
   },
   seedData: (path, data) => {
     setPathData(path, data, false);

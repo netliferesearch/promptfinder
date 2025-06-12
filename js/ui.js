@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.getElementById('main-content');
     if (authView) authView.classList.add('hidden');
     if (mainContent) mainContent.classList.remove('hidden');
+
+    // Restore original popup constraints when returning to main content
+    document.body.style.overflowY = 'hidden';
+    document.body.style.height = '600px';
+    document.body.style.minHeight = '';
   }
   if (authBackToListBtn) {
     authBackToListBtn.addEventListener('click', handleAuthBackToList);
@@ -1774,7 +1779,7 @@ export const loadAndDisplayData = async () => {
     populateSelect(aiToolFilterEl, aiTools, 'Any');
     populateSelect(mainCategoryDropdownEl, categories, 'All Categories');
 
-    showTab(activeTab);
+    await showTab(activeTab);
   } catch (error) {
     // Check for connection-specific errors and handle them
     if (error.message && error.message.includes('WebChannelConnection')) {
@@ -1831,7 +1836,7 @@ export const initializeUI = async () => {
   }
 };
 
-export const showTab = (which, opts = {}) => {
+export const showTab = async (which, opts = {}) => {
   const previousTab = activeTab;
   activeTab = which;
   if (tabAllEl) tabAllEl.classList.toggle('active', which === 'all');
@@ -1915,14 +1920,69 @@ export const showTab = (which, opts = {}) => {
     });
   }
 
-  displayPrompts(filtered, opts);
+  await displayPrompts(filtered, opts);
   updateResetFiltersButtonVisibility();
 };
 
 // Clusterize.js instance for virtualized prompt list
 let clusterizeInstance = null;
 
-export const displayPrompts = (prompts, opts = {}) => {
+/**
+ * Wait for stylesheets to load before initializing layout-dependent components
+ * This prevents "Layout was forced before the page was fully loaded" warnings
+ */
+function waitForStylesheetsToLoad() {
+  return new Promise(resolve => {
+    // Check if all stylesheets are loaded
+    const stylesheets = Array.from(document.styleSheets);
+
+    // If no stylesheets or all are loaded, resolve immediately
+    if (stylesheets.length === 0) {
+      resolve();
+      return;
+    }
+
+    let loadedCount = 0;
+    const totalCount = stylesheets.length;
+
+    function checkStylesheet(stylesheet) {
+      try {
+        // Try to access cssRules to check if stylesheet is loaded
+        // This will throw an error if stylesheet is not loaded
+        const _ = stylesheet.cssRules;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function checkAllStylesheets() {
+      loadedCount = 0;
+      for (const stylesheet of stylesheets) {
+        if (checkStylesheet(stylesheet)) {
+          loadedCount++;
+        }
+      }
+
+      if (loadedCount === totalCount) {
+        resolve();
+      } else {
+        // Check again after a short delay
+        setTimeout(checkAllStylesheets, 10);
+      }
+    }
+
+    // Start checking
+    checkAllStylesheets();
+
+    // Fallback: resolve after maximum wait time to prevent hanging
+    setTimeout(() => {
+      resolve();
+    }, 500); // Maximum 500ms wait
+  });
+}
+
+export const displayPrompts = async (prompts, opts = {}) => {
   // Use Clusterize.js for virtualization
   const scrollElem = document.getElementById('scrollable-main');
   const contentElem = document.getElementById('prompts-list-content');
@@ -1987,32 +2047,28 @@ export const displayPrompts = (prompts, opts = {}) => {
     // Community rating (read-only stars)
     const avgRating =
       typeof prompt.averageRating === 'number' ? prompt.averageRating.toFixed(1) : '-';
-    const stars = (() => {
-      const val = Math.round(prompt.averageRating || 0);
-      return `<span class="star-rating-wrapper read-only-stars">${[1, 2, 3, 4, 5].map(i => (i <= val ? "<i class='fas fa-star'></i>" : "<i class='far fa-star'></i>")).join('')}</span>`;
-    })();
-    // Favorite count
-    const favCount = typeof prompt.favoritesCount === 'number' ? prompt.favoritesCount : 0;
-    // --- CATEGORY ROW WITH COPY ICON ---
-    const categoryRow = `
-      <div class="prompt-card__category-row">
-        <span class="prompt-item__category">${Utils.escapeHTML(prompt.category || '')}</span>
-        <button class="prompt-card__copy-icon copy-prompt" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('COPY_PROMPT')}">
-          <i class="fa-regular fa-copy"></i>
-          <span class="copy-prompt-label">${getText('COPY_PROMPT_LABEL')}</span>
-        </button>
-      </div>
-    `;
-    // --- MATCHED FIELDS BADGES ---
-    let matchedFieldsHtml = '';
-    if (Array.isArray(prompt.matchedIn) && prompt.matchedIn.length > 0) {
-      matchedFieldsHtml = `<div class="matched-fields" aria-label="Matched fields: ${prompt.matchedIn.join(', ')}">${prompt.matchedIn
-        .map(
-          f =>
-            `<span class="matched-field-badge" aria-label="Matched in ${Utils.escapeHTML(f)}"><span class="visually-hidden">Matched in </span>${Utils.escapeHTML(f)}</span>`
-        )
-        .join(' ')}<span class="matched-fields-label"> matched</span></div>`;
-    }
+    const stars = createStars(prompt.averageRating || 0, prompt.id, false);
+    const starsHtml = stars.outerHTML;
+    const favCount = prompt.favoritesCount || 0;
+
+    // Matched fields for search highlighting
+    const matchedFieldsHtml =
+      prompt.matchedIn && Array.isArray(prompt.matchedIn) && prompt.matchedIn.length > 0
+        ? `<div class="matched-fields" aria-label="Matched fields: ${prompt.matchedIn.join(', ')}">${prompt.matchedIn
+            .map(
+              f =>
+                `<span class="matched-field-badge" aria-label="Matched in ${Utils.escapeHTML(f)}"><span class="visually-hidden">Matched in </span>${Utils.escapeHTML(f)}</span>`
+            )
+            .join(' ')}<span class="matched-fields-label"> matched</span></div>`
+        : '';
+
+    // Category row with background color
+    const categoryRow = prompt.category
+      ? `<div class="prompt-card__category-row">
+           <span class="prompt-card__category">${Utils.escapeHTML(prompt.category)}</span>
+         </div>`
+      : '';
+
     // --- NEW STRUCTURE: div.prompt-card-btn as top-level container ---
     return `
       <div class="prompt-card-btn" tabindex="0" aria-label="${textManager.format('VIEW_DETAILS_FOR_PROMPT', { title: Utils.escapeHTML(prompt.title) })}" data-id="${prompt.id}">
@@ -2036,7 +2092,7 @@ export const displayPrompts = (prompts, opts = {}) => {
         ${toolsSection}
         <div class="prompt-card-bottom">
           <div class="community-rating-section">
-            ${stars}
+            ${starsHtml}
             <span class="avg-rating">(${avgRating})</span>
           </div>
           <button class="toggle-favorite${isFavoriteDisplay ? ' active' : ''}" data-id="${Utils.escapeHTML(prompt.id)}" aria-label="${getText('TOGGLE_FAVORITE')}" aria-pressed="${isFavoriteDisplay}">
@@ -2046,6 +2102,11 @@ export const displayPrompts = (prompts, opts = {}) => {
       </div>
     `;
   });
+
+  // Wait for stylesheets to load before initializing Clusterize to prevent FOUC
+  if (!clusterizeInstance) {
+    await waitForStylesheetsToLoad();
+  }
 
   // Initialize or update Clusterize
   if (!clusterizeInstance) {
