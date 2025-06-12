@@ -11,10 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (authView) authView.classList.add('hidden');
     if (mainContent) mainContent.classList.remove('hidden');
 
-    // Restore original popup constraints when returning to main content
-    document.body.style.overflowY = 'hidden';
-    document.body.style.height = '600px';
-    document.body.style.minHeight = '';
+    // Restore original popup constraints using class-based approach
+    document.body.classList.remove('auth-view-active');
   }
   if (authBackToListBtn) {
     authBackToListBtn.addEventListener('click', handleAuthBackToList);
@@ -1949,7 +1947,7 @@ function waitForStylesheetsToLoad() {
       try {
         // Try to access cssRules to check if stylesheet is loaded
         // This will throw an error if stylesheet is not loaded
-        const _ = stylesheet.cssRules;
+        void stylesheet.cssRules; // Access cssRules to trigger loading check
         return true;
       } catch {
         return false;

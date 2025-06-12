@@ -140,10 +140,8 @@ async function showAuthView() {
     authErrorMessageElement.classList.add('hidden');
   }
 
-  // Enable scrolling for auth view (fix for sign-up link accessibility)
-  document.body.style.overflowY = 'auto';
-  document.body.style.height = 'auto';
-  document.body.style.minHeight = '600px';
+  // Enable scrolling for auth view using class-based approach (better compatibility)
+  document.body.classList.add('auth-view-active');
 
   // Hide FAB if present
   const addPromptFabEl = document.getElementById('add-prompt-fab');
@@ -329,10 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (authViewElement) authViewElement.classList.add('hidden');
     if (mainContentElement) mainContentElement.classList.remove('hidden');
 
-    // Restore original popup constraints when returning to main content
-    document.body.style.overflowY = 'hidden';
-    document.body.style.height = '600px';
-    document.body.style.minHeight = '';
+    // Restore original popup constraints using class-based approach
+    document.body.classList.remove('auth-view-active');
 
     // Show FAB if user is logged in
     const addPromptFabEl = document.getElementById('add-prompt-fab');

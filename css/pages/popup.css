@@ -8,11 +8,19 @@ body {
   overflow: hidden;
 }
 
-/* Allow scrolling when auth view is active */
-body:has(#auth-view:not(.hidden)) {
+/* Allow scrolling when auth view is active - class-based approach for better compatibility */
+body.auth-view-active {
   overflow-y: auto;
   height: auto;
   min-height: 600px;
+}
+
+/* Override auth container centering when in popup to allow scrolling */
+body.auth-view-active .auth-container {
+  justify-content: flex-start;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  min-height: auto;
 }
 
 /* Hide prompt counter and filter-sort-row when prompt details section is visible */
