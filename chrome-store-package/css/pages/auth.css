@@ -65,29 +65,63 @@
   position: relative;
   z-index: 2;
 }
+
 .auth-container {
-  min-height: 100vh;
+  min-height: 600px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
-  justify-content: center;
+  padding: 1rem;
+  padding-bottom: 2rem;
+  box-sizing: border-box;
   position: relative;
   z-index: 1;
 }
 
 .auth-card {
-  background: var(--color-white);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 1rem 2rem 2rem 2rem;
-  max-width: 370px;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  max-width: 400px;
+  background: var(--color-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
   margin: 1rem auto;
-  /* Ensure card is always fully visible and not clipped */
-  min-height: unset;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure signup row is visible */
+.auth-signup-row {
+  position: relative;
+  z-index: 2;
+  margin-top: 1rem;
+  padding: 1rem;
+  text-align: center;
+  background: var(--color-bg);
+}
+
+/* Popup-specific overrides */
+body.auth-view-active .auth-container {
+  min-height: auto;
+  height: auto;
+  overflow: visible;
+  padding-bottom: 4rem;
+}
+
+body.auth-view-active .auth-card {
+  margin: 1rem auto;
+  position: relative;
+  z-index: 2;
+}
+
+body.auth-view-active .auth-signup-row {
+  position: relative;
+  z-index: 2;
+  margin-top: 1rem;
+  padding: 1rem;
+  text-align: center;
+  background: var(--color-bg);
 }
 
 .auth-title {
@@ -255,6 +289,8 @@
   gap: 0.5rem;
   margin: 1.25rem 0;
   font-size: var(--font-size-sm);
+  position: relative;
+  z-index: 2;
 }
 .auth-link {
   color: var(--color-primary);

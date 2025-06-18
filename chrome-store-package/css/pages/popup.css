@@ -2,25 +2,33 @@
 html,
 body {
   width: 400px;
-  height: 600px;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
-/* Allow scrolling when auth view is active - class-based approach for better compatibility */
+/* Allow scrolling when auth view is active */
 body.auth-view-active {
   overflow-y: auto;
   height: auto;
   min-height: 600px;
+  max-height: none;
 }
 
 /* Override auth container centering when in popup to allow scrolling */
 body.auth-view-active .auth-container {
   justify-content: flex-start;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: 1rem;
   min-height: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Ensure auth card is properly positioned and scrollable */
+body.auth-view-active .auth-card {
+  position: relative;
+  margin: 1rem auto;
+  overflow: visible;
 }
 
 /* Hide prompt counter and filter-sort-row when prompt details section is visible */
@@ -56,6 +64,14 @@ section.main-controls {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Allow popup container to expand when auth view is active */
+body.auth-view-active .popup-container,
+body.auth-view-active #main-content {
+  height: auto;
+  min-height: 600px;
+  overflow: visible;
 }
 
 #scrollable-main {
