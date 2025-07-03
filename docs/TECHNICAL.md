@@ -1,6 +1,6 @@
-# PromptFinder Technical Documentation
+# DesignPrompts Technical Documentation
 
-This document contains detailed technical information about PromptFinder's implementation, architecture, and development processes.
+This document contains detailed technical information about DesignPrompts's implementation, architecture, and development processes.
 
 ## Project Status & Roadmap
 
@@ -77,7 +77,7 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Advanced Search System
 
-PromptFinder features a powerful, server-side search system designed for speed, accuracy, and usability:
+DesignPrompts features a powerful, server-side search system designed for speed, accuracy, and usability:
 
 - **Field Weighting:** Prioritizes matches in prompt title, description, text, categories, and tags, with title matches ranked highest.
 - **Stemming, Synonyms, and Typo Tolerance:** Uses open-source libraries to handle word variations, common synonyms, and minor typos.
@@ -182,7 +182,7 @@ PromptFinder features a powerful, server-side search system designed for speed, 
 
    You will still need to manually reload the extension in Chrome to see changes.
 
-5. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for PromptFinder.
+5. **Reload Extension in Chrome:** After making changes and rebuilding (if not using watch mode, or even with it for some changes), go to `chrome://extensions/` and click the reload icon for DesignPrompts.
 
 ## Testing
 
@@ -312,7 +312,7 @@ The optimized CSS files are output to `dist/css-purged/` and maintain full compa
 
 ## GA4 Analytics System
 
-PromptFinder includes a comprehensive Google Analytics 4 (GA4) implementation designed for privacy and performance:
+DesignPrompts includes a comprehensive Google Analytics 4 (GA4) implementation designed for privacy and performance:
 
 ### Analytics Features
 
@@ -360,7 +360,7 @@ npm run build  # Includes analytics config validation
 ## File Structure Overview
 
 ```plaintext
-promptfinder/
+designprompts/
 ├── css/                    # Source CSS files (modular structure) - 92K total
 │   ├── base/
 │   ├── components/

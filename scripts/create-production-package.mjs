@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Production Package Creation Script for PromptFinder Chrome Extension
+ * Production Package Creation Script for DesignPrompts Chrome Extension
  *
  * This script creates a clean, optimized production package ready for
  * Chrome Web Store submission with size verification and quality checks.
@@ -18,7 +18,7 @@ const projectRoot = path.join(__dirname, '..');
 
 // Configuration
 const PACKAGE_CONFIG = {
-  name: 'promptfinder-chrome-extension',
+  name: 'designprompts-chrome-extension',
   maxSize: 5 * 1024 * 1024, // 5MB Chrome Web Store limit
   outputDir: 'chrome-store-package',
   excludePatterns: [
@@ -236,8 +236,7 @@ async function createPackage() {
     'icons/',
     'js/clusterize.min.js', // Keep specific JS files that are referenced directly
     'js/toast.js', // Required for toast notifications
-    'js/analytics/popup-analytics.js', // Required for popup analytics
-    'js/analytics/consent-dialog.js', // Required for analytics consent dialog
+    // Note: analytics files are now processed by Rollup and included in dist/
   ];
 
   let totalFiles = 0;
@@ -367,7 +366,9 @@ async function runQualityChecks(packagePath) {
 
   // Check JS minification
   const jsFiles = findFilesWithPattern(path.join(packagePath, 'dist'), /\.js$/);
-  checks.jsMinified = jsFiles.every(file => isMinified(fs.readFileSync(file, 'utf-8')));
+  // Exclude vendor files from minification check (they are external dependencies)
+  const nonVendorJsFiles = jsFiles.filter(file => !file.includes('/vendor/'));
+  checks.jsMinified = nonVendorJsFiles.every(file => isMinified(fs.readFileSync(file, 'utf-8')));
   console.log(`  ✅ JS minified: ${checks.jsMinified ? 'PASSED' : 'FAILED'}`);
 
   // Check icons

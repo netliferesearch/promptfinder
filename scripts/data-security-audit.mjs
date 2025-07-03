@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Data Security Audit Script for PromptFinder Chrome Extension
+ * Data Security Audit Script for DesignPrompts Chrome Extension
  *
  * This script validates secure data storage and transmission practices including:
  * - Data storage security (Chrome storage APIs, localStorage usage)
@@ -42,7 +42,7 @@ const SENSITIVE_PATTERNS = {
  * Main data security audit function
  */
 async function runDataSecurityAudit() {
-  console.log('🔒 Starting Data Security Audit for PromptFinder...\n');
+  console.log('🔒 Starting Data Security Audit for DesignPrompts...\n');
 
   const results = {
     storage_security: await auditStorageSecurity(),

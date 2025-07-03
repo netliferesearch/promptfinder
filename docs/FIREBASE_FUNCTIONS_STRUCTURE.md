@@ -1,6 +1,6 @@
 # Firebase Cloud Functions Development Guide
 
-This document provides information about the Firebase Cloud Functions setup for PromptFinder.
+This document provides information about the Firebase Cloud Functions setup for DesignPrompts.
 
 ## Project Structure
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Git Ignore Verification Script for PromptFinder Chrome Extension
+ * Git Ignore Verification Script for DesignPrompts Chrome Extension
  *
  * This script verifies that the .gitignore file is properly excluding
  * files that should not be in the repository for Chrome Web Store submission.

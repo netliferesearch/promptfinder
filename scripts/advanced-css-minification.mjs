@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Advanced CSS Minification for PromptFinder Chrome Extension
+ * Advanced CSS Minification for DesignPrompts Chrome Extension
  *
  * This script applies additional minification techniques to already purged CSS:
  * - Remove all comments

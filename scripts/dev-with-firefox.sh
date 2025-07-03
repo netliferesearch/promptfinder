@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PromptFinder Development Script
+# DesignPrompts Development Script
 # This script sets up a complete development environment with:
 # - CSS environment switching
 # - JavaScript bundling with watch mode
@@ -8,7 +8,7 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Starting PromptFinder development environment..."
+echo "🚀 Starting DesignPrompts development environment..."
 
 # Function to cleanup background processes on exit
 cleanup() {

@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions/v2';
 
 /**
- * Error types for PromptFinder Cloud Functions
+ * Error types for DesignPrompts Cloud Functions
  * Used to categorize errors for monitoring and logging
  */
 export enum ErrorType {

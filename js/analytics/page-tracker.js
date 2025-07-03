@@ -1,5 +1,5 @@
 /**
- * Page Tracker for PromptFinder Chrome Extension
+ * Page Tracker for DesignPrompts Chrome Extension
  *
  * Tracks page views and navigation events within the extension popup
  * using GA4 analytics standards
@@ -279,16 +279,16 @@ class PageTracker {
    */
   getPageTitle(pageName) {
     const titles = {
-      main: 'PromptFinder - Browse Prompts',
-      auth: 'PromptFinder - Sign In',
-      email_verification: 'PromptFinder - Verify Email',
-      password_reset: 'PromptFinder - Reset Password',
-      prompt_details: 'PromptFinder - Prompt Details',
-      options: 'PromptFinder - Options',
-      background: 'PromptFinder - Background',
+      main: 'DesignPrompts - Browse Prompts',
+      auth: 'DesignPrompts - Sign In',
+      email_verification: 'DesignPrompts - Verify Email',
+      password_reset: 'DesignPrompts - Reset Password',
+      prompt_details: 'DesignPrompts - Prompt Details',
+      options: 'DesignPrompts - Options',
+      background: 'DesignPrompts - Background',
     };
 
-    return titles[pageName] || `PromptFinder - ${pageName}`;
+    return titles[pageName] || `DesignPrompts - ${pageName}`;
   }
 
   /**

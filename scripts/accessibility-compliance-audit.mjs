@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Accessibility Compliance Audit Script for PromptFinder Chrome Extension
+ * Accessibility Compliance Audit Script for DesignPrompts Chrome Extension
  *
  * This script analyzes the codebase for accessibility compliance including:
  * - Keyboard navigation and focus management
@@ -32,7 +32,7 @@ const CRITERIA_WEIGHTS = {
  * Main audit function
  */
 async function runAccessibilityAudit() {
-  console.log('🔍 Starting Accessibility Compliance Audit for PromptFinder...\n');
+  console.log('🔍 Starting Accessibility Compliance Audit for DesignPrompts...\n');
 
   const results = {
     keyboard_navigation: await auditKeyboardNavigation(),

@@ -1,6 +1,6 @@
-# CSS Optimization Guide for PromptFinder
+# CSS Optimization Guide for DesignPrompts
 
-This document outlines the CSS optimization process used to improve performance and maintainability of the PromptFinder extension's CSS.
+This document outlines the CSS optimization process used to improve performance and maintainability of the DesignPrompts extension's CSS.
 
 ## Optimization Steps
 
@@ -115,51 +115,4 @@ The CSS modularization effort has been completed successfully. The extension now
 
 ✅ **Critical Bug Fixes**
 
-- Fixed CSS property typos (`ext-align` → `text-align`) in 4 minified CSS files
-
-✅ **Icon Optimization** (High Impact)
-
-- Resized icons from 800x800px to proper dimensions (16px, 48px, 128px)
-- Achieved ~90% file size reduction for icons
-
-✅ **Legacy Code Removal**
-
-- Removed CSS migration helper files: `css-migration-helper.js`, `css-class-helper.js`
-- Removed unused storage functions: `chromeStorageGet`, `chromeStorageSet`
-- Cleaned up migration-specific documentation
-
-✅ **Test Suite Fixes**
-
-- Fixed 4 failing tests related to removed storage functions
-- All 65 tests now pass across 7 test suites
-
-✅ **Build Process Verification**
-
-- Confirmed successful builds with only minor ESLint warnings
-- Verified all functionality remains intact
-
-### Performance Impact Achieved
-
-- **Extension Size**: ~90% reduction from icon optimization
-- **Code Quality**: Removed ~2KB of legacy JavaScript code
-- **CSS Rendering**: Fixed critical property typos affecting text alignment
-- **Maintainability**: Eliminated migration-specific code and documentation
-- **Test Coverage**: 100% test pass rate (65/65 tests passing)
-
-### Files Modified/Removed Summary
-
-**Modified**:
-
-- 4 CSS files: Fixed `ext-align` typo
-- `popup.html`: Added proper CSS classes
-- `utils.js`: Removed unused functions
-- `utils.test.js`: Removed obsolete tests
-
-**Removed**:
-
-- 2 JavaScript helper files
-- 2 migration documentation files
-
-**Optimized**:
-
-- 3 icon files resized to proper dimensions
+- Fixed CSS property typos (`ext-align` → `

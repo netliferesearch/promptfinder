@@ -142,7 +142,7 @@ function generateBenchmarkReport() {
 
   const report = {
     reportInfo: {
-      title: 'PromptFinder Performance Benchmark Report',
+      title: 'DesignPrompts Performance Benchmark Report',
       generatedAt: new Date().toISOString(),
       version: '1.0.0',
       comparison: `${baseline.version} vs ${current.version}`,
@@ -239,7 +239,7 @@ function generateBenchmarkReport() {
  * Display benchmark report
  */
 function displayBenchmarkReport(report) {
-  console.log('📊 PromptFinder Performance Benchmark Report');
+  console.log('📊 DesignPrompts Performance Benchmark Report');
   console.log('===========================================\n');
 
   console.log(`📈 Comparison: ${report.reportInfo.comparison}`);

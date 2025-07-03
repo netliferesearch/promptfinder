@@ -1,4 +1,4 @@
-# PromptFinder Chrome Extension - Installation Guide
+# DesignPrompts Chrome Extension - Installation Guide
 
 ## ✅ **PRODUCTION PACKAGE READY**
 
@@ -8,11 +8,11 @@ The extension has been **fixed and optimized** for production use. All JavaScrip
 
 ## 🏪 **Method 1: Chrome Web Store (Coming Soon - Recommended)**
 
-Once published to the Chrome Web Store, you can install PromptFinder easily:
+Once published to the Chrome Web Store, you can install DesignPrompts easily:
 
 1. **Open Chrome browser**
 2. **Visit the Chrome Web Store**
-3. **Search for "PromptFinder"**
+3. **Search for "DesignPrompts"**
 4. **Click "Add to Chrome"**
 5. **Confirm permissions when prompted**
 6. **The extension icon will appear in your Chrome toolbar**
@@ -45,7 +45,7 @@ Once published to the Chrome Web Store, you can install PromptFinder easily:
    - The extension will be installed and appear in your toolbar
 
 3. **Verify installation:**
-   - Look for the PromptFinder icon in your Chrome toolbar
+   - Look for the DesignPrompts icon in your Chrome toolbar
    - Click the icon to open the extension popup
    - The extension should load without any console errors
 
@@ -115,7 +115,7 @@ The extension is now **production-ready** and should work without any JavaScript
 
 After installation:
 
-1. **Click the PromptFinder icon** in your Chrome toolbar
+1. **Click the DesignPrompts icon** in your Chrome toolbar
 2. **Sign up or log in** to access all features
 3. **Browse prompts** by category, rating, or search
 4. **Copy prompts** to your clipboard with one click
@@ -157,7 +157,7 @@ If you encounter any issues:
 
 ## 🔒 Privacy & Permissions
 
-PromptFinder requires these permissions:
+DesignPrompts requires these permissions:
 
 - **Storage**: To save your preferences and cache data
 - **Identity**: For Google sign-in authentication

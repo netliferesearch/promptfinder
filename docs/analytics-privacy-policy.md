@@ -1,8 +1,8 @@
-# PromptFinder Analytics Privacy Policy
+# DesignPrompts Analytics Privacy Policy
 
 ## Analytics Data Collection
 
-PromptFinder uses Google Analytics 4 (GA4) to collect anonymous usage data to improve the extension's functionality and user experience. We are committed to protecting your privacy while gathering insights that help us make the extension better.
+DesignPrompts uses Google Analytics 4 (GA4) to collect anonymous usage data to improve the extension's functionality and user experience. We are committed to protecting your privacy while gathering insights that help us make the extension better.
 
 ## What Data We Collect
 
@@ -167,7 +167,7 @@ _For transparency, here are the technical details of our analytics implementatio
 4. **Processing**: Google Analytics processes and stores the data
 5. **Analysis**: We access only aggregated, anonymous reports
 
-This privacy policy reflects our commitment to protecting your privacy while gathering the minimum data necessary to improve PromptFinder for all users.
+This privacy policy reflects our commitment to protecting your privacy while gathering the minimum data necessary to improve DesignPrompts for all users.
 
 ---
 

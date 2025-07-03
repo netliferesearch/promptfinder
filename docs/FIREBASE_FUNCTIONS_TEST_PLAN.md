@@ -1,8 +1,8 @@
-# Firebase Cloud Functions Testing Plan for PromptFinder
+# Firebase Cloud Functions Testing Plan for DesignPrompts
 
 ## Testing Overview
 
-This plan outlines approaches for testing Firebase Cloud Functions in the PromptFinder Chrome extension. It covers unit testing, integration testing with Firebase emulators, and strategies for both local development and CI/CD.
+This plan outlines approaches for testing Firebase Cloud Functions in the DesignPrompts Chrome extension. It covers unit testing, integration testing with Firebase emulators, and strategies for both local development and CI/CD.
 
 ## 1. Testing Approaches
 

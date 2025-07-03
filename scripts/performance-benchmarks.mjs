@@ -271,7 +271,7 @@ function generatePerformanceReport(bundleMetrics, lazyMetrics, cssMetrics) {
  * Main performance testing
  */
 async function runPerformanceTests() {
-  console.log('🚀 PromptFinder Performance Benchmark Test');
+  console.log('🚀 DesignPrompts Performance Benchmark Test');
   console.log('===========================================\n');
 
   // Run all performance tests

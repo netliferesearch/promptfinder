@@ -1,6 +1,6 @@
-# Firestore Security Rules Documentation
+# Firestore Security Rules Implementation
 
-This document explains the implementation of Firestore security rules for the PromptFinder Chrome extension. These rules ensure proper data security, validation, and access control.
+This document explains the implementation of Firestore security rules for the DesignPrompts Chrome extension. These rules ensure proper data security, validation, and access control.
 
 ## Overview
 

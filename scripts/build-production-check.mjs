@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Production Build Check for PromptFinder Chrome Extension
+ * Production Build Check for DesignPrompts Chrome Extension
  *
  * Simplified check focusing on critical production issues:
  * - Source maps excluded in production
@@ -13,7 +13,7 @@
 import fs from 'fs';
 import path from 'path';
 
-console.log('🔍 Production Build Check for PromptFinder...\n');
+console.log('🔍 Production Build Check for DesignPrompts...\n');
 
 const issues = [];
 const checks = [];

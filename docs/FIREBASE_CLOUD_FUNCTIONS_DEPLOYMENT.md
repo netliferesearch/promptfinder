@@ -1,6 +1,6 @@
 # Firebase Cloud Functions Deployment Guide
 
-This guide explains how to complete the deployment of the Firebase Cloud Functions for PromptFinder.
+This guide explains how to complete the deployment of the Firebase Cloud Functions for DesignPrompts.
 
 ## What's Been Implemented
 
@@ -105,23 +105,3 @@ For local development, you can set up Firebase emulators to test functions witho
    // connectFirestoreEmulator(db, 'localhost', 8080);
    // connectAuthEmulator(auth, 'http://localhost:9099');
    ```
-
-## Potential Future Improvements
-
-1. **Function Optimization**
-
-   - Consider using batched writes for high-traffic scenarios
-   - Add more error handling and retry logic
-
-2. **Security Rules**
-
-   - Further tighten Firestore security rules to protect aggregated data
-
-3. **Scheduled Functions**
-
-   - Add a scheduled version of `recalculateAllStats` to run nightly
-   - Monitor for data inconsistencies and fix them automatically
-
-4. **Monitoring**
-   - Set up Firebase alerts for function errors
-   - Add more detailed logging for debugging

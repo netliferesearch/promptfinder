@@ -1,8 +1,8 @@
-# PromptFinder Improved Search System
+# DesignPrompts Improved Search System
 
 ## Overview
 
-PromptFinder's search system is designed to help users find the right prompt as quickly and accurately as possible. It leverages a server-side Cloud Function (Firebase Functions v2) to deliver fast, prioritized, and annotated search results, supporting both public and private prompts.
+DesignPrompts's search system is designed to help users find the right prompt as quickly and accurately as possible. It leverages a server-side Cloud Function (Firebase Functions v2) to deliver fast, prioritized, and annotated search results, supporting both public and private prompts.
 
 ## Goals
 

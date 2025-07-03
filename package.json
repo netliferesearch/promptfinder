@@ -39,7 +39,7 @@
     "assets:optimize": "node scripts/asset-optimization.mjs",
     "css:minify": "node scripts/advanced-css-minification.mjs",
     "git:audit-ignore": "node scripts/gitignore-audit.mjs",
-    "package:prod": "node scripts/create-production-package.mjs",
+    "package:prod": "NODE_ENV=production node scripts/create-production-package.mjs",
     "test:prod-build": "node scripts/test-production-build.mjs",
     "validate:prod-build": "node scripts/production-functionality-validation.mjs",
     "git:verify-ignore": "node scripts/gitignore-verification.mjs",

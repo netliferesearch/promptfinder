@@ -174,7 +174,7 @@ export async function searchPromptsHandler(request: any): Promise<any> {
   const duration = Date.now() - startTime;
 
   // Console log for server-side search timing
-  console.log('[PromptFinder][searchPrompts] query="' + query + '" userId=' + (authUserId || 'public') + ' durationMs=' + duration);
+  console.log('[DesignPrompts][searchPrompts] query="' + query + '" userId=' + (authUserId || 'public') + ' durationMs=' + duration);
 
   return {
     results,

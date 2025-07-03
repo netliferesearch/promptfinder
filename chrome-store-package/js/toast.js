@@ -1,4 +1,4 @@
-// Toast notification system for PromptFinder
+// Toast notification system for DesignPrompts
 // Usage: showToast('Message', { type: 'success'|'error'|'info', duration: ms })
 
 window.showToast = function (message, { type = 'info', duration = 3000 } = {}) {

@@ -1,8 +1,8 @@
 /**
- * Chrome Extension Analytics Integration Module
+ * Google Analytics 4 gtag Integration for DesignPrompts Chrome Extension
+ * Bridges the DesignPrompts analytics implementation with GA4 Measurement Protocol API
  *
- * Bridges the PromptFinder analytics implementation with GA4 Measurement Protocol API
- * Provides privacy-compliant tracking with consent management for Chrome extensions
+ * Handles the actual sending of events to GA4
  */
 
 /**

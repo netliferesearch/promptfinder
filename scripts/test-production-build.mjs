@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Production Build Functionality Testing Script for PromptFinder Chrome Extension
+ * Production Build Functionality Testing Script for DesignPrompts Chrome Extension
  *
  * This script tests that the production build functionality exactly matches
  * the development version by validating all core features, UI components,

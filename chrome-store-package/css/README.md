@@ -1,6 +1,6 @@
-# PromptFinder CSS Structure
+# DesignPrompts CSS Structure
 
-This document describes the CSS architecture for the PromptFinder Chrome extension.
+This document describes the CSS architecture for the DesignPrompts Chrome extension.
 
 ## Organization
 

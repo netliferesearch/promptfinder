@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Dependency Audit Script for PromptFinder Chrome Extension
+ * Dependency Audit Script for DesignPrompts Chrome Extension
  *
  * This script analyzes package.json dependencies and identifies:
  * - Unused dependencies that can be safely removed
@@ -23,7 +23,7 @@ const EXCLUDED_DIRECTORIES = ['node_modules', '.git', 'coverage', 'dist', 'build
  * Main dependency audit function
  */
 async function runDependencyAudit() {
-  console.log('📦 Starting Dependency Audit for PromptFinder...\n');
+  console.log('📦 Starting Dependency Audit for DesignPrompts...\n');
 
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
   const allDependencies = {

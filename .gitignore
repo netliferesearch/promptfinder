@@ -1,4 +1,4 @@
-# PromptFinder Chrome Extension - .gitignore
+# DesignPrompts Chrome Extension - .gitignore
 # Comprehensive exclusions for Chrome Web Store preparation
 
 # Dependencies
@@ -14,6 +14,7 @@ css-minified/
 css-purged/
 icons-optimized/
 package.json.optimized
+chrome-store-package/
 
 # Reports and audit results (development tools)
 *-report.json
@@ -71,3 +72,8 @@ extension.zip
 # Temporary files
 *.tmp
 *.temp
+
+# Exclude AI task files
+ai-tasks/
+# Exclude task markdown files
+tasks/

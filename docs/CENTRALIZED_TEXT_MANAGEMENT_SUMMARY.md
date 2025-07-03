@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a centralized text management system for the PromptFinder Chrome Extension to replace hardcoded strings throughout the codebase with a consistent, internationalization-ready system.
+Successfully implemented a centralized text management system for the DesignPrompts Chrome Extension to replace hardcoded strings throughout the codebase with a consistent, internationalization-ready system.
 
 ## Implementation Details
 
@@ -42,7 +42,7 @@ Successfully implemented a centralized text management system for the PromptFind
 #### App Branding & Navigation
 
 ```javascript
-APP_NAME: 'PromptFinder';
+APP_NAME: 'DesignPrompts';
 BACK_TO_LIST: 'Back to list';
 VIEW_MORE: 'View More';
 CANCEL: 'Cancel';

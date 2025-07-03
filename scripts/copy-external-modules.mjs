@@ -12,58 +12,11 @@ async function copyExternalModules() {
 
   // Create target directories
   const targetDir = join(rootDir, 'dist', 'js', 'js');
-  const analyticsTargetDir = join(targetDir, 'analytics');
 
   await mkdir(targetDir, { recursive: true });
-  await mkdir(analyticsTargetDir, { recursive: true });
 
-  // Copy oauth-config.js from config directory
-  try {
-    const oauthConfigSrc = join(rootDir, 'config', 'oauth-config.js');
-    const oauthConfigDest = join(targetDir, 'oauth-config.js');
-    await copyFile(oauthConfigSrc, oauthConfigDest);
-    console.log(`✅ Copied oauth-config.js from config/`);
-  } catch (error) {
-    console.warn(`⚠️  Failed to copy oauth-config.js:`, error.message);
-  }
-
-  // Copy external modules (with special handling for promptData.js)
-  const externalFiles = [
-    'ui.js',
-    'firebase-connection-handler.js',
-    'utils.js',
-    'categories.js',
-    'text-constants.js',
-  ];
-
-  for (const file of externalFiles) {
-    const src = join(rootDir, 'js', file);
-    const dest = join(targetDir, file);
-    try {
-      await copyFile(src, dest);
-      console.log(`✅ Copied ${file}`);
-    } catch (error) {
-      console.warn(`⚠️  Failed to copy ${file}:`, error.message);
-    }
-  }
-
-  // Copy promptData.js with fixed import path for oauth-config.js
-  try {
-    const promptDataSrc = join(rootDir, 'js', 'promptData.js');
-    const promptDataContent = await readFile(promptDataSrc, 'utf8');
-
-    // Fix the oauth-config import path from '../config/oauth-config.js' to './oauth-config.js'
-    const fixedContent = promptDataContent.replace(
-      "import { getOAuth2Config } from '../config/oauth-config.js';",
-      "import { getOAuth2Config } from './oauth-config.js';"
-    );
-
-    const promptDataDest = join(targetDir, 'promptData.js');
-    await writeFile(promptDataDest, fixedContent);
-    console.log(`✅ Copied promptData.js with fixed oauth-config import path`);
-  } catch (error) {
-    console.warn(`⚠️  Failed to copy promptData.js:`, error.message);
-  }
+  // NOTE: Most files are now processed by Rollup and automatically minified
+  // This script now only handles special cases that can't go through Rollup
 
   // Copy bundled firebase-init.js and create ES module wrapper
   try {
@@ -119,42 +72,10 @@ export const httpsCallable = firebaseExports.httpsCallable;
     console.warn(`⚠️  Failed to create firebase-init wrapper:`, error.message);
   }
 
-  // Copy analytics modules
-  const analyticsDir = join(rootDir, 'js', 'analytics');
-  try {
-    const analyticsFiles = await readdir(analyticsDir);
-    for (const file of analyticsFiles) {
-      if (file.endsWith('.js')) {
-        const src = join(analyticsDir, file);
-        const dest = join(analyticsTargetDir, file);
-        await copyFile(src, dest);
-        console.log(`✅ Copied analytics/${file}`);
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️  Failed to copy analytics modules:', error.message);
-  }
-
-  // Copy vendor modules
-  const vendorDir = join(rootDir, 'js', 'vendor');
-  const vendorTargetDir = join(targetDir, 'vendor');
-
-  try {
-    await mkdir(vendorTargetDir, { recursive: true });
-    const vendorFiles = await readdir(vendorDir);
-    for (const file of vendorFiles) {
-      if (file.endsWith('.js')) {
-        const src = join(vendorDir, file);
-        const dest = join(vendorTargetDir, file);
-        await copyFile(src, dest);
-        console.log(`✅ Copied vendor/${file}`);
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️  Failed to copy vendor files:', error.message);
-  }
-
   console.log('✅ External modules copied successfully!');
+  console.log(
+    '📝 Note: Source files (ui.js, analytics/, etc.) are now processed by Rollup and automatically minified'
+  );
 }
 
 copyExternalModules().catch(error => {

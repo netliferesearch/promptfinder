@@ -1,8 +1,8 @@
-# PromptFinder Analytics Configuration Guide
+# DesignPrompts Analytics Configuration Guide
 
 ## Overview
 
-This document outlines the configuration decisions and setup requirements for PromptFinder's GA4 analytics implementation.
+This document outlines the configuration decisions and setup requirements for DesignPrompts's GA4 analytics implementation.
 
 ## Analytics Toggle Default State
 

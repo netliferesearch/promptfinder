@@ -10,7 +10,7 @@
  * 5. Prepare for unexpected termination
  */
 
-import { eventTracker } from './event-tracker.js';
+import eventTracker from './event-tracker.js';
 import { promiseRejectionTracker } from './promise-rejection-tracker.js';
 // import { TextConstants } from '../text-constants.js'; // Unused
 

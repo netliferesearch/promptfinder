@@ -1,17 +1,17 @@
 /**
- * GA4 Event Schema for PromptFinder Chrome Extension
+ * GA4 Event Schema for DesignPrompts Chrome Extension
  *
  * This file defines the complete event schema using GA4 recommended event names
  * and parameters. It provides validation, type definitions, and documentation
- * for all events tracked in the PromptFinder extension.
+ * for all events tracked in the DesignPrompts extension.
  *
  * Reference: https://developers.google.com/analytics/devguides/collection/ga4/reference/events
  */
 
 /**
- * GA4 Recommended Events for PromptFinder
+ * GA4 Recommended Events for DesignPrompts
  * Using standard GA4 event names where applicable, with custom events for
- * PromptFinder-specific functionality
+ * DesignPrompts-specific functionality
  */
 export const GA4_EVENTS = {
   // =============================================
@@ -36,7 +36,7 @@ export const GA4_EVENTS = {
   EXCEPTION: 'exception',
 
   // =============================================
-  // PROMPTFINDER CUSTOM EVENTS
+  // DESIGNPROMPTS CUSTOM EVENTS
   // =============================================
 
   // Extension lifecycle
@@ -162,7 +162,7 @@ export const EVENT_PARAMETERS = {
   },
 
   // =============================================
-  // PROMPTFINDER CUSTOM PARAMETERS
+  // DESIGNPROMPTS CUSTOM PARAMETERS
   // =============================================
 
   // Extension parameters

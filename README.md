@@ -1,6 +1,6 @@
-# PromptFinder - AI Prompt Management Chrome Extension
+# DesignPrompts - AI Prompt Management Chrome Extension
 
-PromptFinder is a Chrome extension that helps you efficiently manage, store, and discover AI prompts for tools like ChatGPT, Claude, Midjourney, and more. Your prompts sync across devices through secure cloud storage.
+DesignPrompts is a Chrome extension that helps you efficiently manage, store, and discover AI prompts for tools like ChatGPT, Claude, Midjourney, and more. Your prompts sync across devices through secure cloud storage.
 
 ## 🚀 Quick Start
 
@@ -55,7 +55,7 @@ PromptFinder is a Chrome extension that helps you efficiently manage, store, and
 
 ## 🎨 **Perfect For**
 
-- **Content Creators** - Save writing prompts, style guides, and creative templates
+- **Content Creators** - Save content writing prompts, style guides, and creative templates
 - **Developers** - Store code generation prompts and debugging helpers
 - **Marketers** - Organize campaign ideas, ad copy templates, and strategy prompts
 - **Students & Researchers** - Build a library of study aids and research prompts
@@ -65,15 +65,15 @@ PromptFinder is a Chrome extension that helps you efficiently manage, store, and
 
 ### For Developers
 
-Want to contribute or run PromptFinder locally? See our [Development Guide](docs/DEVELOPMENT.md).
+Want to contribute or run DesignPrompts locally? See our [Development Guide](docs/DEVELOPMENT.md).
 
 ### Building from Source
 
 1. **Prerequisites**: Node.js and npm
 2. **Clone & Install:**
    ```bash
-   git clone https://github.com/mjolne/promptfinder.git
-   cd promptfinder
+   git clone https://github.com/mjolne/designprompts.git
+   cd designprompts
    npm install
    ```
 3. **Build:**
@@ -127,6 +127,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Questions or Issues?**
 
-- 🐛 [Report a bug](https://github.com/mjolne/promptfinder/issues)
-- 💡 [Request a feature](https://github.com/mjolne/promptfinder/issues)
-- 📧 [Contact us](mailto:support@promptfinder.com)
+- 🐛 [Report a bug](https://github.com/mjolne/designprompts/issues)
+- 💡 [Request a feature](https://github.com/mjolne/designprompts/issues)
+- 📧 [Contact us](mailto:support@designprompts.com)

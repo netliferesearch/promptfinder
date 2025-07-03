@@ -1,4 +1,4 @@
-// Text constants for PromptFinder Chrome Extension
+// Text constants for DesignPrompts Chrome Extension
 // Centralized text management for consistency and future internationalization
 
 export const TEXT_CONSTANTS = {
@@ -189,7 +189,7 @@ export const TEXT_CONSTANTS = {
 
   // Authentication UI (Sign in/Sign up forms)
   LOGIN_OR_SIGNUP: 'Login or Signup',
-  SIGNIN_TITLE: 'Sign in to PromptFinder',
+  SIGNIN_TITLE: 'Sign in to DesignPrompts',
   SIGNIN_SUBTEXT: 'Welcome back! Please enter your details below.',
   SIGNIN_EMAIL_LABEL: 'Email',
   SIGNIN_EMAIL_PLACEHOLDER: 'you@email.com',

@@ -61,7 +61,7 @@
 
     // Send initial page view
     window.sendAnalyticsEvent('page_view', {
-      page_title: 'PromptFinder Extension',
+      page_title: 'DesignPrompts Extension',
       page_location: 'chrome-extension://popup',
     });
   };

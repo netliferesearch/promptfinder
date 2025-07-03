@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Comprehensive Asset Optimization Script for PromptFinder Chrome Extension
+ * Comprehensive Asset Optimization Script for DesignPrompts Chrome Extension
  *
  * This script optimizes and compresses all assets:
  * - Images (PNG, JPG, SVG)
@@ -53,7 +53,7 @@ const OPTIMIZATION_CONFIG = {
  * Main asset optimization function
  */
 async function runAssetOptimization() {
-  console.log('🎨 Starting Comprehensive Asset Optimization for PromptFinder...\n');
+  console.log('🎨 Starting Comprehensive Asset Optimization for DesignPrompts...\n');
 
   const results = {
     icons: await optimizeIcons(),

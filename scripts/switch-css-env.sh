@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CSS Environment Switcher for PromptFinder
+# CSS Environment Switcher for DesignPrompts
 # Switches between development and production CSS
 
 set -e

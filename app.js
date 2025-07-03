@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  console.info('PromptFinder extension initialized successfully (app.js - v9 modular)');
+  console.info('DesignPrompts extension initialized successfully (app.js - v9 modular)');
 
   // Initialize Firebase connection monitoring lazily
   loadConnectionMonitoring()

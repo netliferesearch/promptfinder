@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Error Handling Testing Script for PromptFinder Chrome Extension
+ * Error Handling Testing Script for DesignPrompts Chrome Extension
  *
  * This script tests comprehensive error handling including:
  * - Network failure scenarios and recovery
@@ -33,7 +33,7 @@ const ERROR_HANDLING_WEIGHTS = {
  * Main error handling test function
  */
 async function runErrorHandlingTest() {
-  console.log('🚨 Starting Error Handling Testing for PromptFinder...\n');
+  console.log('🚨 Starting Error Handling Testing for DesignPrompts...\n');
 
   const results = {
     network_errors: await testNetworkErrorHandling(),

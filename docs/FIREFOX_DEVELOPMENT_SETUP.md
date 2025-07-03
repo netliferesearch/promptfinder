@@ -1,6 +1,6 @@
-# Firefox Extension Development Setup
+# Firefox Extension Development for DesignPrompts
 
-This document outlines the complete Firefox development environment for the PromptFinder extension.
+This document outlines the complete Firefox development environment for the DesignPrompts extension.
 
 ## Quick Start
 

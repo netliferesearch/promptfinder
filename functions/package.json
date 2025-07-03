@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for PromptFinder",
+  "description": "Cloud Functions for DesignPrompts",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",

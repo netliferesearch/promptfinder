@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * WCAG 2.1 AA Compliance Audit Script for PromptFinder Chrome Extension
+ * WCAG 2.1 AA Compliance Audit Script for DesignPrompts Chrome Extension
  *
  * This script validates compliance with Web Content Accessibility Guidelines (WCAG) 2.1 Level AA
  * including:
@@ -37,7 +37,7 @@ const CONTRAST_RATIOS = {
  * Main WCAG 2.1 AA compliance audit function
  */
 async function runWcagComplianceAudit() {
-  console.log('♿ Starting WCAG 2.1 AA Compliance Audit for PromptFinder...\n');
+  console.log('♿ Starting WCAG 2.1 AA Compliance Audit for DesignPrompts...\n');
 
   const results = {
     perceivable: await auditPerceivable(),

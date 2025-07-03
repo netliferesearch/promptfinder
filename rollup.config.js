@@ -40,8 +40,8 @@ const commonPlugins = isProd =>
       }),
   ].filter(Boolean);
 
-export default [
-  // Main app bundle - inline all dynamic imports to avoid external references
+// Special configs for main app and firebase-init
+const specialConfigs = [
   {
     input: 'app.js',
     output: {
@@ -49,12 +49,11 @@ export default [
       format: 'iife',
       name: 'PromptFinderApp',
       sourcemap: !isProduction,
-      inlineDynamicImports: true, // This will bundle all dynamic imports inline
+      inlineDynamicImports: true,
     },
     plugins: commonPlugins(isProduction),
     external: [],
   },
-  // Firebase init bundle
   {
     input: 'js/firebase-init.js',
     output: {
@@ -66,87 +65,72 @@ export default [
     plugins: commonPlugins(isProduction),
     external: [],
   },
-  // Individual JS modules for dynamic imports - use ES format
-  {
-    input: 'js/ui.js',
-    output: {
-      file: 'dist/js/js/ui.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
-  },
-  {
-    input: 'js/promptData.js',
-    output: {
-      file: 'dist/js/js/promptData.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
-  },
-  {
-    input: 'js/utils.js',
-    output: {
-      file: 'dist/js/js/utils.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
-  },
-  {
-    input: 'js/text-constants.js',
-    output: {
-      file: 'dist/js/js/text-constants.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
-  },
+];
+
+// All other JS modules (add new files here as needed)
+const jsModules = [
+  // Main modules
+  { input: 'js/ui.js', output: 'dist/js/js/ui.js' },
+  { input: 'js/promptData.js', output: 'dist/js/js/promptData.js' },
+  { input: 'js/utils.js', output: 'dist/js/js/utils.js' },
+  { input: 'js/text-constants.js', output: 'dist/js/js/text-constants.js' },
   {
     input: 'js/firebase-connection-handler.js',
-    output: {
-      file: 'dist/js/js/firebase-connection-handler.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
+    output: 'dist/js/js/firebase-connection-handler.js',
   },
+  { input: 'config/oauth-config.js', output: 'dist/js/js/oauth-config.js' },
+  { input: 'js/categories.js', output: 'dist/js/js/categories.js' },
+
   // Analytics modules
+  { input: 'js/analytics/analytics.js', output: 'dist/js/js/analytics/analytics.js' },
   {
-    input: 'js/analytics/analytics.js',
-    output: {
-      file: 'dist/js/js/analytics/analytics.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
+    input: 'js/analytics/analytics-service.js',
+    output: 'dist/js/js/analytics/analytics-service.js',
+  },
+  { input: 'js/analytics/client-manager.js', output: 'dist/js/js/analytics/client-manager.js' },
+  { input: 'js/analytics/config.js', output: 'dist/js/js/analytics/config.js' },
+  { input: 'js/analytics/consent-dialog.js', output: 'dist/js/js/analytics/consent-dialog.js' },
+  { input: 'js/analytics/event-filter.js', output: 'dist/js/js/analytics/event-filter.js' },
+  { input: 'js/analytics/event-schema.js', output: 'dist/js/js/analytics/event-schema.js' },
+  { input: 'js/analytics/event-tracker.js', output: 'dist/js/js/analytics/event-tracker.js' },
+  { input: 'js/analytics/gtag-integration.js', output: 'dist/js/js/analytics/gtag-integration.js' },
+  { input: 'js/analytics/page-tracker.js', output: 'dist/js/js/analytics/page-tracker.js' },
+  { input: 'js/analytics/popup-analytics.js', output: 'dist/js/js/analytics/popup-analytics.js' },
+  {
+    input: 'js/analytics/promise-rejection-tracker.js',
+    output: 'dist/js/js/analytics/promise-rejection-tracker.js',
   },
   {
-    input: 'js/analytics/page-tracker.js',
-    output: {
-      file: 'dist/js/js/analytics/page-tracker.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
+    input: 'js/analytics/realtime-validator.js',
+    output: 'dist/js/js/analytics/realtime-validator.js',
   },
-  // Vendor modules
   {
-    input: 'js/vendor/prism.js',
-    output: {
-      file: 'dist/js/js/vendor/prism.js',
-      format: 'es',
-      sourcemap: !isProduction,
-    },
-    plugins: commonPlugins(isProduction),
-    external: [],
+    input: 'js/analytics/service-worker-analytics.js',
+    output: 'dist/js/js/analytics/service-worker-analytics.js',
   },
+  { input: 'js/analytics/session-manager.js', output: 'dist/js/js/analytics/session-manager.js' },
+  {
+    input: 'js/analytics/testing-utilities.js',
+    output: 'dist/js/js/analytics/testing-utilities.js',
+  },
+  {
+    input: 'js/analytics/user-property-manager.js',
+    output: 'dist/js/js/analytics/user-property-manager.js',
+  },
+
+  // Vendor (skip .min.js)
+  { input: 'js/vendor/prism.js', output: 'dist/js/js/vendor/prism.js' },
 ];
+
+const moduleConfigs = jsModules.map(({ input, output }) => ({
+  input,
+  output: {
+    file: output,
+    format: 'es',
+    sourcemap: !isProduction,
+  },
+  plugins: commonPlugins(isProduction),
+  external: [],
+}));
+
+export default [...specialConfigs, ...moduleConfigs];

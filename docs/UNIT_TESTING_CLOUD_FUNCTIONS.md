@@ -1,6 +1,6 @@
-# Unit Testing Firebase Cloud Functions
+# Unit Testing Cloud Functions
 
-This document explains how to test Firebase Cloud Functions in the PromptFinder project.
+This document explains how to test Firebase Cloud Functions in the DesignPrompts project.
 
 ## Testing Approaches
 

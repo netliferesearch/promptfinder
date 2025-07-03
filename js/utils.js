@@ -1,6 +1,7 @@
 /**
- * PromptFinder Extension - Utility Functions
- * Contains shared utility functions for the extension.
+ * DesignPrompts Extension - Utility Functions
+ *
+ * Common utility functions used throughout the extension
  */
 
 /**

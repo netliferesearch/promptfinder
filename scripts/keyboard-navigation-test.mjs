@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Keyboard Navigation Testing Script for PromptFinder Chrome Extension
+ * Keyboard Navigation Testing Script for DesignPrompts Chrome Extension
  *
  * This script simulates and tests keyboard navigation patterns including:
  * - Tab order and focus management
@@ -30,7 +30,7 @@ const KEYBOARD_PATTERNS = {
  * Main keyboard navigation test function
  */
 async function runKeyboardNavigationTest() {
-  console.log('⌨️  Starting Keyboard Navigation Testing for PromptFinder...\n');
+  console.log('⌨️  Starting Keyboard Navigation Testing for DesignPrompts...\n');
 
   const results = {
     tab_order: await testTabOrder(),

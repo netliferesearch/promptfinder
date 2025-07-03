@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Build Output Audit Script for PromptFinder Chrome Extension
+ * Build Output Audit Script for DesignPrompts Chrome Extension
  *
  * This script validates production build outputs to ensure:
  * - No test files are included
@@ -144,7 +144,7 @@ const DEVELOPMENT_CODE_PATTERNS = [
  * Main build audit function
  */
 async function runBuildAudit() {
-  console.log('🔍 Starting Build Output Audit for PromptFinder...\n');
+  console.log('🔍 Starting Build Output Audit for DesignPrompts...\n');
 
   const results = {
     structure: auditBuildStructure(),

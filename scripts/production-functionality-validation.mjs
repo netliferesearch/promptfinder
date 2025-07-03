@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Production Functionality Validation Script for PromptFinder Chrome Extension
+ * Production Functionality Validation Script for DesignPrompts Chrome Extension
  *
  * This script validates that the production build maintains functional equivalence
  * with the development version by focusing on critical functionality rather than

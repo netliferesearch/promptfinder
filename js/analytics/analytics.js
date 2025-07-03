@@ -1,7 +1,7 @@
 /**
  * GA4 Analytics Interface
  *
- * High-level interface for Google Analytics 4 tracking in PromptFinder Chrome Extension
+ * High-level interface for Google Analytics 4 tracking in DesignPrompts Chrome Extension
  * Provides a simple, unified API for event tracking across all extension contexts
  */
 
@@ -15,7 +15,7 @@ import analyticsService from './analytics-service.js';
 
 /**
  * Analytics Interface Class
- * Provides simplified methods for common PromptFinder analytics events
+ * Provides simplified methods for common DesignPrompts analytics events
  */
 class Analytics {
   constructor(dependencies = {}) {

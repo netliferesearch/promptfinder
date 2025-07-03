@@ -1,4 +1,4 @@
-# PromptFinder Cloud Functions Testing Guide
+# DesignPrompts Cloud Functions Testing Guide
 
 ## Overview
 
@@ -23,7 +23,7 @@ This test plan will help verify that the Fireb## Verification Methods
 
 ### For Production Testing
 
-1. Ensure the PromptFinder extension is using the production Firebase configuration (default).
+1. Ensure the DesignPrompts extension is using the production Firebase configuration (default).
    - In `firebase-init.js`, make sure `useEmulators` is set to `false`.
 
 ### For Local Testing with Emulators
@@ -35,7 +35,7 @@ This test plan will help verify that the Fireb## Verification Methods
    npx firebase emulators:start
    ```
 
-2. Enable emulator mode in the PromptFinder extension:
+2. Enable emulator mode in the DesignPrompts extension:
    - In `firebase-init.js`, set `useEmulators` to `true`.
    - Reload the extension.
 
@@ -47,7 +47,7 @@ This test plan will help verify that the Fireb## Verification Methods
 
 **Steps**:
 
-1. Log in to PromptFinder
+1. Log in to DesignPrompts
 2. Find an existing prompt or create a new one
 3. Rate the prompt with 4 stars
 4. Wait a moment for the cloud function to process
@@ -70,7 +70,7 @@ This test plan will help verify that the Fireb## Verification Methods
 
 **Steps**:
 
-1. Log in to PromptFinder
+1. Log in to DesignPrompts
 2. Find a prompt to favorite
 3. Click the favorite (star) icon
 4. Wait a moment for the cloud function to process
@@ -88,7 +88,7 @@ This test plan will help verify that the Fireb## Verification Methods
 
 **Steps**:
 
-1. Log in to PromptFinder
+1. Log in to DesignPrompts
 2. Find a prompt and note its current usage count
 3. Click the copy button to copy the prompt to clipboard
 4. Wait a moment for the cloud function to process

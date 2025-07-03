@@ -22,7 +22,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for testing the GA4 analytics implementation in the PromptFinder Chrome extension. The analytics system uses Google Analytics 4 Measurement Protocol and includes extensive testing utilities, validation tools, and debugging capabilities.
+This guide provides comprehensive instructions for testing the GA4 analytics implementation in the DesignPrompts Chrome extension. The analytics system uses Google Analytics 4 Measurement Protocol and includes extensive testing utilities, validation tools, and debugging capabilities.
 
 ### Key Testing Components
 
@@ -188,7 +188,7 @@ console.log('Batch validation result:', batchResult);
 import analytics from './js/analytics/analytics.js';
 
 // Test page view event
-analytics.trackPageView('/popup', 'PromptFinder Popup');
+analytics.trackPageView('/popup', 'DesignPrompts Popup');
 
 // Test search event
 analytics.trackSearch('react hooks', {
@@ -212,7 +212,7 @@ analytics.trackPromptAction('copy', 'prompt-123', {
 import analytics from './js/analytics/analytics.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  analytics.trackPageView('/popup', 'Popup Opened');
+  analytics.trackPageView('/popup', 'DesignPrompts Popup');
 });
 ```
 
@@ -384,7 +384,7 @@ console.log('Realtime validation:', result);
 // Run comprehensive validation suite
 const suiteResults = await realtimeValidator.runValidationSuite({
   eventCount: 10,
-  includePromptFinderActions: true,
+  includeDesignPromptsActions: true,
   fastMode: true, // For testing
 });
 
@@ -613,7 +613,7 @@ console.log('Memory usage increase:', memoryAfter - memoryBefore, 'bytes');
 
    ```javascript
    // Test in production with real data
-   analytics.trackPageView('/popup', 'Production Test');
+   analytics.trackPageView('/popup', 'DesignPrompts Popup');
    analytics.trackSearch('production test search');
    ```
 
@@ -658,7 +658,7 @@ Test analytics across all extension contexts:
 ```javascript
 // In popup.html
 import analytics from './js/analytics/analytics.js';
-analytics.trackPageView('/popup', 'Popup Test');
+analytics.trackPageView('/popup', 'DesignPrompts Popup');
 ```
 
 #### Service Worker Testing
@@ -789,7 +789,7 @@ if (typeof importScripts === 'function') {
 // Check popup analytics
 if (window.chrome && chrome.runtime) {
   console.log('✅ Chrome extension APIs available');
-  analytics.trackPageView('/popup', 'Popup Debug');
+  analytics.trackPageView('/popup', 'DesignPrompts Popup');
 } else {
   console.log('❌ Chrome extension APIs not available');
 }
@@ -853,7 +853,7 @@ if (window.chrome && chrome.runtime) {
 - [GA4 Measurement Protocol Documentation](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
 - [Chrome Extension Analytics Best Practices](https://developer.chrome.com/docs/extensions/mv3/analytics/)
 - [Jest Testing Framework](https://jestjs.io/docs/getting-started)
-- [PromptFinder Analytics PRD](../tasks/prd-ga4-analytics.md)
+- [DesignPrompts Analytics PRD](../tasks/prd-ga4-analytics.md)
 - [Analytics Implementation Tasks](../tasks/tasks-prd-ga4-analytics.md)
 
 ---
