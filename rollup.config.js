@@ -11,12 +11,30 @@ const commonPlugins = isProd =>
     resolve({
       browser: true,
       preferBuiltins: false,
+      // Exclude Firebase modules that contain remote script loading
+      ignore: [
+        // Firebase Auth reCAPTCHA modules that contain remote script loading
+        'firebase/auth/web-extension',
+        'firebase/auth/cordova',
+        'firebase/auth/react-native',
+        // These modules contain loadJS functions for external scripts
+        '@firebase/auth/dist/esm2017/src/platform_browser/recaptcha/recaptcha_loader',
+        '@firebase/auth/dist/esm2017/src/platform_browser/load_js',
+        '@firebase/auth/dist/esm2017/src/core/util/delay',
+        '@firebase/auth/dist/esm2017/src/platform_browser/recaptcha',
+        '@firebase/util/dist/index.esm2017.js',
+      ],
     }),
     commonjs(),
     replace({
       preventAssignment: true,
       'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
       'process.env.DEBUG': JSON.stringify(false),
+      // Replace Firebase Auth reCAPTCHA-related code with no-ops
+      loadJS: 'function() { return Promise.resolve(); }',
+      gapiScript: '""',
+      recaptchaV2Script: '""',
+      recaptchaEnterpriseScript: '""',
     }),
     babel({
       babelHelpers: 'bundled',
@@ -29,6 +47,9 @@ const commonPlugins = isProd =>
           drop_console: false, // Keep console logs for debugging
           drop_debugger: true,
           pure_funcs: ['console.debug'],
+          // Remove unused reCAPTCHA code
+          dead_code: true,
+          unused: true,
         },
         mangle: {
           // Don't mangle these important identifiers

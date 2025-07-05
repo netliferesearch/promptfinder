@@ -21,7 +21,55 @@ async function copyExternalModules() {
   // Copy bundled firebase-init.js and create ES module wrapper
   try {
     const bundledFirebaseSrc = join(rootDir, 'dist', 'js', 'firebase-init.js');
-    const bundledContent = await readFile(bundledFirebaseSrc, 'utf8');
+    let bundledContent = await readFile(bundledFirebaseSrc, 'utf8');
+
+    // Remove problematic remote script loading code for Chrome Web Store compliance
+    console.log('🔧 Removing remote script loading code from Firebase bundle...');
+
+    // Remove _loadJS function definition and calls
+    bundledContent = bundledContent.replace(
+      /function _loadJS\(url\)\s*{[^}]*}/g,
+      'function _loadJS(url) { return Promise.resolve(); }'
+    );
+
+    // Remove specific problematic URLs
+    bundledContent = bundledContent.replace(
+      /_loadJS\(`https:\/\/apis\.google\.com\/js\/api\.js[^`]*`\)/g,
+      'Promise.resolve()'
+    );
+
+    bundledContent = bundledContent.replace(
+      /_loadJS\(RECAPTCHA_ENTERPRISE_URL[^)]*\)/g,
+      'Promise.resolve()'
+    );
+
+    // Remove any remaining references to remote script URLs
+    bundledContent = bundledContent.replace(/https:\/\/apis\.google\.com\/js\/api\.js/g, '""');
+
+    bundledContent = bundledContent.replace(
+      /https:\/\/www\.google\.com\/recaptcha\/api\.js/g,
+      '""'
+    );
+
+    bundledContent = bundledContent.replace(
+      /https:\/\/www\.google\.com\/recaptcha\/enterprise\.js/g,
+      '""'
+    );
+
+    // Remove reCAPTCHA constants
+    bundledContent = bundledContent.replace(
+      /const RECAPTCHA_ENTERPRISE_URL = [^;]*;/g,
+      'const RECAPTCHA_ENTERPRISE_URL = "";'
+    );
+
+    bundledContent = bundledContent.replace(
+      /const RECAPTCHA_V2_URL = [^;]*;/g,
+      'const RECAPTCHA_V2_URL = "";'
+    );
+
+    // Write the cleaned content back
+    await writeFile(bundledFirebaseSrc, bundledContent, 'utf8');
+    console.log('✅ Removed remote script loading code from Firebase bundle');
 
     // Create ES module wrapper that executes the IIFE and exports the results
     const esModuleWrapper = `// ES Module wrapper for bundled Firebase (IIFE format)
@@ -65,11 +113,12 @@ export const Timestamp = firebaseExports.Timestamp;
 export const httpsCallable = firebaseExports.httpsCallable;
 `;
 
-    const wrapperDest = join(targetDir, 'firebase-init.js');
-    await writeFile(wrapperDest, esModuleWrapper);
-    console.log(`✅ Created firebase-init.js ES module wrapper with IIFE`);
+    const targetFirebaseFile = join(targetDir, 'firebase-init.js');
+    await writeFile(targetFirebaseFile, esModuleWrapper, 'utf8');
+    console.log('✅ Created firebase-init.js ES module wrapper with IIFE');
   } catch (error) {
-    console.warn(`⚠️  Failed to create firebase-init wrapper:`, error.message);
+    console.error('❌ Error processing firebase-init.js:', error);
+    throw error;
   }
 
   console.log('✅ External modules copied successfully!');
@@ -78,7 +127,4 @@ export const httpsCallable = firebaseExports.httpsCallable;
   );
 }
 
-copyExternalModules().catch(error => {
-  console.error('❌ Failed to copy external modules:', error);
-  process.exit(1);
-});
+copyExternalModules().catch(console.error);
