@@ -1,20 +1,10 @@
 // Firebase v9 Modular SDK Initialization - Chrome Extension Compatible
-// Excludes reCAPTCHA and remote script loading functionality for Chrome Web Store compliance
+// Minimal Firebase setup to avoid ALL modules that might contain remote script loading
 
 import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged as firebaseOnAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithCredential,
-  updateProfile,
-  sendPasswordResetEmail,
-  sendEmailVerification as firebaseSendEmailVerification,
-  reload as firebaseReload,
-} from 'firebase/auth';
+// DO NOT import firebase/auth - it contains reCAPTCHA modules with remote script loading
+// We'll implement a basic auth alternative using only Firestore
+
 import {
   getFirestore,
   enableNetwork,
@@ -47,45 +37,15 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app, 'europe-west1');
 
-// Configure Firestore for Chrome extension environment
-// Disable offline persistence to avoid potential issues
-try {
-  if (typeof window !== 'undefined' && window.chrome && window.chrome.runtime) {
-    console.log('Initializing Firestore in Chrome extension environment');
+// Instead of Firebase Auth, we'll use Firebase Admin functions for authentication
+// This completely avoids the client-side auth modules that contain reCAPTCHA
 
-    // Configure Auth for Chrome extension
-    // Disable reCAPTCHA and other features that might load remote scripts
-    if (auth) {
-      // Set custom settings for Chrome extension environment
-      console.log('Firebase Auth configured for Chrome extension');
-
-      // Override any potential reCAPTCHA functionality
-      // This ensures no remote scripts are loaded
-      if (auth.app && auth.app.options) {
-        // Disable any reCAPTCHA-related features
-        const authSettings = {
-          appVerificationDisabledForTesting: true,
-        };
-
-        // Apply Chrome extension specific settings
-        try {
-          // Note: This is a defensive approach to prevent any remote script loading
-          if (typeof auth.settings !== 'undefined') {
-            Object.assign(auth.settings, authSettings);
-          }
-        } catch (settingsError) {
-          console.warn('Auth settings configuration warning:', settingsError);
-        }
-      }
-    }
-  }
-} catch (error) {
-  console.warn('Firebase configuration warning:', error);
-}
+console.log(
+  'Firebase initialized without client-side auth modules for Chrome Web Store compliance'
+);
 
 // Helper function to handle connection issues
 const handleFirestoreConnection = async () => {
@@ -100,29 +60,166 @@ const handleFirestoreConnection = async () => {
 // Initialize connection when module loads
 handleFirestoreConnection();
 
-// Custom wrapper functions to ensure no remote script loading
-const createUserWithEmailAndPasswordSafe = async (auth, email, password) => {
+// Auth functionality using Cloud Functions instead of client-side Firebase Auth
+// This completely avoids any reCAPTCHA or remote script loading
+
+let currentUser = null;
+const authStateListeners = [];
+
+// Create user using Cloud Function
+const createUserWithEmailAndPassword = async (authInstance, email, password) => {
   try {
-    return await createUserWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    // Handle auth errors without triggering reCAPTCHA
-    if (error.code === 'auth/too-many-requests') {
-      throw new Error('Too many requests. Please try again later.');
+    const createUser = httpsCallable(functions, 'createUser');
+    const result = await createUser({ email, password });
+
+    if (result.data.success) {
+      currentUser = {
+        uid: result.data.uid,
+        email: email,
+        emailVerified: false,
+      };
+      // Notify listeners
+      authStateListeners.forEach(listener => listener(currentUser));
+      return { user: currentUser };
+    } else {
+      throw new Error(result.data.error || 'Account creation failed');
     }
+  } catch (error) {
+    console.error('Create user error:', error);
     throw error;
   }
 };
 
-const signInWithEmailAndPasswordSafe = async (auth, email, password) => {
+// Sign in using Cloud Function
+const signInWithEmailAndPassword = async (authInstance, email, password) => {
   try {
-    return await signInWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    // Handle auth errors without triggering reCAPTCHA
-    if (error.code === 'auth/too-many-requests') {
-      throw new Error('Too many requests. Please try again later.');
+    const signIn = httpsCallable(functions, 'signInUser');
+    const result = await signIn({ email, password });
+
+    if (result.data.success) {
+      currentUser = {
+        uid: result.data.uid,
+        email: email,
+        emailVerified: result.data.emailVerified || false,
+      };
+      // Notify listeners
+      authStateListeners.forEach(listener => listener(currentUser));
+      return { user: currentUser };
+    } else {
+      throw new Error(result.data.error || 'Sign in failed');
     }
+  } catch (error) {
+    console.error('Sign in error:', error);
     throw error;
   }
+};
+
+// Sign out
+const firebaseSignOut = async () => {
+  currentUser = null;
+  // Notify listeners
+  authStateListeners.forEach(listener => listener(null));
+  return Promise.resolve();
+};
+
+// Auth state listener
+const firebaseOnAuthStateChanged = callback => {
+  authStateListeners.push(callback);
+  // Call immediately with current state
+  callback(currentUser);
+
+  // Return unsubscribe function
+  return () => {
+    const index = authStateListeners.indexOf(callback);
+    if (index > -1) {
+      authStateListeners.splice(index, 1);
+    }
+  };
+};
+
+// Mock auth object for compatibility
+const auth = {
+  currentUser: () => currentUser,
+  app: app,
+};
+
+// Password reset using Cloud Function
+const sendPasswordResetEmail = async (authInstance, email) => {
+  try {
+    const resetPassword = httpsCallable(functions, 'sendPasswordReset');
+    const result = await resetPassword({ email });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Password reset failed');
+    }
+  } catch (error) {
+    console.error('Password reset error:', error);
+    throw error;
+  }
+};
+
+// Email verification using Cloud Function
+const firebaseSendEmailVerification = async user => {
+  try {
+    const sendVerification = httpsCallable(functions, 'sendEmailVerification');
+    const result = await sendVerification({ uid: user.uid });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Email verification failed');
+    }
+  } catch (error) {
+    console.error('Email verification error:', error);
+    throw error;
+  }
+};
+
+// Reload user data
+const firebaseReload = async _user => {
+  // Refresh user data from server
+  if (currentUser) {
+    const getUserData = httpsCallable(functions, 'getUserData');
+    const result = await getUserData({ uid: currentUser.uid });
+
+    if (result.data.success) {
+      currentUser.emailVerified = result.data.emailVerified;
+      // Notify listeners
+      authStateListeners.forEach(listener => listener(currentUser));
+    }
+  }
+};
+
+// Update profile using Cloud Function
+const updateProfile = async (user, profileData) => {
+  try {
+    const updateUserProfile = httpsCallable(functions, 'updateProfile');
+    const result = await updateUserProfile({
+      uid: user.uid,
+      displayName: profileData.displayName,
+    });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Profile update failed');
+    }
+
+    // Update local user object
+    if (currentUser) {
+      currentUser.displayName = profileData.displayName;
+    }
+  } catch (error) {
+    console.error('Profile update error:', error);
+    throw error;
+  }
+};
+
+// Mock Google Auth Provider for compatibility
+const GoogleAuthProvider = {
+  credential: () => {
+    throw new Error('Google Sign-In not available in Chrome extension mode');
+  },
+};
+
+const signInWithCredential = async () => {
+  throw new Error('Google Sign-In not available in Chrome extension mode');
 };
 
 // Export Firebase instances and functions
@@ -132,9 +229,9 @@ export {
   functions,
   enableNetwork,
   disableNetwork,
-  // Auth functions - using safe wrappers
-  createUserWithEmailAndPasswordSafe as createUserWithEmailAndPassword,
-  signInWithEmailAndPasswordSafe as signInWithEmailAndPassword,
+  // Auth functions - using Cloud Function implementations
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   firebaseSignOut,
   firebaseOnAuthStateChanged,
   GoogleAuthProvider,

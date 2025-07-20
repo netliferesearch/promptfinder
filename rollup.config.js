@@ -11,13 +11,16 @@ const commonPlugins = isProd =>
     resolve({
       browser: true,
       preferBuiltins: false,
-      // Exclude Firebase modules that contain remote script loading
+      // Completely exclude ALL Firebase Auth modules to prevent remote script loading
       ignore: [
-        // Firebase Auth reCAPTCHA modules that contain remote script loading
+        // Block all Firebase Auth modules - we use Cloud Functions instead
+        'firebase/auth',
         'firebase/auth/web-extension',
         'firebase/auth/cordova',
         'firebase/auth/react-native',
-        // These modules contain loadJS functions for external scripts
+        '@firebase/auth',
+        '@firebase/auth/**',
+        // Block specific modules that contain loadJS functions for external scripts
         '@firebase/auth/dist/esm2017/src/platform_browser/recaptcha/recaptcha_loader',
         '@firebase/auth/dist/esm2017/src/platform_browser/load_js',
         '@firebase/auth/dist/esm2017/src/core/util/delay',
