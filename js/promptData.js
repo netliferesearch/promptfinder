@@ -1,17 +1,6 @@
 import { getOAuth2Config } from '../config/oauth-config.js';
 import {
-  auth,
   db,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  firebaseSignOut,
-  firebaseOnAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithCredential,
-  updateProfile,
-  sendPasswordResetEmail,
-  firebaseSendEmailVerification,
-  firebaseReload,
   collection,
   doc,
   setDoc,
@@ -28,16 +17,37 @@ import {
   functions,
 } from './firebase-init.js';
 
+// Create stub auth object for compatibility with existing code
+const auth = {
+  currentUser: null,
+};
+
+// Create stub objects for removed Firebase Auth functionality
+const GoogleAuthProvider = {};
+const signInWithCredential = () =>
+  Promise.reject(new Error('Client-side auth disabled - use Cloud Functions'));
+
+// Export stubs for compatibility
+export { GoogleAuthProvider, signInWithCredential };
+
 // --- Email Verification ---
 export const sendEmailVerification = async (user = null) => {
-  const currentUser = user || (auth ? auth.currentUser : null);
-  if (!currentUser) {
-    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+  if (!functions) {
+    const err = new Error('Firebase Functions not available');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
+
+  // For Cloud Functions, we need the user's UID
+  if (!user?.uid) {
+    const err = new Error('User not authenticated - uid required');
+    Utils.handleError(err.message, { userVisible: true, originalError: err });
+    return Promise.reject(err);
+  }
+
   try {
-    await firebaseSendEmailVerification(currentUser);
+    const sendEmailVerificationFn = httpsCallable(functions, 'sendEmailVerification');
+    await sendEmailVerificationFn({ uid: user.uid });
     return true;
   } catch (error) {
     Utils.handleError(textManager.format('EMAIL_VERIFICATION_ERROR', { message: error.message }), {
@@ -48,15 +58,22 @@ export const sendEmailVerification = async (user = null) => {
   }
 };
 
-export const checkEmailVerified = async () => {
-  const currentUser = auth ? auth.currentUser : null;
-  if (!currentUser) {
+export const checkEmailVerified = async (user = null) => {
+  if (!functions) {
+    console.log('Firebase Functions not available for checking email verification');
     return false;
   }
+
+  if (!user?.uid) {
+    console.log('No user provided for email verification check');
+    return false;
+  }
+
   try {
-    // Reload user to get latest verification status
-    await firebaseReload(currentUser);
-    return currentUser.emailVerified;
+    // Get user data from Cloud Function to check verification status
+    const getUserData = httpsCallable(functions, 'getUserData');
+    const result = await getUserData({ uid: user.uid });
+    return result.data.emailVerified || false;
   } catch (error) {
     console.error('Error checking email verification status:', error);
     return false;
@@ -65,13 +82,14 @@ export const checkEmailVerified = async () => {
 
 // --- Password Reset ---
 export const sendResetPasswordEmail = async email => {
-  if (!auth) {
-    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+  if (!functions) {
+    const err = new Error('Firebase Functions not available');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
   try {
-    await sendPasswordResetEmail(auth, email);
+    const sendPasswordReset = httpsCallable(functions, 'sendPasswordReset');
+    await sendPasswordReset({ email });
     return true;
   } catch (error) {
     Utils.handleError(textManager.format('RESET_PASSWORD_ERROR', { message: error.message }), {
@@ -87,60 +105,35 @@ import { textManager, getText } from './text-constants.js';
 
 // --- Firebase Authentication Functions ---
 export const signupUser = async (email, password, displayName) => {
-  if (!auth) {
-    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+  if (!functions) {
+    const err = new Error('Firebase Functions not available');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    // console.log('User signed up:', userCredential.user);
+    // Create user using Cloud Function
+    const createUser = httpsCallable(functions, 'createUser');
+    const result = await createUser({
+      email,
+      password,
+      displayName: displayName || '',
+    });
 
-    if (userCredential.user && displayName) {
-      try {
-        await updateProfile(userCredential.user, { displayName: displayName });
-      } catch (profileError) {
-        console.error('Error updating Firebase Auth profile:', profileError);
-        Utils.handleError(getText('PROFILE_UPDATE_ERROR'), {
-          userVisible: false,
-          originalError: profileError,
-        });
-      }
-    }
+    console.log('User signed up via Cloud Function:', result.data);
 
-    if (db) {
-      try {
-        const userDocRef = doc(db, 'users', userCredential.user.uid);
-        await setDoc(userDocRef, {
-          email: userCredential.user.email,
-          displayName: displayName,
-          createdAt: serverTimestamp(),
-          emailVerified: false, // Will be updated when email is verified
-        });
-      } catch (dbError) {
-        console.error('Error creating user document in Firestore:', dbError);
-        Utils.handleError(getText('USER_DOC_ERROR'), {
-          userVisible: true,
-          originalError: dbError,
-        });
-      }
-    }
-
-    // Send email verification
-    try {
-      await firebaseSendEmailVerification(userCredential.user);
-      console.log('Email verification sent to:', userCredential.user.email);
-    } catch (verificationError) {
-      console.error('Error sending email verification:', verificationError);
-      // Don't fail the signup process if email verification fails
-      Utils.handleError(getText('EMAIL_VERIFICATION_SEND_ERROR'), {
-        userVisible: true,
-        originalError: verificationError,
-      });
-    }
+    // Return a compatible structure with existing code
+    const userCredential = {
+      user: {
+        uid: result.data.uid,
+        email: result.data.email,
+        displayName: result.data.displayName,
+        emailVerified: false,
+      },
+    };
 
     return userCredential;
   } catch (error) {
+    console.error('Signup error:', error);
     Utils.handleError(textManager.format('SIGNUP_ERROR', { message: error.message }), {
       userVisible: true,
       originalError: error,
@@ -150,15 +143,31 @@ export const signupUser = async (email, password, displayName) => {
 };
 
 export const loginUser = async (email, password) => {
-  if (!auth) {
-    const err = new Error(getText('AUTH_NOT_AVAILABLE'));
+  if (!functions) {
+    const err = new Error('Firebase Functions not available');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
   }
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Sign in user using Cloud Function
+    const signInUser = httpsCallable(functions, 'signInUser');
+    const result = await signInUser({ email, password });
+
+    console.log('User signed in via Cloud Function:', result.data);
+
+    // Return a compatible structure with existing code
+    const userCredential = {
+      user: {
+        uid: result.data.uid,
+        email: result.data.email,
+        displayName: result.data.displayName,
+        emailVerified: result.data.emailVerified,
+      },
+    };
+
     return userCredential;
   } catch (error) {
+    console.error('Login error:', error);
     Utils.handleError(textManager.format('LOGIN_ERROR', { message: error.message }), {
       userVisible: true,
       originalError: error,
@@ -278,12 +287,12 @@ export const signInWithGoogle = async () => {
 };
 
 export const logoutUser = async () => {
-  if (!auth) {
-    Utils.handleError(getText('FIREBASE_AUTH_NOT_AVAILABLE'), { userVisible: true });
-    return Promise.resolve(false);
-  }
+  // For our Cloud Function-based auth, logout is just clearing local state
+  // No need to call Firebase Auth since we're not using client-side auth
   try {
-    await firebaseSignOut(auth);
+    // Clear any local user state here if needed
+    console.log('User logged out (client-side)');
+
     if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
       window.showToast(getText('LOGOUT_SUCCESS'), { type: 'success', duration: 3000 });
     }
@@ -298,12 +307,17 @@ export const logoutUser = async () => {
 };
 
 export const onAuthStateChanged = callback => {
-  if (!auth) {
-    Utils.handleError(getText('FIREBASE_AUTH_NOT_AVAILABLE'), { userVisible: false });
-    callback(null);
-    return () => {};
-  }
-  return firebaseOnAuthStateChanged(auth, callback);
+  // For Cloud Function-based auth, we don't have real-time auth state changes
+  // Return a dummy function for compatibility
+  console.log('onAuthStateChanged called - using Cloud Function auth (no real-time updates)');
+
+  // Call with null user initially (not authenticated on client-side)
+  callback(null);
+
+  // Return an unsubscribe function for compatibility
+  return () => {
+    console.log('Auth state listener unsubscribed');
+  };
 };
 
 // --- Prompt Functions (Firestore) ---
