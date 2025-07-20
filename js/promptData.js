@@ -23,9 +23,18 @@ const auth = {
 };
 
 // Create stub objects for removed Firebase Auth functionality
-const GoogleAuthProvider = {};
-const signInWithCredential = () =>
-  Promise.reject(new Error('Client-side auth disabled - use Cloud Functions'));
+const GoogleAuthProvider = {
+  credential: idToken => {
+    console.log('GoogleAuthProvider.credential called with idToken (stub)');
+    return { idToken, providerId: 'google.com' };
+  },
+};
+const signInWithCredential = async (auth, credential) => {
+  console.log('signInWithCredential called (stub) - redirecting to Cloud Function auth');
+  // For Google Sign-In, we would need to handle this differently
+  // For now, return a rejected promise with a helpful message
+  throw new Error('Google Sign-In requires server-side implementation with Cloud Functions');
+};
 
 // Export stubs for compatibility
 export { GoogleAuthProvider, signInWithCredential };
