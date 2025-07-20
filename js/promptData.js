@@ -254,32 +254,26 @@ export const signInWithGoogle = async () => {
       return Promise.reject(new Error(errMsg));
     }
 
-    const credential = GoogleAuthProvider.credential(idToken);
-    const userCredential = await signInWithCredential(auth, credential);
+    // Use Cloud Function for Google Sign-In (Chrome Web Store compliant)
+    const googleSignInFn = httpsCallable(functions, 'googleSignIn');
+    const result = await googleSignInFn({
+      idToken,
+      clientId,
+    });
 
-    if (db && userCredential.user) {
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      if (!userDocSnap.exists()) {
-        try {
-          await setDoc(userDocRef, {
-            email: userCredential.user.email,
-            displayName: userCredential.user.displayName || userCredential.user.email,
-            createdAt: serverTimestamp(),
-            photoURL: userCredential.user.photoURL || null,
-          });
-        } catch (dbError) {
-          console.error(
-            'Error creating user document for Google user (launchWebAuthFlow):',
-            dbError
-          );
-          Utils.handleError(getText('GOOGLE_USER_DETAILS_SAVE_ERROR'), {
-            userVisible: true,
-            originalError: dbError,
-          });
-        }
-      }
-    }
+    console.log('Google Sign-In successful via Cloud Function:', result.data);
+
+    // Return a compatible structure with existing code
+    const userCredential = {
+      user: {
+        uid: result.data.uid,
+        email: result.data.email,
+        displayName: result.data.displayName,
+        photoURL: result.data.photoURL,
+        emailVerified: result.data.emailVerified,
+      },
+    };
+
     return userCredential;
   } catch (error) {
     // Handle specific cases without logging as errors
@@ -288,12 +282,6 @@ export const signInWithGoogle = async () => {
         // User cancelled: log info, do not log as error
         console.info(getText('GOOGLE_SIGNIN_CANCELLED'));
         return null;
-      }
-      if (error.message.includes('Google Sign-In requires server-side implementation')) {
-        // Expected behavior - Cloud Functions auth is required
-        console.info('Google Sign-In: Server-side implementation required');
-        Utils.handleError(error.message, { userVisible: true, originalError: error });
-        return null; // Return null instead of rejecting to avoid further error handling
       }
     }
     console.error('Error in signInWithGoogle (launchWebAuthFlow) flow:', error);

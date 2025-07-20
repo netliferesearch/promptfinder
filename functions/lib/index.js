@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPrompts = exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.updateProfile = exports.getUserData = exports.sendEmailVerification = exports.sendPasswordReset = exports.signInUser = exports.createUser = exports.deletePromptCleanup = void 0;
+exports.searchPrompts = exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.googleSignIn = exports.updateProfile = exports.getUserData = exports.sendEmailVerification = exports.sendPasswordReset = exports.signInUser = exports.createUser = exports.deletePromptCleanup = void 0;
 const functions = require("firebase-functions/v2");
 const admin = require("firebase-admin");
+const google_auth_library_1 = require("google-auth-library");
 const utils_1 = require("./utils");
 /**
  * Deletes all subcollections (ratings, favoritedBy) when a prompt is deleted
@@ -317,6 +318,114 @@ exports.updateProfile = functions.https.onCall({ region: 'europe-west1' }, (0, u
         });
     }
 }, 'updateProfile'));
+/**
+ * Authenticates a user with Google OAuth ID token (server-side)
+ * Replaces client-side Google Sign-In to avoid remote script loading
+ */
+exports.googleSignIn = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+    const { idToken, clientId } = request.data;
+    if (!idToken || !clientId) {
+        throw (0, utils_1.createError)('invalid-argument', 'Google ID token and client ID are required', {
+            operation: 'googleSignIn',
+        });
+    }
+    const startTime = Date.now();
+    (0, utils_1.logInfo)('Processing Google Sign-In', {
+        operation: 'googleSignIn',
+    });
+    try {
+        // Initialize Google OAuth2 client
+        const client = new google_auth_library_1.OAuth2Client(clientId);
+        // Verify the Google ID token
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: clientId,
+        });
+        const payload = ticket.getPayload();
+        if (!payload) {
+            throw (0, utils_1.createError)('invalid-argument', 'Invalid Google ID token payload', {
+                operation: 'googleSignIn',
+            });
+        }
+        const { sub: googleId, email, name, picture, email_verified } = payload;
+        if (!email) {
+            throw (0, utils_1.createError)('invalid-argument', 'Email not provided by Google', {
+                operation: 'googleSignIn',
+            });
+        }
+        let userRecord;
+        try {
+            // Try to get existing user by email
+            userRecord = await admin.auth().getUserByEmail(email);
+            // Update user with Google info if not already set
+            const updates = {};
+            if (!userRecord.photoURL && picture)
+                updates.photoURL = picture;
+            if (!userRecord.displayName && name)
+                updates.displayName = name;
+            if (email_verified && !userRecord.emailVerified)
+                updates.emailVerified = true;
+            if (Object.keys(updates).length > 0) {
+                userRecord = await admin.auth().updateUser(userRecord.uid, updates);
+            }
+        }
+        catch (error) {
+            if (error.code === 'auth/user-not-found') {
+                // Create new user with Google info
+                userRecord = await admin.auth().createUser({
+                    email,
+                    displayName: name,
+                    photoURL: picture,
+                    emailVerified: email_verified || false,
+                });
+                (0, utils_1.logInfo)('New Google user created', {
+                    uid: userRecord.uid,
+                    email: userRecord.email,
+                    operation: 'googleSignIn',
+                });
+            }
+            else {
+                throw error;
+            }
+        }
+        // Create/update user document in Firestore
+        const userDocRef = db.collection('users').doc(userRecord.uid);
+        await userDocRef.set({
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName || name || '',
+            photoURL: userRecord.photoURL || picture || '',
+            emailVerified: userRecord.emailVerified,
+            googleId,
+            lastSignIn: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        (0, utils_1.logInfo)('Google Sign-In successful', {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            operation: 'googleSignIn',
+            executionTimeMs: Date.now() - startTime,
+        });
+        return {
+            success: true,
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName || name || '',
+            photoURL: userRecord.photoURL || picture || '',
+            emailVerified: userRecord.emailVerified,
+        };
+    }
+    catch (error) {
+        (0, utils_1.logError)('Failed to authenticate with Google', utils_1.ErrorType.UNAUTHENTICATED, {
+            operation: 'googleSignIn',
+            executionTimeMs: Date.now() - startTime,
+            originalError: error,
+        });
+        throw (0, utils_1.createError)('unauthenticated', `Google Sign-In failed: ${error.message}`, {
+            operation: 'googleSignIn',
+        });
+    }
+}, 'googleSignIn'));
 /**
  * Recalculates the average rating for a prompt when a rating is added, updated, or removed
  */

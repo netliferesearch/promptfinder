@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import { OAuth2Client } from 'google-auth-library';
 import { ErrorType, logError, logInfo, logWarning, withErrorHandling, createError } from './utils';
 
 /**
@@ -381,6 +382,131 @@ export const updateProfile = functions.https.onCall(
       });
     }
   }, 'updateProfile')
+);
+
+/**
+ * Authenticates a user with Google OAuth ID token (server-side)
+ * Replaces client-side Google Sign-In to avoid remote script loading
+ */
+export const googleSignIn = functions.https.onCall(
+  { region: 'europe-west1' },
+  withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
+    const { idToken, clientId } = request.data;
+
+    if (!idToken || !clientId) {
+      throw createError('invalid-argument', 'Google ID token and client ID are required', {
+        operation: 'googleSignIn',
+      });
+    }
+
+    const startTime = Date.now();
+
+    logInfo('Processing Google Sign-In', {
+      operation: 'googleSignIn',
+    });
+
+    try {
+      // Initialize Google OAuth2 client
+      const client = new OAuth2Client(clientId);
+      
+      // Verify the Google ID token
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: clientId,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw createError('invalid-argument', 'Invalid Google ID token payload', {
+          operation: 'googleSignIn',
+        });
+      }
+
+      const { sub: googleId, email, name, picture, email_verified } = payload;
+
+      if (!email) {
+        throw createError('invalid-argument', 'Email not provided by Google', {
+          operation: 'googleSignIn',
+        });
+      }
+
+      let userRecord;
+      
+      try {
+        // Try to get existing user by email
+        userRecord = await admin.auth().getUserByEmail(email);
+        
+        // Update user with Google info if not already set
+        const updates: any = {};
+        if (!userRecord.photoURL && picture) updates.photoURL = picture;
+        if (!userRecord.displayName && name) updates.displayName = name;
+        if (email_verified && !userRecord.emailVerified) updates.emailVerified = true;
+        
+        if (Object.keys(updates).length > 0) {
+          userRecord = await admin.auth().updateUser(userRecord.uid, updates);
+        }
+        
+      } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+          // Create new user with Google info
+          userRecord = await admin.auth().createUser({
+            email,
+            displayName: name,
+            photoURL: picture,
+            emailVerified: email_verified || false,
+          });
+
+          logInfo('New Google user created', {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            operation: 'googleSignIn',
+          });
+        } else {
+          throw error;
+        }
+      }
+
+      // Create/update user document in Firestore
+      const userDocRef = db.collection('users').doc(userRecord.uid);
+      await userDocRef.set({
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName || name || '',
+        photoURL: userRecord.photoURL || picture || '',
+        emailVerified: userRecord.emailVerified,
+        googleId,
+        lastSignIn: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      logInfo('Google Sign-In successful', {
+        uid: userRecord.uid,
+        email: userRecord.email,
+        operation: 'googleSignIn',
+        executionTimeMs: Date.now() - startTime,
+      });
+
+      return {
+        success: true,
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName || name || '',
+        photoURL: userRecord.photoURL || picture || '',
+        emailVerified: userRecord.emailVerified,
+      };
+
+    } catch (error: any) {
+      logError('Failed to authenticate with Google', ErrorType.UNAUTHENTICATED, {
+        operation: 'googleSignIn',
+        executionTimeMs: Date.now() - startTime,
+        originalError: error,
+      });
+
+      throw createError('unauthenticated', `Google Sign-In failed: ${error.message}`, {
+        operation: 'googleSignIn',
+      });
+    }
+  }, 'googleSignIn')
 );
 
 /**
