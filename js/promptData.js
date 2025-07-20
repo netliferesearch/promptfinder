@@ -282,11 +282,19 @@ export const signInWithGoogle = async () => {
     }
     return userCredential;
   } catch (error) {
-    // Only log as error if not user cancellation
-    if (error && error.message && error.message.includes('The user did not approve access')) {
-      // User cancelled: log info, do not log as error
-      console.info(getText('GOOGLE_SIGNIN_CANCELLED'));
-      return null;
+    // Handle specific cases without logging as errors
+    if (error && error.message) {
+      if (error.message.includes('The user did not approve access')) {
+        // User cancelled: log info, do not log as error
+        console.info(getText('GOOGLE_SIGNIN_CANCELLED'));
+        return null;
+      }
+      if (error.message.includes('Google Sign-In requires server-side implementation')) {
+        // Expected behavior - Cloud Functions auth is required
+        console.info('Google Sign-In: Server-side implementation required');
+        Utils.handleError(error.message, { userVisible: true, originalError: error });
+        return null; // Return null instead of rejecting to avoid further error handling
+      }
     }
     console.error('Error in signInWithGoogle (launchWebAuthFlow) flow:', error);
     const errMsg = error.message || getText('GOOGLE_SIGNIN_UNKNOWN_ERROR');
