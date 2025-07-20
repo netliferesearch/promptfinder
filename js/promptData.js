@@ -29,7 +29,7 @@ const GoogleAuthProvider = {
     return { idToken, providerId: 'google.com' };
   },
 };
-const signInWithCredential = async (auth, credential) => {
+const signInWithCredential = async (_auth, _credential) => {
   console.log('signInWithCredential called (stub) - redirecting to Cloud Function auth');
   // For Google Sign-In, we would need to handle this differently
   // For now, return a rejected promise with a helpful message
