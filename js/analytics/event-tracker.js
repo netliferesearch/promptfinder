@@ -232,7 +232,7 @@ class EventTracker {
       ...errorData.customParameters,
     };
 
-    return this.trackEvent('error', parameters, options);
+    return this.trackEvent('app_error', parameters, options);
   }
 
   /**
