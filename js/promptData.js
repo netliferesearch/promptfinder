@@ -1,4 +1,32 @@
 import { getOAuth2Config } from '../config/oauth-config.js';
+import {
+  auth,
+  db,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  firebaseSignOut,
+  firebaseOnAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential,
+  updateProfile,
+  sendPasswordResetEmail,
+  firebaseSendEmailVerification,
+  firebaseReload,
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  serverTimestamp,
+  Timestamp,
+  httpsCallable,
+  functions,
+} from './firebase-init.js';
 
 // --- Email Verification ---
 export const sendEmailVerification = async (user = null) => {
@@ -54,37 +82,6 @@ export const sendResetPasswordEmail = async email => {
   }
 };
 
-import {
-  auth,
-  db,
-  functions,
-  // Auth functions
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  firebaseSignOut,
-  firebaseOnAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithCredential,
-  updateProfile,
-  sendPasswordResetEmail,
-  firebaseSendEmailVerification,
-  firebaseReload,
-  // Firestore functions
-  collection,
-  doc,
-  setDoc,
-  addDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  serverTimestamp,
-  Timestamp,
-  // Functions
-  httpsCallable,
-} from '../js/firebase-init.js';
 import * as Utils from '../js/utils.js';
 import { textManager, getText } from './text-constants.js';
 
