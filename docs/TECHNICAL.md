@@ -10,6 +10,15 @@ This project has recently undergone a significant migration to Firebase for back
 
 ## Recent Major Changes (2025)
 
+### Authentication & Cloud Functions Migration (July 2025) - COMPLETED
+
+- ✅ **Server-Side Authentication:** Migrated from client-side Firebase Auth to Cloud Function-based authentication for Chrome Web Store Manifest V3 compliance
+- ✅ **Cloud Functions for Operations:** Implemented `ratePrompt` and `toggleFavorite` Cloud Functions to handle user operations with server-side validation
+- ✅ **Firestore Security Fixes:** Resolved permission-denied errors by moving authenticated operations to server-side with proper user validation
+- ✅ **Auth State Management:** Fixed email/password login, Google Sign-In, and logout to properly update local authentication state and trigger UI updates
+- ✅ **Hybrid Architecture:** Maintained existing Firestore trigger functions (`recalculateRating`, `updateFavoritesCount`) while adding callable functions for security
+- ✅ **ESLint Compliance:** Removed unused imports and fixed all linting warnings for clean production builds
+
 ### GA4 Analytics Implementation (July 2025) - COMPLETED
 
 - ✅ **Comprehensive Analytics System:** Implemented complete Google Analytics 4 (GA4) integration using Measurement Protocol for Chrome extension compatibility
@@ -46,6 +55,26 @@ This project has recently undergone a significant migration to Firebase for back
 - ✅ **General Code Cleanup:** Related code in `popup.html`, `popup.css`, `auth.css`, and `ui.js` was refactored for clarity and maintainability.
 
 ## System Architecture
+
+### Authentication & Cloud Functions Architecture (July 2025)
+
+**Server-Side Authentication for Chrome Web Store Compliance:**
+
+- **Cloud Function Authentication:** Migrated from client-side Firebase Auth to server-side Cloud Functions (`googleSignIn`, `createUser`, `signInUser`, `sendPasswordReset`) to comply with Chrome Web Store Manifest V3 requirements
+- **Hybrid Data Operations:**
+  - **Callable Functions:** `ratePrompt`, `toggleFavorite` handle user operations with server-side authentication validation
+  - **Trigger Functions:** `recalculateRating`, `updateFavoritesCount` continue to handle aggregate calculations automatically
+- **Local Auth State Management:** Custom auth object in `firebase-init.js` with `updateCurrentUser()` and `onAuthStateChanged()` methods to maintain UI synchronization
+- **Security Benefits:** All authenticated operations validate user identity server-side, preventing client-side permission bypass attempts
+- **Chrome Web Store Compliance:** Eliminates remote script loading while maintaining full authentication functionality
+
+**Authentication Flow:**
+
+1. User initiates login (Google, email/password, or signup)
+2. Client calls appropriate Cloud Function with credentials
+3. Server validates credentials and returns user data
+4. Client updates local auth state via `auth.updateCurrentUser()`
+5. UI automatically updates via `onAuthStateChanged` listeners
 
 ### Centralized Text Management System (January 2025)
 

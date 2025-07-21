@@ -819,6 +819,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Google Sign-Up button handler (uses the same signInWithGoogle function)
+  const googleSignUpButton = document.getElementById('google-signup-button');
+  if (googleSignUpButton) {
+    googleSignUpButton.addEventListener('click', async () => {
+      if (authErrorMessageElement) authErrorMessageElement.classList.add('hidden');
+      const googleSignupStartTime = Date.now();
+
+      try {
+        const result = await signInWithGoogle();
+        if (result && result.user) {
+          const googleSignupDuration = Date.now() - googleSignupStartTime;
+
+          // Track as signup for new Google users
+          analytics.trackSignup({
+            method: 'google',
+            userId: result.user.uid,
+            displayName: result.user.displayName || '',
+            duration: googleSignupDuration,
+            emailVerificationSent: false, // Google accounts are pre-verified
+            context: 'popup',
+          });
+        }
+      } catch (error) {
+        // Don't track cancelled authentications as errors
+        if (
+          error &&
+          error.message &&
+          !error.message.includes('cancelled') &&
+          !error.message.includes('popup_closed')
+        ) {
+          const googleSignupDuration = Date.now() - googleSignupStartTime;
+
+          // Track failed Google signup attempt
+          analytics.trackError({
+            error_type: 'google_signup_failed',
+            error_message: error.message || 'Google signup failed',
+            method: 'google',
+            duration: googleSignupDuration,
+            context: 'popup',
+          });
+        }
+
+        Utils.displayAuthError(
+          error.message || getText('AUTH_GOOGLE_SIGNUP_FAILED'),
+          authErrorMessageElement
+        );
+      }
+    });
+  }
+
   // Email verification event handlers
   if (checkVerificationButton) {
     checkVerificationButton.addEventListener('click', async () => {

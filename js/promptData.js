@@ -3,7 +3,6 @@ import {
   db,
   collection,
   doc,
-  setDoc,
   addDoc,
   getDoc,
   getDocs,
@@ -126,14 +125,22 @@ export const signupUser = async (email, password, displayName) => {
 
     console.log('User signed up via Cloud Function:', result.data);
 
+    // Update the local auth state in firebase-init.js
+    const user = {
+      uid: result.data.uid,
+      email: result.data.email,
+      displayName: result.data.displayName,
+      emailVerified: false,
+    };
+
+    // Update currentUser and notify listeners
+    if (auth && typeof auth.updateCurrentUser === 'function') {
+      auth.updateCurrentUser(user);
+    }
+
     // Return a compatible structure with existing code
     const userCredential = {
-      user: {
-        uid: result.data.uid,
-        email: result.data.email,
-        displayName: result.data.displayName,
-        emailVerified: false,
-      },
+      user: user,
     };
 
     return userCredential;
@@ -160,14 +167,22 @@ export const loginUser = async (email, password) => {
 
     console.log('User signed in via Cloud Function:', result.data);
 
+    // Update the local auth state in firebase-init.js
+    const user = {
+      uid: result.data.uid,
+      email: result.data.email,
+      displayName: result.data.displayName,
+      emailVerified: result.data.emailVerified,
+    };
+
+    // Update currentUser and notify listeners
+    if (auth && typeof auth.updateCurrentUser === 'function') {
+      auth.updateCurrentUser(user);
+    }
+
     // Return a compatible structure with existing code
     const userCredential = {
-      user: {
-        uid: result.data.uid,
-        email: result.data.email,
-        displayName: result.data.displayName,
-        emailVerified: result.data.emailVerified,
-      },
+      user: user,
     };
 
     return userCredential;
@@ -259,15 +274,23 @@ export const signInWithGoogle = async () => {
 
     console.log('Google Sign-In successful via Cloud Function:', result.data);
 
+    // Update the local auth state in firebase-init.js
+    const user = {
+      uid: result.data.uid,
+      email: result.data.email,
+      displayName: result.data.displayName,
+      photoURL: result.data.photoURL,
+      emailVerified: result.data.emailVerified,
+    };
+
+    // Update currentUser and notify listeners
+    if (auth && typeof auth.updateCurrentUser === 'function') {
+      auth.updateCurrentUser(user);
+    }
+
     // Return a compatible structure with existing code
     const userCredential = {
-      user: {
-        uid: result.data.uid,
-        email: result.data.email,
-        displayName: result.data.displayName,
-        photoURL: result.data.photoURL,
-        emailVerified: result.data.emailVerified,
-      },
+      user: user,
     };
 
     return userCredential;
@@ -291,7 +314,11 @@ export const logoutUser = async () => {
   // For our Cloud Function-based auth, logout is just clearing local state
   // No need to call Firebase Auth since we're not using client-side auth
   try {
-    // Clear any local user state here if needed
+    // Clear the local auth state and notify listeners
+    if (auth && typeof auth.updateCurrentUser === 'function') {
+      auth.updateCurrentUser(null);
+    }
+
     console.log('User logged out (client-side)');
 
     if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
@@ -308,17 +335,17 @@ export const logoutUser = async () => {
 };
 
 export const onAuthStateChanged = callback => {
-  // For Cloud Function-based auth, we don't have real-time auth state changes
-  // Return a dummy function for compatibility
-  console.log('onAuthStateChanged called - using Cloud Function auth (no real-time updates)');
+  // Register the callback with the auth object in firebase-init.js
+  if (auth && typeof auth.onAuthStateChanged === 'function') {
+    return auth.onAuthStateChanged(callback);
+  } else {
+    console.error('auth.onAuthStateChanged not available');
+    // Fallback: call with current user state
+    callback(auth ? auth.currentUser : null);
 
-  // Call with null user initially (not authenticated on client-side)
-  callback(null);
-
-  // Return an unsubscribe function for compatibility
-  return () => {
-    console.log('Auth state listener unsubscribed');
-  };
+    // Return an unsubscribe function for compatibility
+    return () => {};
+  }
 };
 
 // --- Prompt Functions (Firestore) ---
@@ -374,7 +401,7 @@ export const ratePrompt = async (promptId, ratingValue) => {
     Utils.handleError(getText('LOGIN_TO_RATE_PROMPT'), { userVisible: true });
     return null;
   }
-  if (!db) {
+  if (!functions) {
     Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return null;
   }
@@ -385,18 +412,24 @@ export const ratePrompt = async (promptId, ratingValue) => {
     return null;
   }
 
-  const promptRef = doc(db, 'prompts', promptId);
-  const ratingDocRef = doc(db, 'prompts', promptId, 'ratings', currentUser.uid);
-
   try {
-    // Set the rating document - the cloud function will handle the aggregation
-    await setDoc(ratingDocRef, {
+    // Call the Cloud Function to handle the rating
+    const ratePromptFn = httpsCallable(functions, 'ratePrompt');
+    const result = await ratePromptFn({
+      promptId: promptId,
       rating: ratingValue,
-      ratedAt: serverTimestamp(),
       userId: currentUser.uid,
     });
 
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Rating failed');
+    }
+
+    console.log('Rating submitted successfully via Cloud Function:', result.data);
+
     // Poll for updated averageRating (max 2s, check every 250ms)
+    // The Cloud Function triggers will update the aggregated data
+    const promptRef = doc(db, 'prompts', promptId);
     let updatedPromptSnap;
     let promptDataToReturn;
     let attempts = 0;
@@ -678,7 +711,7 @@ export const toggleFavorite = async promptId => {
     Utils.handleError('User must be logged in to change favorite status.', { userVisible: true });
     return null;
   }
-  if (!db) {
+  if (!functions) {
     Utils.handleError(getText('FIRESTORE_NOT_AVAILABLE_GENERAL'), { userVisible: true });
     return null;
   }
@@ -687,33 +720,21 @@ export const toggleFavorite = async promptId => {
     return null;
   }
 
-  const promptRef = doc(db, 'prompts', promptId);
-  const favoritedByDocRef = doc(db, 'prompts', promptId, 'favoritedBy', currentUser.uid);
-
   try {
-    const currentPromptSnap = await getDoc(promptRef);
-    if (!currentPromptSnap.exists()) {
-      Utils.handleError(`Prompt ${promptId} not found for toggling favorite.`, {
-        userVisible: true,
-      });
-      return null;
+    // Call the Cloud Function to handle the favorite toggle
+    const toggleFavoriteFn = httpsCallable(functions, 'toggleFavorite');
+    const result = await toggleFavoriteFn({
+      promptId: promptId,
+      userId: currentUser.uid,
+    });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Toggle favorite failed');
     }
 
-    // Check if the user has already favorited this prompt
-    const favoritedBySnap = await getDoc(favoritedByDocRef);
+    console.log('Favorite toggled successfully via Cloud Function:', result.data);
 
-    // Simply add or remove the favorite document
-    // The cloud function will handle updating the favoritesCount
-    if (favoritedBySnap.exists()) {
-      await deleteDoc(favoritedByDocRef);
-    } else {
-      await setDoc(favoritedByDocRef, {
-        favoritedAt: serverTimestamp(),
-        userId: currentUser.uid,
-      });
-    }
-
-    // Wait a moment for the cloud function to process
+    // Wait a moment for the cloud function trigger to process the count update
     // In a production app, you might consider implementing a more sophisticated
     // approach that doesn't rely on this delay
     await new Promise(resolve => setTimeout(resolve, 300));

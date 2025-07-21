@@ -1,4 +1,33 @@
-# Changelog Entry - CSS Optimization
+# DesignPrompts Changelog
+
+## [1.3.0] - 2025-07-21
+
+### Authentication & Cloud Functions Architecture
+
+- **Added**
+
+  - Server-side Cloud Functions for rating and favorites operations (`ratePrompt`, `toggleFavorite`)
+  - Enhanced Google Sign-In, email/password login, and signup with proper auth state management
+  - Chrome Web Store Manifest V3 compliant authentication system
+  - Server-side authentication validation for all user operations
+
+- **Fixed**
+
+  - Resolved Firestore permission-denied errors for rating and favorites operations
+  - Fixed email/password login not updating UI after successful authentication
+  - Fixed Google Sign-In and logout auth state synchronization
+  - Eliminated ESLint warnings for unused imports
+
+- **Security**
+
+  - Migrated client-side Firestore writes to secure server-side Cloud Functions
+  - Added proper user ID validation for all authenticated operations
+  - Enhanced security compliance for Chrome Web Store approval
+
+- **Improved**
+  - Consistent authentication experience across all login methods
+  - Better error handling and user feedback for authentication failures
+  - Maintained existing UI/UX while improving underlying security
 
 ## [1.1.0] - 2025-05-13
 

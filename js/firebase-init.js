@@ -142,6 +142,25 @@ const auth = {
   get currentUser() {
     return currentUser;
   },
+  updateCurrentUser(user) {
+    currentUser = user;
+    // Notify all auth state listeners
+    authStateListeners.forEach(listener => listener(currentUser));
+  },
+  onAuthStateChanged(callback) {
+    authStateListeners.push(callback);
+
+    // Immediately call with current user state
+    callback(currentUser);
+
+    // Return unsubscribe function
+    return () => {
+      const index = authStateListeners.indexOf(callback);
+      if (index > -1) {
+        authStateListeners.splice(index, 1);
+      }
+    };
+  },
   app: app,
 };
 

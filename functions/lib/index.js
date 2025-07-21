@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPrompts = exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.googleSignIn = exports.updateProfile = exports.getUserData = exports.sendEmailVerification = exports.sendPasswordReset = exports.signInUser = exports.createUser = exports.deletePromptCleanup = void 0;
+exports.searchPrompts = exports.toggleFavorite = exports.ratePrompt = exports.incrementUsageCount = exports.recalculateAllStats = exports.updateFavoritesCount = exports.recalculateRating = exports.googleSignIn = exports.updateProfile = exports.getUserData = exports.sendEmailVerification = exports.sendPasswordReset = exports.signInUser = exports.createUser = exports.deletePromptCleanup = void 0;
 const functions = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const google_auth_library_1 = require("google-auth-library");
@@ -703,6 +703,179 @@ exports.incrementUsageCount = functions.https.onCall({ region: 'europe-west1' },
     });
     return { success: true };
 }, 'incrementUsageCount'));
+/**
+ * Rate a prompt (server-side authentication)
+ * Replaces client-side Firestore writes for rating operations
+ */
+exports.ratePrompt = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
+    const startTime = Date.now();
+    const { promptId, rating, userId } = request.data || {};
+    // Validate authentication (userId passed from client)
+    if (!userId || typeof userId !== 'string') {
+        throw (0, utils_1.createError)('unauthenticated', 'User ID must be provided to rate prompts', {
+            operation: 'ratePrompt',
+        });
+    }
+    // Validate input
+    if (!promptId || typeof promptId !== 'string') {
+        throw (0, utils_1.createError)('invalid-argument', 'Valid promptId is required', {
+            operation: 'ratePrompt',
+            promptId,
+        });
+    }
+    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+        throw (0, utils_1.createError)('invalid-argument', 'Rating must be a number between 1 and 5', {
+            operation: 'ratePrompt',
+            additionalInfo: { rating },
+        });
+    }
+    // userId is now passed from client data (validated above)
+    try {
+        (0, utils_1.logInfo)('Processing rating request', {
+            promptId,
+            userId,
+            rating,
+            operation: 'ratePrompt',
+        });
+        // Check if prompt exists
+        const promptRef = db.collection('prompts').doc(promptId);
+        const promptSnap = await promptRef.get();
+        if (!promptSnap.exists) {
+            throw (0, utils_1.createError)('not-found', `Prompt ${promptId} not found`, {
+                operation: 'ratePrompt',
+                promptId,
+            });
+        }
+        // Set the rating document - the existing trigger will handle aggregation
+        const ratingDocRef = db.collection('prompts').doc(promptId).collection('ratings').doc(userId);
+        await ratingDocRef.set({
+            rating: rating,
+            ratedAt: admin.firestore.FieldValue.serverTimestamp(),
+            userId: userId,
+        });
+        (0, utils_1.logInfo)('Rating saved successfully', {
+            promptId,
+            userId,
+            rating,
+            operation: 'ratePrompt',
+            executionTimeMs: Date.now() - startTime,
+        });
+        return {
+            success: true,
+            promptId,
+            rating,
+            userId,
+        };
+    }
+    catch (error) {
+        (0, utils_1.logError)('Failed to rate prompt', utils_1.ErrorType.DATABASE_ERROR, {
+            promptId,
+            userId,
+            operation: 'ratePrompt',
+            executionTimeMs: Date.now() - startTime,
+            originalError: error,
+            additionalInfo: { rating },
+        });
+        throw (0, utils_1.createError)('internal', `Failed to rate prompt: ${error.message}`, {
+            operation: 'ratePrompt',
+            promptId,
+        });
+    }
+}, 'ratePrompt'));
+/**
+ * Toggle favorite status for a prompt (server-side authentication)
+ * Replaces client-side Firestore writes for favorite operations
+ */
+exports.toggleFavorite = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
+    const startTime = Date.now();
+    const { promptId, userId } = request.data || {};
+    // Validate authentication (userId passed from client)
+    if (!userId || typeof userId !== 'string') {
+        throw (0, utils_1.createError)('unauthenticated', 'User ID must be provided to favorite prompts', {
+            operation: 'toggleFavorite',
+        });
+    }
+    // Validate input
+    if (!promptId || typeof promptId !== 'string') {
+        throw (0, utils_1.createError)('invalid-argument', 'Valid promptId is required', {
+            operation: 'toggleFavorite',
+            promptId,
+        });
+    }
+    // userId is now passed from client data (validated above)
+    try {
+        (0, utils_1.logInfo)('Processing favorite toggle request', {
+            promptId,
+            userId,
+            operation: 'toggleFavorite',
+        });
+        // Check if prompt exists
+        const promptRef = db.collection('prompts').doc(promptId);
+        const promptSnap = await promptRef.get();
+        if (!promptSnap.exists) {
+            throw (0, utils_1.createError)('not-found', `Prompt ${promptId} not found`, {
+                operation: 'toggleFavorite',
+                promptId,
+            });
+        }
+        // Check current favorite status
+        const favoritedByDocRef = db.collection('prompts').doc(promptId).collection('favoritedBy').doc(userId);
+        const favoritedBySnap = await favoritedByDocRef.get();
+        let action;
+        let isFavorite;
+        if (favoritedBySnap.exists) {
+            // Remove favorite
+            await favoritedByDocRef.delete();
+            action = 'unfavorite';
+            isFavorite = false;
+        }
+        else {
+            // Add favorite
+            await favoritedByDocRef.set({
+                favoritedAt: admin.firestore.FieldValue.serverTimestamp(),
+                userId: userId,
+            });
+            action = 'favorite';
+            isFavorite = true;
+        }
+        (0, utils_1.logInfo)('Favorite toggle completed', {
+            promptId,
+            userId,
+            action,
+            isFavorite,
+            operation: 'toggleFavorite',
+            executionTimeMs: Date.now() - startTime,
+        });
+        return {
+            success: true,
+            promptId,
+            action,
+            isFavorite,
+            userId,
+        };
+    }
+    catch (error) {
+        (0, utils_1.logError)('Failed to toggle favorite', utils_1.ErrorType.DATABASE_ERROR, {
+            promptId,
+            userId,
+            operation: 'toggleFavorite',
+            executionTimeMs: Date.now() - startTime,
+            originalError: error,
+        });
+        throw (0, utils_1.createError)('internal', `Failed to toggle favorite: ${error.message}`, {
+            operation: 'toggleFavorite',
+            promptId,
+        });
+    }
+}, 'toggleFavorite'));
 // Export the searchPrompts Cloud Function for deployment
 var searchPrompts_1 = require("./searchPrompts");
 Object.defineProperty(exports, "searchPrompts", { enumerable: true, get: function () { return searchPrompts_1.searchPrompts; } });

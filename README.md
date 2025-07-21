@@ -49,7 +49,9 @@ DesignPrompts is a Chrome extension that helps you efficiently manage, store, an
 ### 🔒 **Privacy & Security**
 
 - Choose to keep prompts private or share with the community
-- Secure authentication with Google Sign-In or email/password
+- Secure server-side authentication with Cloud Functions
+- Google Sign-In and email/password authentication supported
+- Chrome Web Store Manifest V3 compliant for enhanced security
 - Your private prompts are only visible to you
 - No ads, no tracking of your personal conversations
 
@@ -109,11 +111,13 @@ npm run lint    # Check code quality
 ## 🔧 **Technical Highlights**
 
 - Built with modern JavaScript (ES Modules)
-- Firebase backend for real-time sync
+- Firebase backend with Cloud Functions for secure server-side operations
+- Chrome Web Store Manifest V3 compliant architecture
 - Advanced search with typo tolerance and ranking
-- Comprehensive test suite (774+ tests)
-- Privacy-first analytics
+- Comprehensive test suite (766+ tests)
+- Privacy-first analytics with GA4 integration
 - Accessibility-focused UI design
+- Server-side authentication for enhanced security
 
 ## 🤝 **Contributing**
 
