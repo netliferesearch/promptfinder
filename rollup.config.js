@@ -133,10 +133,15 @@ const jsModules = [
     output: 'dist/js/js/analytics/service-worker-analytics.js',
   },
   { input: 'js/analytics/session-manager.js', output: 'dist/js/js/analytics/session-manager.js' },
-  {
-    input: 'js/analytics/testing-utilities.js',
-    output: 'dist/js/js/analytics/testing-utilities.js',
-  },
+  // Skip testing utilities in production builds
+  ...(isProduction
+    ? []
+    : [
+        {
+          input: 'js/analytics/testing-utilities.js',
+          output: 'dist/js/js/analytics/testing-utilities.js',
+        },
+      ]),
   {
     input: 'js/analytics/user-property-manager.js',
     output: 'dist/js/js/analytics/user-property-manager.js',

@@ -26,8 +26,8 @@ const projectRoot = path.join(__dirname, '..');
 async function advancedCSSMinification() {
   console.log('🔧 Starting Advanced CSS Minification...\n');
 
-  const cssDir = path.join(projectRoot, 'css-min');
-  const outputDir = path.join(projectRoot, 'css-minified');
+  const cssDir = path.join(projectRoot, 'dist/css-purged');
+  const outputDir = path.join(projectRoot, 'css-min');
 
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
