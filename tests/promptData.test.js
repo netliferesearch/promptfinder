@@ -3,16 +3,14 @@ import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
 
 // Import Firebase functions from our firebase-init module instead of direct Firebase imports
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  firebaseSignOut as signOut,
-  firebaseOnAuthStateChanged as onAuthStateChanged,
-  updateProfile,
-  addDoc,
-  serverTimestamp,
-  httpsCallable,
-} from '../js/firebase-init.js';
+import { addDoc, serverTimestamp, httpsCallable, functions } from '../js/firebase-init.js';
+
+// Mock the Firebase Auth functions that are now handled by Cloud Functions
+const createUserWithEmailAndPassword = jest.fn();
+const signInWithEmailAndPassword = jest.fn();
+const signOut = jest.fn();
+const onAuthStateChanged = jest.fn();
+const updateProfile = jest.fn();
 
 jest.mock('../js/utils.js', () => ({
   ...jest.requireActual('../js/utils.js'),
@@ -46,69 +44,87 @@ describe('PromptData Module - Firestore v9', () => {
   });
 
   describe('signupUser', () => {
-    test('should call createUserWithEmailAndPassword, updateProfile, and setDoc for user', async () => {
-      createUserWithEmailAndPassword.mockResolvedValueOnce({
-        user: { uid: 'newUserUid', email: 'new@example.com' },
+    test('should call createUser Cloud Function and return user data', async () => {
+      // Mock the Cloud Function
+      const mockCreateUser = jest.fn().mockResolvedValue({
+        data: {
+          success: true,
+          uid: 'newUserUid',
+          email: 'new@example.com',
+          displayName: 'New User',
+          emailVerified: false,
+        },
       });
-      updateProfile.mockResolvedValueOnce(undefined);
+      httpsCallable.mockReturnValue(mockCreateUser);
 
       const result = await PromptData.signupUser('new@example.com', 'password123', 'New User');
 
-      expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
-        expect.anything(),
-        'new@example.com',
-        'password123'
-      );
-      expect(updateProfile).toHaveBeenCalledWith(
-        { uid: 'newUserUid', email: 'new@example.com' },
-        { displayName: 'New User' }
-      );
+      expect(httpsCallable).toHaveBeenCalledWith(functions, 'createUser');
+      expect(mockCreateUser).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        password: 'password123',
+        displayName: 'New User',
+      });
       expect(result.user.uid).toBe('newUserUid');
-
-      const userDoc = global.mockFirestoreDb.getPathData(`users/newUserUid`);
-      expect(userDoc).toBeDefined();
-      expect(userDoc.email).toBe('new@example.com');
-      expect(userDoc.displayName).toBe('New User');
+      expect(result.user.email).toBe('new@example.com');
+      expect(result.user.displayName).toBe('New User');
     });
 
-    test('should return Promise.reject if signup fails', async () => {
-      const authError = new Error('Firebase signup failed');
-      createUserWithEmailAndPassword.mockRejectedValueOnce(authError);
+    test('should return Promise.reject if Cloud Function signup fails', async () => {
+      const authError = new Error('Cloud Function signup failed');
+      const mockCreateUser = jest.fn().mockRejectedValue(authError);
+      httpsCallable.mockReturnValue(mockCreateUser);
+
       await expect(PromptData.signupUser('fail@example.com', 'password', 'Fail User')).rejects.toBe(
         authError
       );
       expect(Utils.handleError).toHaveBeenCalledWith(
-        expect.stringContaining('Firebase signup failed'),
+        expect.stringContaining('Cloud Function signup failed'),
         expect.anything()
       );
     });
   });
 
   describe('loginUser', () => {
-    test('should call signInWithEmailAndPassword', async () => {
-      signInWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
+    test('should call signInUser Cloud Function', async () => {
+      const mockSignInUser = jest.fn().mockResolvedValue({
+        data: {
+          uid: mockUser.uid,
+          email: mockUser.email,
+          displayName: mockUser.displayName,
+          emailVerified: true,
+        },
+      });
+      httpsCallable.mockReturnValue(mockSignInUser);
+
       const result = await PromptData.loginUser('test@example.com', 'password');
-      expect(signInWithEmailAndPassword).toHaveBeenCalledWith(
-        expect.anything(),
-        'test@example.com',
-        'password'
-      );
-      expect(result.user).toEqual(mockUser);
+
+      expect(httpsCallable).toHaveBeenCalledWith(functions, 'signInUser');
+      expect(mockSignInUser).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password',
+      });
+      expect(result.user.uid).toBe(mockUser.uid);
+      expect(result.user.email).toBe(mockUser.email);
     });
   });
 
   describe('logoutUser', () => {
-    test('should call signOut', async () => {
-      await PromptData.logoutUser();
-      expect(signOut).toHaveBeenCalled();
+    test('should handle logout (Cloud Function-based auth)', async () => {
+      const result = await PromptData.logoutUser();
+      // For Cloud Function-based auth, logout just clears local state
+      expect(result).toBe(true);
     });
   });
 
   describe('onAuthStateChanged', () => {
-    test('should call Firebase onAuthStateChanged and pass callback', () => {
+    test('should handle auth state changes (Cloud Function-based auth)', () => {
       const callback = jest.fn();
-      PromptData.onAuthStateChanged(callback);
-      expect(onAuthStateChanged).toHaveBeenCalledWith(expect.anything(), callback);
+      const unsubscribe = PromptData.onAuthStateChanged(callback);
+
+      // For Cloud Function-based auth, callback is called with null (no client-side auth state)
+      expect(callback).toHaveBeenCalledWith(null);
+      expect(typeof unsubscribe).toBe('function');
     });
   });
 

@@ -475,7 +475,7 @@ describe('EventTracker', () => {
       await eventTracker.trackError(errorData);
 
       expect(trackEventSpy).toHaveBeenCalledWith(
-        'error',
+        'app_error',
         {
           error_message: 'Test error',
           error_code: 'TEST_ERROR',
