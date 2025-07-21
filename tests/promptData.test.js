@@ -5,12 +5,7 @@ import * as Utils from '../js/utils.js';
 // Import Firebase functions from our firebase-init module instead of direct Firebase imports
 import { addDoc, serverTimestamp, httpsCallable, functions } from '../js/firebase-init.js';
 
-// Mock the Firebase Auth functions that are now handled by Cloud Functions
-const createUserWithEmailAndPassword = jest.fn();
-const signInWithEmailAndPassword = jest.fn();
-const signOut = jest.fn();
-const onAuthStateChanged = jest.fn();
-const updateProfile = jest.fn();
+// Note: Firebase Auth functions are now handled by Cloud Functions
 
 jest.mock('../js/utils.js', () => ({
   ...jest.requireActual('../js/utils.js'),

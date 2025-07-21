@@ -215,12 +215,6 @@ jest.mock('../js/firebase-init.js', () => {
       mockFunction._functionName = functionName;
       return mockFunction;
     }),
-    // Export auth object for promptData.js to import instead of creating its own
-    auth: {
-      get currentUser() {
-        return mockCurrentAuthUser;
-      },
-    },
   };
 });
 
