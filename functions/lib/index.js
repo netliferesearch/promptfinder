@@ -56,7 +56,11 @@ const db = admin.firestore();
  * Creates a new user account using Firebase Admin SDK
  * Replaces client-side Firebase Auth to avoid remote script loading
  */
-exports.createUser = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.createUser = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { email, password } = request.data;
     if (!email || !password) {
         throw (0, utils_1.createError)('invalid-argument', 'Email and password are required', {
@@ -108,7 +112,11 @@ exports.createUser = functions.https.onCall({ region: 'europe-west1' }, (0, util
  * Signs in a user using email/password validation
  * Replaces client-side Firebase Auth to avoid remote script loading
  */
-exports.signInUser = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.signInUser = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { email, password } = request.data;
     if (!email || !password) {
         throw (0, utils_1.createError)('invalid-argument', 'Email and password are required', {
@@ -156,7 +164,11 @@ exports.signInUser = functions.https.onCall({ region: 'europe-west1' }, (0, util
 /**
  * Sends a password reset email to the user
  */
-exports.sendPasswordReset = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.sendPasswordReset = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { email } = request.data;
     if (!email) {
         throw (0, utils_1.createError)('invalid-argument', 'Email is required', {
@@ -321,8 +333,13 @@ exports.updateProfile = functions.https.onCall({ region: 'europe-west1' }, (0, u
 /**
  * Authenticates a user with Google OAuth ID token (server-side)
  * Replaces client-side Google Sign-In to avoid remote script loading
+ * Public access enabled for unauthenticated users
  */
-exports.googleSignIn = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.googleSignIn = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { idToken, clientId } = request.data;
     if (!idToken || !clientId) {
         throw (0, utils_1.createError)('invalid-argument', 'Google ID token and client ID are required', {

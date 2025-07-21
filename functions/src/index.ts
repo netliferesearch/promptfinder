@@ -61,7 +61,11 @@ const db = admin.firestore();
  * Replaces client-side Firebase Auth to avoid remote script loading
  */
 export const createUser = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1', 
+    enforceAppCheck: false,
+    cors: true
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { email, password } = request.data;
 
@@ -124,7 +128,11 @@ export const createUser = functions.https.onCall(
  * Replaces client-side Firebase Auth to avoid remote script loading
  */
 export const signInUser = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1', 
+    enforceAppCheck: false,
+    cors: true
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { email, password } = request.data;
 
@@ -183,7 +191,11 @@ export const signInUser = functions.https.onCall(
  * Sends a password reset email to the user
  */
 export const sendPasswordReset = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1', 
+    enforceAppCheck: false,
+    cors: true
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { email } = request.data;
 
@@ -387,9 +399,14 @@ export const updateProfile = functions.https.onCall(
 /**
  * Authenticates a user with Google OAuth ID token (server-side)
  * Replaces client-side Google Sign-In to avoid remote script loading
+ * Public access enabled for unauthenticated users
  */
 export const googleSignIn = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1', 
+    enforceAppCheck: false,
+    cors: true
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { idToken, clientId } = request.data;
 
