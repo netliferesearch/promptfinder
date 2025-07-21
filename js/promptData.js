@@ -15,12 +15,8 @@ import {
   Timestamp,
   httpsCallable,
   functions,
+  auth,
 } from './firebase-init.js';
-
-// Create stub auth object for compatibility with existing code
-const auth = {
-  currentUser: null,
-};
 
 // Create stub objects for removed Firebase Auth functionality
 const GoogleAuthProvider = {

@@ -139,7 +139,9 @@ const firebaseOnAuthStateChanged = callback => {
 
 // Mock auth object for compatibility
 const auth = {
-  currentUser: () => currentUser,
+  get currentUser() {
+    return currentUser;
+  },
   app: app,
 };
 
