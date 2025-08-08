@@ -42,8 +42,11 @@ export const sendEmailVerification = async (user = null) => {
     return Promise.reject(err);
   }
 
+  // Fall back to current auth user if none provided
+  const targetUser = user || (auth ? auth.currentUser : null);
+
   // For Cloud Functions, we need the user's UID
-  if (!user?.uid) {
+  if (!targetUser?.uid) {
     const err = new Error('User not authenticated - uid required');
     Utils.handleError(err.message, { userVisible: true, originalError: err });
     return Promise.reject(err);
@@ -51,8 +54,9 @@ export const sendEmailVerification = async (user = null) => {
 
   try {
     const sendEmailVerificationFn = httpsCallable(functions, 'sendEmailVerification');
-    await sendEmailVerificationFn({ uid: user.uid });
-    return true;
+    const result = await sendEmailVerificationFn({ uid: targetUser.uid });
+    // Return verification link so the UI can open it directly (since backend does not send emails)
+    return result?.data?.verificationLink || true;
   } catch (error) {
     Utils.handleError(textManager.format('EMAIL_VERIFICATION_ERROR', { message: error.message }), {
       userVisible: true,
@@ -138,9 +142,10 @@ export const signupUser = async (email, password, displayName) => {
       auth.updateCurrentUser(user);
     }
 
-    // Return a compatible structure with existing code
+    // Return a compatible structure with existing code plus verificationLink when available
     const userCredential = {
       user: user,
+      verificationLink: result?.data?.verificationLink || null,
     };
 
     return userCredential;

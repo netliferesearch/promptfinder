@@ -107,7 +107,7 @@
     "testMatch": [
       "**/tests/**/*.test.js"
     ],
-    "setupFiles": [
+    "setupFilesAfterEnv": [
       "./tests/setupTests.js"
     ],
     "moduleNameMapper": {

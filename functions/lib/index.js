@@ -207,7 +207,11 @@ exports.sendPasswordReset = functions.https.onCall({
 /**
  * Sends an email verification link to the user
  */
-exports.sendEmailVerification = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.sendEmailVerification = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { uid } = request.data;
     if (!uid) {
         throw (0, utils_1.createError)('invalid-argument', 'User UID is required', {
@@ -221,7 +225,13 @@ exports.sendEmailVerification = functions.https.onCall({ region: 'europe-west1' 
     });
     try {
         const userRecord = await admin.auth().getUser(uid);
-        const verificationLink = await admin.auth().generateEmailVerificationLink(userRecord.email);
+        const actionCodeSettings = {
+            url: 'https://promptfinder-2a095.firebaseapp.com',
+            handleCodeInApp: false,
+        };
+        const verificationLink = await admin
+            .auth()
+            .generateEmailVerificationLink(userRecord.email, actionCodeSettings);
         (0, utils_1.logInfo)('Email verification sent successfully', {
             uid,
             email: userRecord.email,
@@ -248,7 +258,11 @@ exports.sendEmailVerification = functions.https.onCall({ region: 'europe-west1' 
 /**
  * Gets user data including verification status
  */
-exports.getUserData = functions.https.onCall({ region: 'europe-west1' }, (0, utils_1.withErrorHandling)(async (request) => {
+exports.getUserData = functions.https.onCall({
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+}, (0, utils_1.withErrorHandling)(async (request) => {
     const { uid } = request.data;
     if (!uid) {
         throw (0, utils_1.createError)('invalid-argument', 'User UID is required', {

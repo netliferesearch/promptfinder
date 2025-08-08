@@ -202,6 +202,48 @@ jest.mock('../js/firebase-init.js', () => {
           global.mockFirestoreDb.seedData(promptPath, updatedData);
 
           return Promise.resolve({ data: mockFunctionsCallResults.incrementUsageCount });
+        } else if (functionName === 'ratePrompt') {
+          const { promptId, rating, userId } = data || {};
+          if (!promptId || !userId || typeof rating !== 'number') {
+            return Promise.reject(new Error('Invalid arguments for ratePrompt'));
+          }
+          const ratingPath = `prompts/${promptId}/ratings/${userId}`;
+          const ratingData = {
+            rating,
+            ratedAt: { _methodName: 'serverTimestamp' },
+            userId,
+          };
+          global.mockFirestoreDb.seedData(ratingPath, ratingData);
+          return Promise.resolve({ data: { success: true, promptId, rating, userId } });
+        } else if (functionName === 'toggleFavorite') {
+          const { promptId, userId } = data || {};
+          if (!promptId || !userId) {
+            return Promise.reject(new Error('Invalid arguments for toggleFavorite'));
+          }
+          const favPath = `prompts/${promptId}/favoritedBy/${userId}`;
+          const existing = global.mockFirestoreDb.getPathData(favPath);
+          if (existing) {
+            // Remove the favorite by resetting the favorites map without this user
+            const parentPath = `prompts/${promptId}/favoritedBy`;
+            const all = global.mockFirestoreDb.getPathData(parentPath) || {};
+            delete all[userId];
+            // Clear the entire subtree by reseeding the prompt doc without 'favoritedBy'
+            const promptPath = `prompts/${promptId}`;
+            const promptDoc = global.mockFirestoreDb.getPathData(promptPath) || {};
+            const rest = { ...promptDoc };
+            delete rest.favoritedBy;
+            global.mockFirestoreDb.seedData(promptPath, rest);
+            // Recreate remaining favorites children
+            Object.keys(all).forEach(childId => {
+              global.mockFirestoreDb.seedData(`${parentPath}/${childId}`, all[childId]);
+            });
+          } else {
+            global.mockFirestoreDb.seedData(favPath, {
+              favoritedAt: { _methodName: 'serverTimestamp' },
+              userId,
+            });
+          }
+          return Promise.resolve({ data: { success: true, promptId, userId } });
         } else if (functionName === 'recalculateAllStats') {
           // For admin function, we just return a success result
           return Promise.resolve({ data: mockFunctionsCallResults.recalculateAllStats });
@@ -216,6 +258,85 @@ jest.mock('../js/firebase-init.js', () => {
       return mockFunction;
     }),
   };
+});
+
+// Default factory to restore per test so earlier mockReturnValue overrides don't leak
+const defaultHttpsCallableFactory = (functions, functionName) => {
+  const mockFunction = jest.fn(data => {
+    if (functionName === 'incrementUsageCount') {
+      const promptId = data.promptId;
+      if (!promptId) {
+        return Promise.reject(new Error('Prompt ID is required'));
+      }
+      const promptPath = `prompts/${promptId}`;
+      const promptData = global.mockFirestoreDb.getPathData(promptPath);
+      if (!promptData) {
+        return Promise.reject(new Error(`Prompt with ID ${promptId} not found`));
+      }
+      const updatedData = {
+        ...promptData,
+        usageCount: (promptData.usageCount || 0) + 1,
+      };
+      global.mockFirestoreDb.seedData(promptPath, updatedData);
+      return Promise.resolve({ data: { success: true } });
+    } else if (functionName === 'ratePrompt') {
+      const { promptId, rating, userId } = data || {};
+      if (!promptId || !userId || typeof rating !== 'number') {
+        return Promise.reject(new Error('Invalid arguments for ratePrompt'));
+      }
+      const ratingPath = `prompts/${promptId}/ratings/${userId}`;
+      const ratingData = {
+        rating,
+        ratedAt: { _methodName: 'serverTimestamp' },
+        userId,
+      };
+      global.mockFirestoreDb.seedData(ratingPath, ratingData);
+      return Promise.resolve({ data: { success: true, promptId, rating, userId } });
+    } else if (functionName === 'toggleFavorite') {
+      const { promptId, userId } = data || {};
+      if (!promptId || !userId) {
+        return Promise.reject(new Error('Invalid arguments for toggleFavorite'));
+      }
+      const favPath = `prompts/${promptId}/favoritedBy/${userId}`;
+      const existing = global.mockFirestoreDb.getPathData(favPath);
+      if (existing) {
+        // Remove the favorite by resetting the favorites map without this user
+        const parentPath = `prompts/${promptId}/favoritedBy`;
+        const all = global.mockFirestoreDb.getPathData(parentPath) || {};
+        delete all[userId];
+        // Clear and re-seed remaining docs
+        // First, clear the entire tree for favoritedBy by resetting the prompt doc with same data
+        const promptPath = `prompts/${promptId}`;
+        const promptDoc = global.mockFirestoreDb.getPathData(promptPath) || {};
+        // Remove the whole favoritedBy subtree by reseeding prompt without it
+        const rest = { ...promptDoc };
+        delete rest.favoritedBy;
+        global.mockFirestoreDb.seedData(promptPath, rest);
+        // Recreate remaining children
+        Object.keys(all).forEach(childId => {
+          global.mockFirestoreDb.seedData(`${parentPath}/${childId}`, all[childId]);
+        });
+      } else {
+        global.mockFirestoreDb.seedData(favPath, {
+          favoritedAt: { _methodName: 'serverTimestamp' },
+          userId,
+        });
+      }
+      return Promise.resolve({ data: { success: true, promptId, userId } });
+    } else if (functionName === 'recalculateAllStats') {
+      return Promise.resolve({ data: { success: true, promptsUpdated: 5 } });
+    }
+    return Promise.resolve({ data: { success: true } });
+  });
+  mockFunction._functionName = functionName;
+  return mockFunction;
+};
+
+beforeEach(() => {
+  const { httpsCallable } = require('../js/firebase-init.js');
+  if (typeof httpsCallable?.mockImplementation === 'function') {
+    httpsCallable.mockImplementation(defaultHttpsCallableFactory);
+  }
 });
 
 global.simulateLogin = (

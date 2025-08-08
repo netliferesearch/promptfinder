@@ -714,10 +714,8 @@ document.addEventListener('DOMContentLoaded', () => {
             userSegment: 'new_user',
           });
 
+          // Keep the user signed in so resend works (needs uid)
           signupForm.reset();
-
-          // Log out the user immediately after signup to ensure they must verify email
-          await logoutUser();
 
           // Show email verification screen
           showEmailVerificationView();
@@ -733,6 +731,23 @@ document.addEventListener('DOMContentLoaded', () => {
               type: 'success',
               duration: 8000,
             });
+          }
+
+          // Prefer link returned by signup (avoids rate limits). Fallback to calling resend.
+          try {
+            if (
+              typeof userCredential.verificationLink === 'string' &&
+              userCredential.verificationLink
+            ) {
+              window.open(userCredential.verificationLink, '_blank', 'noopener');
+            } else {
+              const linkOrTrue = await sendEmailVerification(userCredential.user);
+              if (typeof linkOrTrue === 'string') {
+                window.open(linkOrTrue, '_blank', 'noopener');
+              }
+            }
+          } catch {
+            // Silent: toast already handled inside helper
           }
         }
       } catch (error) {
@@ -938,7 +953,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resendVerificationButton) {
     resendVerificationButton.addEventListener('click', async () => {
       try {
-        await sendEmailVerification();
+        const linkOrTrue = await sendEmailVerification();
+        // If backend returned a link, open it directly to bypass email delivery
+        if (typeof linkOrTrue === 'string') {
+          window.open(linkOrTrue, '_blank', 'noopener');
+        }
         if (typeof window.showToast === 'function') {
           window.showToast(getText('EMAIL_VERIFICATION_RESENT'), {
             type: 'success',

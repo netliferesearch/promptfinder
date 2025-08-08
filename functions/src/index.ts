@@ -244,7 +244,11 @@ export const sendPasswordReset = functions.https.onCall(
  * Sends an email verification link to the user
  */
 export const sendEmailVerification = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { uid } = request.data;
 
@@ -263,7 +267,13 @@ export const sendEmailVerification = functions.https.onCall(
 
     try {
       const userRecord = await admin.auth().getUser(uid);
-      const verificationLink = await admin.auth().generateEmailVerificationLink(userRecord.email!);
+      const actionCodeSettings = {
+        url: 'https://promptfinder-2a095.firebaseapp.com',
+        handleCodeInApp: false,
+      } as any;
+      const verificationLink = await admin
+        .auth()
+        .generateEmailVerificationLink(userRecord.email!, actionCodeSettings);
 
       logInfo('Email verification sent successfully', {
         uid,
@@ -295,7 +305,11 @@ export const sendEmailVerification = functions.https.onCall(
  * Gets user data including verification status
  */
 export const getUserData = functions.https.onCall(
-  { region: 'europe-west1' },
+  { 
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
     const { uid } = request.data;
 
