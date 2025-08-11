@@ -1,5 +1,27 @@
 # DesignPrompts Changelog
 
+## [1.1.0] - 2025-08-11
+
+### UI/UX
+
+- Moved sticky search to the top of the main view (remains sticky while scrolling)
+- Added spacing below tab buttons to prevent clipping
+- Header logo is now a home button that contextually navigates:
+  - From signup form → back to signup methods
+  - From login email form → back to sign-in methods
+  - Otherwise → back to main list view
+
+### Auth flow
+
+- New signup method chooser (mirrors sign-in): “Sign up with Google” and “Sign up with email”
+- “Sign up with email” reveals a compact form that fits the popup frame
+- Back flows consistently restore the relevant chooser and keep the signup link visible
+
+### Polish
+
+- Compact styling for signup form to avoid scroll on small frames
+- Minor accessibility improvements to header logo button
+
 ## [1.3.0] - 2025-07-21
 
 ### Authentication & Cloud Functions Architecture

@@ -7,28 +7,26 @@ body {
   overflow: hidden;
 }
 
-/* Allow scrolling when auth view is active */
+/* Auth view should fit within popup without scrolling */
 body.auth-view-active {
-  overflow-y: auto;
-  height: auto;
-  min-height: 600px;
-  max-height: none;
+  overflow-y: hidden;
+  height: 600px;
 }
 
-/* Override auth container centering when in popup to allow scrolling */
+/* Compact auth container for popup */
 body.auth-view-active .auth-container {
   justify-content: flex-start;
-  padding: 1rem;
-  min-height: auto;
-  height: auto;
-  overflow: visible;
+  padding: 0.75rem;
+  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Ensure auth card is properly positioned and scrollable */
+/* Compact auth card for popup */
 body.auth-view-active .auth-card {
   position: relative;
-  margin: 1rem auto;
-  overflow: visible;
+  margin: 0.75rem auto;
+  padding: 1rem;
 }
 
 /* Hide prompt counter and filter-sort-row when prompt details section is visible */
@@ -720,22 +718,7 @@ body.editing-prompt .fab {
   background-color: var(--color-white);
 }
 
-/* Sticky search header styles */
-.sticky-search-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--color-bg);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 1px 0 rgba(0, 0, 0, 0.04);
-  padding: var(--spacing-sm) var(--spacing-xs) var(--spacing-xs) var(--spacing-xs);
-  margin-bottom: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xxs);
-}
-
+/* Sticky search header component styles are imported from components/sticky-search-header.css */
 .sticky-search-header .prompt-counter-row {
   padding: 0 var(--spacing-xs) 0 var(--spacing-xs);
   font-size: var(--font-size-xs);
@@ -758,6 +741,7 @@ body.editing-prompt .fab {
 }
 .tabs {
   font-size: 0.95em;
+  margin-bottom: var(--spacing-sm);
 }
 
 #prompts-list-content {

@@ -18,6 +18,21 @@
   color: var(--color-black);
 }
 
+.pf-header__icon {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.pf-header__logo-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

@@ -22,14 +22,15 @@
   <body>
     <div class="popup-container">
       <header class="pf-header">
-        <img
-          src="../icons/icon48.png"
-          alt="DesignPrompts logo"
-          class="pf-header__icon"
-          width="32"
-          height="32"
-          style="vertical-align: middle; margin-right: 0.5em"
-        />
+        <button id="home-button" class="pf-header__logo-btn" aria-label="Go to main view">
+          <img
+            src="../icons/icon48.png"
+            alt="DesignPrompts logo"
+            class="pf-header__icon"
+            width="32"
+            height="32"
+          />
+        </button>
         <h1>DesignPrompts</h1>
         <div class="header-actions">
           <button id="account-button" class="button button-secondary" aria-label="Account">
@@ -40,6 +41,21 @@
 
       <main id="main-content">
         <div id="scrollable-main">
+          <div class="sticky-search-header" role="search">
+            <div class="search-bar">
+              <i class="fas fa-search search-input-icon" aria-hidden="true"></i>
+              <label for="search-input" class="visually-hidden">Search Prompts</label>
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Search prompts, tags, or AI tools..."
+                class="form-input search-input"
+              />
+            </div>
+            <div class="prompt-counter-row" role="status" aria-live="polite">
+              <span id="prompt-counter">0 prompts found</span>
+            </div>
+          </div>
           <section class="main-controls">
             <div class="category-sort-bar">
               <div class="category-dropdown-wrapper">
@@ -71,13 +87,24 @@
               </div>
             </div>
             <nav class="tabs" role="tablist" aria-label="Prompt categories">
-              <button id="tab-all" role="tab" aria-selected="true" class="active">
+              <button
+                id="tab-all"
+                role="tab"
+                aria-controls="panel-all"
+                aria-selected="true"
+                class="active"
+              >
                 All Prompts
               </button>
-              <button id="tab-favs" role="tab" aria-selected="false">
+              <button id="tab-favs" role="tab" aria-controls="panel-favs" aria-selected="false">
                 <i class="fas fa-heart" aria-hidden="true" style="margin-right: 0.4em"></i>Favorites
               </button>
-              <button id="tab-private" role="tab" aria-selected="false">
+              <button
+                id="tab-private"
+                role="tab"
+                aria-controls="panel-private"
+                aria-selected="false"
+              >
                 <i
                   class="fa-solid fa-lock prompt-private-icon"
                   aria-hidden="true"
@@ -86,33 +113,17 @@
                 >Private
               </button>
             </nav>
+            <div id="panel-all" role="tabpanel" aria-labelledby="tab-all" hidden></div>
+            <div id="panel-favs" role="tabpanel" aria-labelledby="tab-favs" hidden></div>
+            <div id="panel-private" role="tabpanel" aria-labelledby="tab-private" hidden></div>
             <div class="filter-sort-row"></div>
           </section>
-          <div class="sticky-search-header" role="search">
-            <div class="search-bar">
-              <i class="fas fa-search search-input-icon" aria-hidden="true"></i>
-              <label for="search-input" class="visually-hidden">Search Prompts</label>
-              <input
-                type="text"
-                id="search-input"
-                placeholder="Search prompts, tags, or AI tools..."
-                class="form-input search-input"
-              />
-            </div>
-            <div class="prompt-counter-row" role="status" aria-live="polite">
-              <span id="prompt-counter">0 prompts found</span>
-            </div>
-          </div>
           <div id="prompts-list-content"></div>
           <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
           <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
             <i class="fas fa-plus" aria-hidden="true"></i>
           </button>
         </div>
-        <!-- Floating Action Button for Add New Prompt (visible only for logged-in users) -->
-        <button id="add-prompt-fab" class="fab" aria-label="Add New Prompt" type="button" hidden>
-          <i class="fas fa-plus" aria-hidden="true"></i>
-        </button>
 
         <section id="prompt-details-section" class="hidden">
           <button
@@ -249,9 +260,34 @@
             <span>Back to list</span>
           </button>
           <h2 class="auth-title">Sign in to DesignPrompts</h2>
-          <p class="auth-subtext">Welcome back! Please enter your details below.</p>
+          <p class="auth-subtext">Welcome back! Please choose a sign-in method.</p>
           <p id="auth-error-message" class="error-message hidden" aria-live="assertive"></p>
-          <form id="login-form" autocomplete="on">
+
+          <!-- Method selection (default) -->
+          <div id="auth-methods" class="auth-methods">
+            <button id="google-signin-button" class="button button-google" type="button">
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google logo"
+                class="google-logo"
+              />
+              Sign in with Google
+            </button>
+            <button id="show-email-login-button" class="button button-secondary" type="button">
+              Sign in with email
+            </button>
+          </div>
+
+          <!-- Email sign-in (hidden until chosen) -->
+          <button
+            id="auth-method-back-button"
+            class="link-button hidden"
+            type="button"
+            aria-label="Back to sign-in methods"
+          >
+            Back to sign-in methods
+          </button>
+          <form id="login-form" class="hidden" autocomplete="on">
             <div class="form-group">
               <label for="login-email">Email</label>
               <input type="email" id="login-email" placeholder="you@email.com" required />
@@ -306,30 +342,53 @@
             </button>
             <p id="reset-password-message" class="error-message hidden" aria-live="polite"></p>
           </form>
-
-          <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
-          <button id="google-signin-button" class="button button-google">
-            <img
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google logo"
-              class="google-logo"
-            />
-            Sign in with Google
-          </button>
         </div>
         <div class="auth-signup-row" id="show-signup-row">
           <span>Don't have an account?</span>
           <a href="#" id="show-signup-link" class="auth-link">Sign up</a>
         </div>
+
+        <!-- Signup method chooser (hidden by default) -->
+        <div id="signup-methods" class="auth-card hidden">
+          <button
+            id="signup-methods-back-button"
+            class="back-to-list-btn"
+            aria-label="Back to sign-in options"
+            type="button"
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to sign-in options</span>
+          </button>
+          <h2 class="auth-title signup-title">Create account</h2>
+          <p class="auth-subtext signup-subtext">Choose how you want to sign up</p>
+          <div class="auth-methods">
+            <button
+              id="signup-google-methods-button"
+              class="button button-google signup-google-btn"
+              type="button"
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google logo"
+                class="google-logo"
+              />
+              Sign up with Google
+            </button>
+            <button id="show-email-signup-button" class="button button-secondary" type="button">
+              Sign up with email
+            </button>
+          </div>
+        </div>
+
         <form id="signup-form" class="hidden auth-card">
           <button
             id="auth-back-to-list-button-signup"
             class="back-to-list-btn"
-            aria-label="Back to prompt list"
+            aria-label="Back to sign-in options"
             type="button"
           >
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span>Back to list</span>
+            <span>Back to sign-in options</span>
           </button>
           <h2 class="auth-title signup-title">Create account</h2>
           <p class="auth-subtext signup-subtext">Enter your information to create a new account</p>
@@ -473,7 +532,6 @@
     <script src="../dist/js/firebase-init.js"></script>
     <script src="../dist/js/app.js"></script>
     <script src="../js/toast.js"></script>
-    <script src="../dist/js/js/analytics/popup-analytics.js"></script>
     <script src="../dist/js/js/analytics/consent-dialog.js"></script>
   </body>
 </html>

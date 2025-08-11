@@ -10,6 +10,7 @@
 @import './components/buttons.css';
 @import './components/tabs.css';
 @import './components/cards.css';
+@import './components/sticky-search-header.css';
 
 /* Layout imports */
 @import './layout/containers.css';

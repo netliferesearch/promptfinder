@@ -1,9 +1,34 @@
 // --- Auth view toggle logic ---
 
+let _authChooserInitialized = false;
+
+export function initializeAuthChooser() {
+  if (_authChooserInitialized) return;
+  // Auth method chooser toggling can be initialized any time after elements exist
+  const authMethods = document.getElementById('auth-methods');
+  const emailLoginForm = document.getElementById('login-form');
+  const showEmailLoginButton = document.getElementById('show-email-login-button');
+  const authMethodBackButton = document.getElementById('auth-method-back-button');
+
+  if (showEmailLoginButton && emailLoginForm && authMethods && authMethodBackButton) {
+    showEmailLoginButton.addEventListener('click', () => {
+      authMethods.classList.add('hidden');
+      emailLoginForm.classList.remove('hidden');
+      authMethodBackButton.classList.remove('hidden');
+    });
+    authMethodBackButton.addEventListener('click', () => {
+      emailLoginForm.classList.add('hidden');
+      authMethods.classList.remove('hidden');
+      authMethodBackButton.classList.add('hidden');
+    });
+    _authChooserInitialized = true;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Handle "Back to list" button in auth views
   const authBackToListBtn = document.getElementById('auth-back-to-list-button');
-  const authBackToListBtnSignup = document.getElementById('auth-back-to-list-button-signup');
+  // const authBackToListBtnSignup = document.getElementById('auth-back-to-list-button-signup'); // handled in showSignUp()
   function handleAuthBackToList() {
     // Hide auth view, show main content
     const authView = document.getElementById('auth-view');
@@ -17,16 +42,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (authBackToListBtn) {
     authBackToListBtn.addEventListener('click', handleAuthBackToList);
   }
-  if (authBackToListBtnSignup) {
-    authBackToListBtnSignup.addEventListener('click', handleAuthBackToList);
-  }
+  // Do not bind signup back button to main list; we'll wire it to go back to sign-in methods below
   const authView = document.getElementById('auth-view');
   const loginCard = authView?.querySelector('.auth-card');
   const signupForm = document.getElementById('signup-form');
+  const signupMethodsCard = document.getElementById('signup-methods');
+  const showEmailSignupButton = document.getElementById('show-email-signup-button');
+  const signupMethodsBackButton = document.getElementById('signup-methods-back-button');
+  const signupGoogleMethodsButton = document.getElementById('signup-google-methods-button');
   const showSignupLink = document.getElementById('show-signup-link');
   const showLoginLink = document.getElementById('show-login-link');
   const showSignupRow = document.getElementById('show-signup-row');
   const header = document.querySelector('.pf-header');
+  const homeButton = document.getElementById('home-button');
+
+  // Ensure method chooser is initialized even if this module loads after DOMContentLoaded
+  initializeAuthChooser();
 
   // --- Dynamic Auth Text Injection ---
   function setAuthTexts() {
@@ -108,12 +139,83 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginCard) loginCard.classList.remove('hidden');
     if (showSignupRow) showSignupRow.style.display = '';
     if (header) header.style.display = '';
+
+    // Default to method chooser
+    const am = document.getElementById('auth-methods');
+    const elf = document.getElementById('login-form');
+    const back = document.getElementById('auth-method-back-button');
+    if (am && elf && back) {
+      am.classList.remove('hidden');
+      elf.classList.add('hidden');
+      back.classList.add('hidden');
+    }
+    if (signupMethodsCard) signupMethodsCard.classList.add('hidden');
+    if (signupForm) signupForm.classList.add('hidden');
   }
   function showSignUp() {
     if (loginCard) loginCard.classList.add('hidden');
-    if (signupForm) signupForm.classList.remove('hidden');
+    // Show signup methods by default (mirror sign-in)
+    if (signupMethodsCard) signupMethodsCard.classList.remove('hidden');
+    if (signupForm) signupForm.classList.add('hidden');
     if (showSignupRow) showSignupRow.style.display = 'none';
     if (header) header.style.display = '';
+    // Ensure signup layout is compact and centered (no scroll needed)
+    const authContainer = document.querySelector('#auth-view.auth-container');
+    if (authContainer) authContainer.classList.remove('signup-active');
+
+    // In signup view, back button should go to sign-in methods (not main list)
+    const backBtn = document.getElementById('auth-back-to-list-button-signup');
+    if (backBtn) {
+      backBtn.onclick = e => {
+        e.preventDefault();
+        // Hide signup, show login card with method chooser
+        if (signupForm) signupForm.classList.add('hidden');
+        if (signupMethodsCard) signupMethodsCard.classList.add('hidden');
+        if (loginCard) loginCard.classList.remove('hidden');
+        if (showSignupRow) showSignupRow.style.display = '';
+        const authContainer2 = document.querySelector('#auth-view.auth-container');
+        if (authContainer2) authContainer2.classList.remove('signup-active');
+        const am = document.getElementById('auth-methods');
+        const elf = document.getElementById('login-form');
+        const back = document.getElementById('auth-method-back-button');
+        if (am && elf && back) {
+          am.classList.remove('hidden');
+          elf.classList.add('hidden');
+          back.classList.add('hidden');
+        }
+      };
+    }
+
+    // Wire signup methods actions
+    if (showEmailSignupButton && signupForm && signupMethodsCard) {
+      showEmailSignupButton.onclick = () => {
+        signupMethodsCard.classList.add('hidden');
+        signupForm.classList.remove('hidden');
+      };
+    }
+    if (signupMethodsBackButton && signupMethodsCard) {
+      signupMethodsBackButton.onclick = e => {
+        e.preventDefault();
+        // Back to sign-in methods
+        if (signupMethodsCard) signupMethodsCard.classList.add('hidden');
+        if (loginCard) loginCard.classList.remove('hidden');
+        if (showSignupRow) showSignupRow.style.display = '';
+        const am = document.getElementById('auth-methods');
+        const elf = document.getElementById('login-form');
+        const back = document.getElementById('auth-method-back-button');
+        if (am && elf && back) {
+          am.classList.remove('hidden');
+          elf.classList.add('hidden');
+          back.classList.add('hidden');
+        }
+      };
+    }
+    if (signupGoogleMethodsButton) {
+      signupGoogleMethodsButton.onclick = () => {
+        const googleSignUpButton = document.getElementById('google-signup-button');
+        if (googleSignUpButton) googleSignUpButton.click();
+      };
+    }
   }
 
   if (showSignupLink && signupForm && loginCard) {
@@ -131,6 +233,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // On load, always show header
   if (header) header.style.display = '';
+
+  // Home button behavior: return to main view unless we're inside a sub-flow that must stay
+  if (homeButton) {
+    homeButton.addEventListener('click', e => {
+      e.preventDefault();
+      // If auth view is visible, decide context-aware behavior
+      const authViewVisible =
+        document.getElementById('auth-view')?.classList.contains('hidden') === false;
+      if (authViewVisible) {
+        // If signup form is open, go to signup methods (avoid jumping straight to list)
+        const signupFormVisible =
+          document.getElementById('signup-form') &&
+          !document.getElementById('signup-form').classList.contains('hidden');
+        const signupMethodsCard = document.getElementById('signup-methods');
+        if (signupFormVisible && signupMethodsCard) {
+          // mirror back-to-methods behavior
+          signupMethodsCard.classList.remove('hidden');
+          document.getElementById('signup-form').classList.add('hidden');
+          return;
+        }
+        // If login email form is open, go back to sign-in methods
+        const loginFormVisible =
+          document.getElementById('login-form') &&
+          !document.getElementById('login-form').classList.contains('hidden');
+        const authMethods = document.getElementById('auth-methods');
+        const authBackLink = document.getElementById('auth-method-back-button');
+        if (loginFormVisible && authMethods && authBackLink) {
+          authMethods.classList.remove('hidden');
+          document.getElementById('login-form').classList.add('hidden');
+          authBackLink.classList.add('hidden');
+          return;
+        }
+      }
+      // Default: show main content view
+      const mainContent = document.getElementById('main-content');
+      const authView = document.getElementById('auth-view');
+      if (mainContent) mainContent.classList.remove('hidden');
+      if (authView) authView.classList.add('hidden');
+      document.body.classList.remove('auth-view-active');
+      // Also restore sign-in chooser state
+      const am = document.getElementById('auth-methods');
+      const elf = document.getElementById('login-form');
+      const back = document.getElementById('auth-method-back-button');
+      if (am && elf && back) {
+        am.classList.remove('hidden');
+        elf.classList.add('hidden');
+        back.classList.add('hidden');
+      }
+    });
+  }
 });
 
 // Test helper to set allPrompts for unit tests
@@ -1010,6 +1162,15 @@ export const cacheDOMElements = () => {
   tabAllEl = document.getElementById('tab-all');
   tabFavsEl = document.getElementById('tab-favs');
   tabPrivateEl = document.getElementById('tab-private');
+  // Link tab panels for accessibility
+  const panelAll = document.getElementById('panel-all');
+  const panelFavs = document.getElementById('panel-favs');
+  const panelPrivate = document.getElementById('panel-private');
+  if (panelAll && tabAllEl) panelAll.hidden = !(tabAllEl.getAttribute('aria-selected') === 'true');
+  if (panelFavs && tabFavsEl)
+    panelFavs.hidden = !(tabFavsEl.getAttribute('aria-selected') === 'true');
+  if (panelPrivate && tabPrivateEl)
+    panelPrivate.hidden = !(tabPrivateEl.getAttribute('aria-selected') === 'true');
   searchInputEl = document.getElementById('search-input');
   filterButtonEl = document.getElementById('filter-button');
   ratingFilterPanelEl = document.getElementById('rating-filter');
@@ -1511,9 +1672,36 @@ const setupEventListeners = () => {
       showTab(activeTab);
     });
   }
-  tabAllEl?.addEventListener('click', () => showTab('all'));
-  tabFavsEl?.addEventListener('click', () => showTab('favs'));
-  tabPrivateEl?.addEventListener('click', () => showTab('private'));
+  const setTabSelection = activeId => {
+    const tabs = [tabAllEl, tabFavsEl, tabPrivateEl];
+    const panels = {
+      all: document.getElementById('panel-all'),
+      favs: document.getElementById('panel-favs'),
+      private: document.getElementById('panel-private'),
+    };
+    tabs.forEach(btn => {
+      if (!btn) return;
+      const isActive = btn.id === activeId;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', String(isActive));
+    });
+    if (panels.all) panels.all.hidden = activeId !== 'tab-all';
+    if (panels.favs) panels.favs.hidden = activeId !== 'tab-favs';
+    if (panels.private) panels.private.hidden = activeId !== 'tab-private';
+  };
+
+  tabAllEl?.addEventListener('click', () => {
+    setTabSelection('tab-all');
+    showTab('all');
+  });
+  tabFavsEl?.addEventListener('click', () => {
+    setTabSelection('tab-favs');
+    showTab('favs');
+  });
+  tabPrivateEl?.addEventListener('click', () => {
+    setTabSelection('tab-private');
+    showTab('private');
+  });
   searchInputEl?.addEventListener('input', () => showTab(activeTab));
 
   if (filterButtonEl && ratingFilterPanelEl) {
@@ -1796,6 +1984,8 @@ export const loadAndDisplayData = async () => {
 
 export const initializeUI = async () => {
   try {
+    // Ensure auth chooser is wired when initializing the UI
+    initializeAuthChooser();
     cacheDOMElements();
     setupEventListeners();
     await loadAndDisplayData();
