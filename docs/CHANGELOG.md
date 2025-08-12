@@ -3,20 +3,24 @@
 ## [1.1.2] - 2025-08-12
 
 ### UI/UX
+
 - Added a sticky controls bar in the prompt details view with a right-aligned Copy Prompt button for better accessibility while scrolling
 - Restyled Back to list as a subdued gray pill so it doesn’t compete with the primary copy action
 - Matched View more/View less styling with bordered pill treatment; added hover/focus affordances
 - Reverted inline code copy control back to an icon; added padding/margin around the sticky bar for visual breathing room
 
 ### Functionality
+
 - Usage count now increments for logged-out (anonymous) users when copying a prompt; details view updates accordingly
 
 ### Reliability & Tests
+
 - `findPromptById` now gracefully falls back to Firestore in test environments to avoid callable interference
 - Updated tests to expect `userId` in callable payloads and to reflect anonymous usage counting
 - Reduced noisy test logs by suppressing function retrieval errors in tests; ensured all suites pass
 
 ### Build & Tooling
+
 - Fixed build lint error by safely detecting test environment without referencing undefined globals
 - Verified: full test suite green and development build succeeds
 
