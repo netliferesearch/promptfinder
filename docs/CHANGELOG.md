@@ -1,5 +1,11 @@
 # DesignPrompts Changelog
 
+## [1.1.1] - 2025-08-11
+
+### Fix
+
+- Bump manifest/package version to 1.1.1 for Chrome Web Store (greater than 1.1)
+
 ## [1.1.0] - 2025-08-11
 
 ### UI/UX
