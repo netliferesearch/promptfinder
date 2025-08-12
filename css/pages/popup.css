@@ -341,7 +341,7 @@ body.editing-prompt .fab {
 .button-icon:hover,
 .button-icon:focus {
   background-color: var(--color-gray-200, #f0f0f0);
-  color: var(--color-primary, #007bff);
+  color: var(--color-white, #007bff);
   outline: 2px solid var(--color-accent, #007bff);
 }
 .button-icon.hidden {

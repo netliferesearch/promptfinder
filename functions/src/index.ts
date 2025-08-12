@@ -57,6 +57,362 @@ admin.initializeApp();
 const db = admin.firestore();
 
 /**
+ * Adds a new prompt document (server-side authentication via userId parameter)
+ * Replaces client-side Firestore writes to comply with Chrome Web Store policies
+ */
+export const addPrompt = functions.https.onCall(
+  {
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
+  withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
+    const {
+      userId,
+      authorDisplayName = '',
+      title,
+      text,
+      description = '',
+      category = '',
+      tags = [],
+      targetAiTools = [],
+      isPrivate = false,
+    } = request.data || {};
+
+    // Auth validation
+    if (!userId || typeof userId !== 'string') {
+      throw createError('unauthenticated', 'User ID must be provided to add prompts', {
+        operation: 'addPrompt',
+      });
+    }
+
+    // Input validation consistent with security rules
+    if (!title || typeof title !== 'string' || title.length === 0 || title.length > 100) {
+      throw createError('invalid-argument', 'Title is required and must be <= 100 characters', {
+        operation: 'addPrompt',
+      });
+    }
+    if (!text || typeof text !== 'string' || text.length === 0) {
+      throw createError('invalid-argument', 'Text is required', {
+        operation: 'addPrompt',
+      });
+    }
+    if (typeof description === 'string' && description.length > 500) {
+      throw createError('invalid-argument', 'Description must be <= 500 characters', {
+        operation: 'addPrompt',
+      });
+    }
+    if (typeof category === 'string' && category.length > 50) {
+      throw createError('invalid-argument', 'Category must be <= 50 characters', {
+        operation: 'addPrompt',
+      });
+    }
+    if (!Array.isArray(tags)) {
+      throw createError('invalid-argument', 'Tags must be an array', { operation: 'addPrompt' });
+    }
+    if (!Array.isArray(targetAiTools)) {
+      throw createError('invalid-argument', 'targetAiTools must be an array', {
+        operation: 'addPrompt',
+      });
+    }
+
+    const startTime = Date.now();
+    logInfo('Creating new prompt', { userId, title, operation: 'addPrompt' });
+
+    try {
+      const newPromptData = {
+        userId,
+        authorDisplayName: authorDisplayName || '',
+        title,
+        text,
+        description: description || '',
+        category: category || '',
+        tags: Array.isArray(tags) ? tags : [],
+        targetAiTools: Array.isArray(targetAiTools) ? targetAiTools : [],
+        isPrivate: !!isPrivate,
+        averageRating: 0,
+        totalRatingsCount: 0,
+        favoritesCount: 0,
+        usageCount: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      } as const;
+
+      const docRef = await db.collection('prompts').add(newPromptData as any);
+
+      logInfo('Prompt created', {
+        promptId: docRef.id,
+        userId,
+        operation: 'addPrompt',
+        executionTimeMs: Date.now() - startTime,
+      });
+
+      return { success: true, id: docRef.id };
+    } catch (error: any) {
+      logError('Failed to create prompt', ErrorType.DATABASE_ERROR, {
+        operation: 'addPrompt',
+        userId,
+        executionTimeMs: Date.now() - startTime,
+        originalError: error,
+        additionalInfo: { title },
+      });
+      throw createError('internal', `Failed to add prompt: ${error.message}`, {
+        operation: 'addPrompt',
+      });
+    }
+  }, 'addPrompt')
+);
+
+/**
+ * Updates an existing prompt (server-side authentication via userId parameter)
+ */
+export const updatePrompt = functions.https.onCall(
+  {
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
+  withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
+    const { promptId, userId, updates } = request.data || {};
+
+    if (!userId || typeof userId !== 'string') {
+      throw createError('unauthenticated', 'User ID must be provided to update prompts', {
+        operation: 'updatePrompt',
+      });
+    }
+    if (!promptId || typeof promptId !== 'string') {
+      throw createError('invalid-argument', 'Valid promptId is required', {
+        operation: 'updatePrompt',
+      });
+    }
+    if (!updates || typeof updates !== 'object') {
+      throw createError('invalid-argument', 'Updates object is required', {
+        operation: 'updatePrompt',
+      });
+    }
+
+    const startTime = Date.now();
+
+    // Validate updatable fields similar to rules
+    const protectedFields = new Set([
+      'userId',
+      'authorDisplayName',
+      'averageRating',
+      'totalRatingsCount',
+      'favoritesCount',
+      'usageCount',
+      'createdAt',
+    ]);
+    for (const key of Object.keys(updates)) {
+      if (protectedFields.has(key)) {
+        throw createError('permission-denied', `Field '${key}' cannot be updated`, {
+          operation: 'updatePrompt',
+        });
+      }
+    }
+
+    const validateString = (v: any, max?: number) => typeof v === 'string' && (max ? v.length <= max : v.length > 0);
+    if (updates.title !== undefined && !validateString(updates.title, 100)) {
+      throw createError('invalid-argument', 'Invalid title', { operation: 'updatePrompt' });
+    }
+    if (updates.text !== undefined && !(typeof updates.text === 'string' && updates.text.length > 0)) {
+      throw createError('invalid-argument', 'Invalid text', { operation: 'updatePrompt' });
+    }
+    if (updates.isPrivate !== undefined && typeof updates.isPrivate !== 'boolean') {
+      throw createError('invalid-argument', 'Invalid isPrivate', { operation: 'updatePrompt' });
+    }
+    if (updates.description !== undefined && !validateString(updates.description, 500)) {
+      throw createError('invalid-argument', 'Invalid description', { operation: 'updatePrompt' });
+    }
+    if (updates.category !== undefined && !validateString(updates.category, 50)) {
+      throw createError('invalid-argument', 'Invalid category', { operation: 'updatePrompt' });
+    }
+    if (updates.tags !== undefined && !Array.isArray(updates.tags)) {
+      throw createError('invalid-argument', 'Invalid tags', { operation: 'updatePrompt' });
+    }
+    if (updates.targetAiTools !== undefined && !Array.isArray(updates.targetAiTools)) {
+      throw createError('invalid-argument', 'Invalid targetAiTools', { operation: 'updatePrompt' });
+    }
+
+    try {
+      const promptRef = db.collection('prompts').doc(promptId);
+      const snap = await promptRef.get();
+      if (!snap.exists) {
+        throw createError('not-found', `Prompt ${promptId} not found`, { operation: 'updatePrompt' });
+      }
+      const data = snap.data() as any;
+      if (data.userId !== userId) {
+        throw createError('permission-denied', 'You do not own this prompt', {
+          operation: 'updatePrompt',
+        });
+      }
+
+      const updateData: Record<string, any> = { ...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+      await promptRef.update(updateData);
+
+      logInfo('Prompt updated', {
+        promptId,
+        userId,
+        operation: 'updatePrompt',
+        executionTimeMs: Date.now() - startTime,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      logError('Failed to update prompt', ErrorType.DATABASE_ERROR, {
+        operation: 'updatePrompt',
+        promptId,
+        userId,
+        executionTimeMs: Date.now() - startTime,
+        originalError: error,
+      });
+      throw createError('internal', `Failed to update prompt: ${error.message}`, {
+        operation: 'updatePrompt',
+      });
+    }
+  }, 'updatePrompt')
+);
+
+/**
+ * Deletes an existing prompt (server-side authentication via userId parameter)
+ */
+export const deletePrompt = functions.https.onCall(
+  {
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
+  withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
+    const { promptId, userId } = request.data || {};
+
+    if (!userId || typeof userId !== 'string') {
+      throw createError('unauthenticated', 'User ID must be provided to delete prompts', {
+        operation: 'deletePrompt',
+      });
+    }
+    if (!promptId || typeof promptId !== 'string') {
+      throw createError('invalid-argument', 'Valid promptId is required', {
+        operation: 'deletePrompt',
+      });
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const promptRef = db.collection('prompts').doc(promptId);
+      const snap = await promptRef.get();
+      if (!snap.exists) {
+        throw createError('not-found', `Prompt ${promptId} not found`, { operation: 'deletePrompt' });
+      }
+      const data = snap.data() as any;
+      if (data.userId !== userId) {
+        throw createError('permission-denied', 'You do not own this prompt', {
+          operation: 'deletePrompt',
+        });
+      }
+
+      await promptRef.delete();
+
+      logInfo('Prompt deleted', {
+        promptId,
+        userId,
+        operation: 'deletePrompt',
+        executionTimeMs: Date.now() - startTime,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      logError('Failed to delete prompt', ErrorType.DATABASE_ERROR, {
+        operation: 'deletePrompt',
+        promptId,
+        userId,
+        executionTimeMs: Date.now() - startTime,
+        originalError: error,
+      });
+      throw createError('internal', `Failed to delete prompt: ${error.message}`, {
+        operation: 'deletePrompt',
+      });
+    }
+  }, 'deletePrompt')
+);
+
+/**
+ * Returns a single prompt by ID, including user-specific flags
+ */
+export const getPrompt = functions.https.onCall(
+  {
+    region: 'europe-west1',
+    enforceAppCheck: false,
+    cors: true,
+  },
+  withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
+    const { promptId, userId } = request.data || {};
+
+    if (!promptId || typeof promptId !== 'string') {
+      throw createError('invalid-argument', 'Valid promptId is required', {
+        operation: 'getPrompt',
+      });
+    }
+
+    const startTime = Date.now();
+    try {
+      const promptRef = db.collection('prompts').doc(promptId);
+      const snap = await promptRef.get();
+      if (!snap.exists) {
+        throw createError('not-found', `Prompt ${promptId} not found`, { operation: 'getPrompt' });
+      }
+      const data = snap.data() as any;
+
+      // Enforce privacy: allow public prompts to anyone; private only to owner
+      if (data.isPrivate && data.userId !== userId) {
+        throw createError('permission-denied', 'Not allowed to view this prompt', {
+          operation: 'getPrompt',
+        });
+      }
+
+      // Build response
+      const toIso = (ts: any) => (ts && typeof ts.toDate === 'function' ? ts.toDate().toISOString() : null);
+      const result: any = {
+        id: promptId,
+        ...data,
+        createdAt: toIso(data.createdAt),
+        updatedAt: toIso(data.updatedAt),
+      };
+
+      // Enrich with user-specific info if userId provided
+      if (userId) {
+        const ratingSnap = await promptRef.collection('ratings').doc(userId).get();
+        if (ratingSnap.exists) {
+          result.currentUserRating = ratingSnap.data()?.rating ?? null;
+        }
+        const favSnap = await promptRef.collection('favoritedBy').doc(userId).get();
+        result.currentUserIsFavorite = favSnap.exists;
+      }
+
+      logInfo('Fetched prompt', {
+        promptId,
+        userId,
+        operation: 'getPrompt',
+        executionTimeMs: Date.now() - startTime,
+      });
+
+      return { success: true, prompt: result };
+    } catch (error: any) {
+      logError('Failed to get prompt', ErrorType.DATABASE_ERROR, {
+        operation: 'getPrompt',
+        promptId,
+        userId,
+        executionTimeMs: Date.now() - startTime,
+        originalError: error,
+      });
+      throw createError('internal', `Failed to get prompt: ${error.message}`, {
+        operation: 'getPrompt',
+      });
+    }
+  }, 'getPrompt')
+);
+
+/**
  * Creates a new user account using Firebase Admin SDK
  * Replaces client-side Firebase Auth to avoid remote script loading
  */
@@ -800,14 +1156,8 @@ export const recalculateAllStats = functions.https.onCall(
 export const incrementUsageCount = functions.https.onCall(
   { region: 'europe-west1' },
   withErrorHandling(async (request: functions.https.CallableRequest<any>) => {
-    if (!request.auth) {
-      throw createError('unauthenticated', 'User must be logged in to track usage', {
-        operation: 'incrementUsageCount',
-      });
-    }
-
-    const userId = request.auth.uid;
-    const promptId = request.data.promptId;
+    const promptId = request.data.promptId as string | undefined;
+    const userId = (request.data && request.data.userId) || request.auth?.uid || 'anonymous';
 
     if (!promptId) {
       throw createError('invalid-argument', 'Prompt ID is required', {
@@ -842,9 +1192,12 @@ export const incrementUsageCount = functions.https.onCall(
       });
     }
 
-    await promptRef.update({
-      usageCount: admin.firestore.FieldValue.increment(1),
-    });
+    await promptRef.update({ usageCount: admin.firestore.FieldValue.increment(1) });
+
+    // Read back the updated count for immediate UI feedback
+    const updatedSnap = await promptRef.get();
+    const updatedData = updatedSnap.data() as any;
+    const usageCount = updatedData?.usageCount ?? null;
 
     logInfo('Successfully incremented usage count', {
       promptId,
@@ -853,7 +1206,7 @@ export const incrementUsageCount = functions.https.onCall(
       executionTimeMs: Date.now() - startTime,
     });
 
-    return { success: true };
+    return { success: true, usageCount };
   }, 'incrementUsageCount')
 );
 
@@ -1026,11 +1379,16 @@ export const toggleFavorite = functions.https.onCall(
         isFavorite = true;
       }
 
+      // Compute up-to-date favorites count for immediate UI feedback
+      const favoritesSnapshot = await promptRef.collection('favoritedBy').get();
+      const favoritesCount = favoritesSnapshot.size;
+
       logInfo('Favorite toggle completed', {
         promptId,
         userId,
         action,
         isFavorite,
+        favoritesCount,
         operation: 'toggleFavorite',
         executionTimeMs: Date.now() - startTime,
       });
@@ -1041,6 +1399,7 @@ export const toggleFavorite = functions.https.onCall(
         action,
         isFavorite,
         userId,
+        favoritesCount,
       };
 
     } catch (error: any) {

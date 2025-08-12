@@ -1225,6 +1225,15 @@ export const cacheDOMElements = () => {
   if (promptDetailsSectionEl) {
     backToListButtonEl = promptDetailsSectionEl.querySelector('#back-to-list-button');
     copyPromptDetailButtonEl = promptDetailsSectionEl.querySelector('#copy-prompt-button');
+    // Also wire copy button inside the code block wrapper
+    const codeCopyBtn = promptDetailsSectionEl.querySelector('#code-block-copy-btn');
+    if (codeCopyBtn) {
+      codeCopyBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = promptDetailsSectionEl.dataset.currentPromptId;
+        if (id) await handleCopyPrompt(id);
+      });
+    }
     deleteConfirmationEl = promptDetailsSectionEl.querySelector('#delete-confirmation');
     cancelDeleteButtonEl = promptDetailsSectionEl.querySelector('#cancel-delete-button');
     confirmDeleteButtonEl = promptDetailsSectionEl.querySelector('#confirm-delete-button');
@@ -1273,32 +1282,71 @@ async function handleToggleFavorite(promptId) {
     if (window.handleAuthRequiredAction) {
       window.handleAuthRequiredAction('favorite a prompt');
     } else {
-      Utils.handleError('Please login or create an account to favorite a prompt.', {
+      Utils.handleError('Please sign in to favorite a prompt.', {
         specificErrorElement: document.getElementById('error-message'),
         type: 'info',
         timeout: 5000,
       });
+    }
+    // Revert any transient UI changes (details or list)
+    if (promptDetailsSectionEl && promptDetailsSectionEl.dataset.currentPromptId === promptId) {
+      const btn = promptDetailsSectionEl.querySelector('#toggle-fav-detail');
+      if (btn) {
+        btn.setAttribute('aria-pressed', 'false');
+        btn.classList.remove('active');
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = 'far fa-heart';
+        btn.setAttribute('data-disabled', 'true');
+      }
+    }
+    // Also update list button if present
+    const listBtn = document.querySelector(`.toggle-favorite[data-id="${promptId}"]`);
+    if (listBtn) {
+      listBtn.setAttribute('aria-pressed', 'false');
+      listBtn.classList.remove('active');
+      const icon = listBtn.querySelector('i');
+      if (icon) icon.className = 'far fa-heart';
+      listBtn.setAttribute('data-disabled', 'true');
     }
     return;
   }
   try {
     const updatedPrompt = await PromptData.toggleFavorite(promptId);
     if (updatedPrompt) {
-      // After toggling favorite, reload all prompts to ensure counts are up to date
-      allPrompts = await PromptData.loadPrompts();
-      if (
+      // Determine if details view is showing this prompt
+      const isDetailsVisible =
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
-        promptDetailsSectionEl.dataset.currentPromptId === promptId
-      ) {
-        // Find the updated prompt from the new allPrompts array
-        const freshPrompt = allPrompts.find(p => p.id === promptId) || updatedPrompt;
-        displayPromptDetails(freshPrompt);
+        promptDetailsSectionEl.dataset.currentPromptId === promptId;
+
+      // Optimistically update in-memory list for immediate UI feedback
+      if (Array.isArray(allPrompts)) {
+        allPrompts = allPrompts.map(p =>
+          p.id === updatedPrompt.id
+            ? {
+                ...p,
+                favoritesCount: updatedPrompt.favoritesCount,
+                currentUserIsFavorite: updatedPrompt.currentUserIsFavorite,
+              }
+            : p
+        );
       }
-      // Always re-render the list to update favorite count, but preserve scroll position
-      const scrollElem = document.getElementById('scrollable-main');
-      const prevScrollTop = scrollElem ? scrollElem.scrollTop : 0;
-      showTab(activeTab, { preserveScrollTop: prevScrollTop });
+
+      // Keep user on the same view while updating UI
+      if (isDetailsVisible) {
+        displayPromptDetails(updatedPrompt);
+      } else {
+        const scrollElem = document.getElementById('scrollable-main');
+        const prevScrollTop = scrollElem ? scrollElem.scrollTop : 0;
+        showTab(activeTab, { preserveScrollTop: prevScrollTop });
+      }
+
+      // Refresh prompts in background to keep data consistent after triggers
+      try {
+        allPrompts = await PromptData.loadPrompts();
+      } catch {
+        // Background refresh failed; ignore silently to avoid disrupting UX
+      }
       Utils.showConfirmationMessage(getText('FAVORITE_UPDATED'));
 
       // Track content selection for favorite action
@@ -1361,16 +1409,42 @@ async function handleRatePrompt(promptId, rating) {
   try {
     const updatedPromptWithNewRating = await PromptData.ratePrompt(promptId, rating);
     if (updatedPromptWithNewRating) {
+      // Optimistically update local cache
       const index = allPrompts.findIndex(p => p.id === promptId);
-      if (index !== -1) {
-        allPrompts[index] = updatedPromptWithNewRating;
+      if (index !== -1) allPrompts[index] = updatedPromptWithNewRating;
+
+      // Try to refetch until aggregates (average/count) are updated
+      const prevAvg = updatedPromptWithNewRating.averageRating;
+      const prevCount = updatedPromptWithNewRating.totalRatingsCount;
+      let latestPrompt = updatedPromptWithNewRating;
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 250));
+        const refreshed = await PromptData.findPromptById(promptId);
+        if (!refreshed) break;
+        // Stop when average or count changes
+        const changed =
+          (typeof refreshed.averageRating === 'number' && refreshed.averageRating !== prevAvg) ||
+          (typeof refreshed.totalRatingsCount === 'number' &&
+            refreshed.totalRatingsCount !== prevCount);
+        if (changed) {
+          latestPrompt = refreshed;
+          break;
+        }
       }
+
+      // Keep user rating in the prompt object
+      latestPrompt.currentUserRating = rating;
+
+      // Update cache
+      if (index !== -1) allPrompts[index] = latestPrompt;
+
+      // Update details view if visible
       if (
         promptDetailsSectionEl &&
         !promptDetailsSectionEl.classList.contains('hidden') &&
         promptDetailsSectionEl.dataset.currentPromptId === promptId
       ) {
-        displayPromptDetails(updatedPromptWithNewRating);
+        displayPromptDetails(latestPrompt);
       }
       Utils.showConfirmationMessage(textManager.format('RATING_SUCCESS', { rating }));
 
@@ -1476,6 +1550,21 @@ async function handleCopyPrompt(promptId) {
               valueMomentsAchieved: ['prompt_copied'],
               actionsCompleted: 1,
             });
+          }
+        }
+      } else {
+        // Optimistic UI update for usage count when backend didn't return prompt
+        if (
+          promptDetailsSectionEl &&
+          !promptDetailsSectionEl.classList.contains('hidden') &&
+          promptDetailsSectionEl.dataset.currentPromptId === promptId
+        ) {
+          const current = Array.isArray(allPrompts)
+            ? allPrompts.find(p => p.id === promptId)
+            : null;
+          if (current) {
+            const optimistic = { ...current, usageCount: (current.usageCount || 0) + 1 };
+            displayPromptDetails(optimistic);
           }
         }
       }
@@ -2520,6 +2609,20 @@ export const displayPromptDetails = prompt => {
   setText(promptDetailUpdatedEl, formatDate(prompt.updatedAt));
   setText(promptDetailUsageEl, prompt.usageCount?.toString() || '0');
   setText(promptDetailFavoritesEl, prompt.favoritesCount?.toString() || '0');
+
+  // Apply Prism highlighting with custom token for <role> ... </role>
+  if (promptDetailTextEl) {
+    const raw = prompt.text || '';
+    // Escape HTML then lightly mark custom role tags for Prism
+    const escaped = Utils.escapeHTML(raw).replace(
+      /(&lt;\/?)(role)(&gt;)/gi,
+      '$1<span class="token role-tag">$2</span>$3'
+    );
+    promptDetailTextEl.innerHTML = escaped;
+    if (window.Prism && typeof Prism.highlightElement === 'function') {
+      Prism.highlightElement(promptDetailTextEl);
+    }
+  }
 
   // Update community rating label if present
   const communityLabel = document.getElementById('community-rating-label');

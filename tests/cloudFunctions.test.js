@@ -149,8 +149,11 @@ describe('Cloud Functions Integration Tests', () => {
       // Execute the copy action
       const result = await PromptData.copyPromptToClipboard(testPromptId);
 
-      // Verify the function was called with the correct prompt ID
-      expect(incrementUsageCountSpy).toHaveBeenCalledWith({ promptId: testPromptId });
+      // Verify the function was called with the correct prompt ID and user context
+      expect(incrementUsageCountSpy).toHaveBeenCalledWith({
+        promptId: testPromptId,
+        userId: mockUser.uid,
+      });
 
       // Verify the prompt text was copied to clipboard
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(testPrompt.text);
@@ -158,7 +161,7 @@ describe('Cloud Functions Integration Tests', () => {
       // Verify the operation succeeded
       expect(result.success).toBe(true);
 
-      // Verify that the usage count was incremented
+      // Verify that the usage count was incremented exactly once by our spy
       const updatedPrompt = global.mockFirestoreDb.getPathData(`prompts/${testPromptId}`);
       expect(updatedPrompt.usageCount).toBe(1);
     });
@@ -173,7 +176,10 @@ describe('Cloud Functions Integration Tests', () => {
       const result = await PromptData.copyPromptToClipboard(testPromptId);
 
       // Verify the function was called
-      expect(incrementUsageCountSpy).toHaveBeenCalledWith({ promptId: testPromptId });
+      expect(incrementUsageCountSpy).toHaveBeenCalledWith({
+        promptId: testPromptId,
+        userId: mockUser.uid,
+      });
 
       // Should NOT call handleError for usage count errors
       expect(Utils.handleError).not.toHaveBeenCalled();

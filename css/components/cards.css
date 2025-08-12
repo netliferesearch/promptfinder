@@ -376,6 +376,14 @@
   flex-shrink: 0;
 }
 
+/* Do not show hover/active color for logged-out users */
+.toggle-favorite[data-disabled='true'],
+.toggle-favorite[data-disabled='true']:hover,
+.toggle-favorite[data-disabled='true']:focus {
+  color: var(--color-gray-500) !important;
+  cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .prompt-card,

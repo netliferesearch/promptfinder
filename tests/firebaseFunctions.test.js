@@ -129,8 +129,11 @@ describe('Firebase Cloud Functions Tests', () => {
       // Execute the copy action
       const result = await PromptData.copyPromptToClipboard(testPromptId);
 
-      // Verify the function was called with the correct prompt ID
-      expect(incrementUsageCountSpy).toHaveBeenCalledWith({ promptId: testPromptId });
+      // Verify the function was called with the correct prompt ID and user context
+      expect(incrementUsageCountSpy).toHaveBeenCalledWith({
+        promptId: testPromptId,
+        userId: mockUser.uid,
+      });
 
       // Verify the prompt text was copied to clipboard
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(testPrompt.text);
@@ -160,8 +163,11 @@ describe('Firebase Cloud Functions Tests', () => {
       // Execute the copy action
       const result = await PromptData.copyPromptToClipboard(testPromptId);
 
-      // Verify the function was called
-      expect(incrementUsageCountSpy).toHaveBeenCalledWith({ promptId: testPromptId });
+      // Verify the function was called with user context
+      expect(incrementUsageCountSpy).toHaveBeenCalledWith({
+        promptId: testPromptId,
+        userId: mockUser.uid,
+      });
 
       // Should NOT call handleError for usage count errors
       expect(Utils.handleError).not.toHaveBeenCalled();

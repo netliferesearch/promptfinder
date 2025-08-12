@@ -6,17 +6,13 @@ import { initializeApp } from 'firebase/app';
 // We'll implement a basic auth alternative using only Firestore
 
 import {
-  getFirestore,
+  initializeFirestore,
   enableNetwork,
   disableNetwork,
   collection,
   doc,
-  setDoc,
-  addDoc,
   getDoc,
   getDocs,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   serverTimestamp,
@@ -37,7 +33,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Use long polling to avoid WebChannel issues in extension environments
+const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false,
+});
 const functions = getFunctions(app, 'europe-west1');
 
 // Instead of Firebase Auth, we'll use Firebase Admin functions for authentication
@@ -264,12 +264,8 @@ export {
   // Firestore functions
   collection,
   doc,
-  setDoc,
-  addDoc,
   getDoc,
   getDocs,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   serverTimestamp,

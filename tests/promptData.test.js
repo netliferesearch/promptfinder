@@ -3,7 +3,7 @@ import * as PromptData from '../js/promptData.js';
 import * as Utils from '../js/utils.js';
 
 // Import Firebase functions from our firebase-init module instead of direct Firebase imports
-import { addDoc, serverTimestamp, httpsCallable, functions } from '../js/firebase-init.js';
+import { serverTimestamp, httpsCallable, functions } from '../js/firebase-init.js';
 
 // Note: Firebase Auth functions are now handled by Cloud Functions
 
@@ -136,24 +136,25 @@ describe('PromptData Module - Firestore v9', () => {
         category: 'Cat',
         targetAiTools: ['Tool'],
       };
+      // Mock callable Cloud Function
+      const mockAddPromptCallable = jest
+        .fn()
+        .mockResolvedValue({ data: { success: true, id: 'newDoc123' } });
+      httpsCallable.mockReturnValue(mockAddPromptCallable);
+
       const result = await PromptData.addPrompt(promptData);
 
-      expect(addDoc).toHaveBeenCalledWith(
-        expect.objectContaining({ path: 'prompts' }),
+      expect(httpsCallable).toHaveBeenCalledWith(functions, 'addPrompt');
+      expect(mockAddPromptCallable).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: mockUser.uid,
           title: 'Firestore Prompt',
           isPrivate: false,
           authorDisplayName: mockUser.displayName,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
         })
       );
-      expect(result.id).toBeDefined();
+      expect(result.id).toBe('newDoc123');
       expect(result.title).toBe('Firestore Prompt');
-      const addedPromptInDb = global.mockFirestoreDb.getPathData(`prompts/${result.id}`);
-      expect(addedPromptInDb).toBeDefined();
-      expect(addedPromptInDb.title).toBe('Firestore Prompt');
     });
 
     test('should return null if user is not logged in', async () => {
@@ -163,7 +164,7 @@ describe('PromptData Module - Firestore v9', () => {
       expect(Utils.handleError).toHaveBeenCalledWith('User must be logged in to add a prompt.', {
         userVisible: true,
       });
-      expect(addDoc).not.toHaveBeenCalled();
+      expect(httpsCallable).not.toHaveBeenCalled();
     });
   });
 
@@ -291,7 +292,7 @@ describe('PromptData Module - Firestore v9', () => {
       expect(updatedPrompt.usageCount).toBe(1);
     });
 
-    test('should copy text but NOT increment usageCount when user is logged out', async () => {
+    test('should copy text and increment usageCount when user is logged out (anonymous)', async () => {
       // Ensure user is logged out
       global.simulateLogout();
 
@@ -300,8 +301,8 @@ describe('PromptData Module - Firestore v9', () => {
       expect(result.prompt).toBeDefined();
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(promptText);
       const updatedPrompt = global.mockFirestoreDb.getPathData(`prompts/${promptId}`);
-      // usageCount should remain at 0 for logged-out users
-      expect(updatedPrompt.usageCount).toBe(0);
+      // usageCount increments even for anonymous users
+      expect(updatedPrompt.usageCount).toBe(1);
     });
 
     test('should return false and handle error if prompt not found', async () => {

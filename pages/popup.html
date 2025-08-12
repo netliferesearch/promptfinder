@@ -126,22 +126,33 @@
         </div>
 
         <section id="prompt-details-section" class="hidden">
-          <button
-            id="back-to-list-button"
-            class="back-to-list-btn"
-            aria-label="Back to prompt list"
-          >
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span>Back to list</span>
-          </button>
+          <div class="detail-sticky-bar" role="region" aria-label="Prompt details controls">
+            <div class="detail-sticky-left">
+              <button
+                id="back-to-list-button"
+                class="back-to-list-btn"
+                aria-label="Back to prompt list"
+              >
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                <span>Back to list</span>
+              </button>
+            </div>
+            <div class="detail-sticky-right">
+              <button
+                id="copy-prompt-button"
+                class="button button-tertiary button-sm copy-prompt"
+                aria-label="Copy prompt"
+                title="Copy prompt"
+              >
+                <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                <span id="copy-prompt-label" class="copy-prompt-label"></span>
+              </button>
+            </div>
+          </div>
           <div class="detail-card prompt-card-btn" tabindex="-1">
             <div class="prompt-item__header">
               <span class="prompt-item__title" id="prompt-detail-title"></span>
               <div class="prompt-item__actions">
-                <button id="copy-prompt-button" aria-label="Copy prompt">
-                  <i class="fa-regular fa-copy"></i>
-                  <span id="copy-prompt-label" class="copy-prompt-label"></span>
-                </button>
                 <button id="toggle-fav-detail" class="toggle-favorite" aria-label="Toggle favorite">
                   <i class="far fa-heart"></i>
                 </button>
@@ -160,6 +171,14 @@
                   <span class="detail-label"><strong>The actual prompt</strong></span>
                   <div id="prompt-text-wrapper" class="code-block-wrapper">
                     <pre><code id="prompt-detail-text" class="language-markdown"></code></pre>
+                    <button
+                      id="code-block-copy-btn"
+                      class="code-block-copy-btn button-icon"
+                      aria-label="Copy Prompt"
+                      title="Copy Prompt"
+                    >
+                      <i class="far fa-copy" aria-hidden="true"></i>
+                    </button>
                   </div>
                   <button id="prompt-text-view-more" class="button button-link button-sm hidden">
                     View More
