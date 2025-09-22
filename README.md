@@ -74,8 +74,8 @@ Want to contribute or run DesignPrompts locally? See our [Development Guide](doc
 1. **Prerequisites**: Node.js and npm
 2. **Clone & Install:**
    ```bash
-   git clone https://github.com/mjolne/designprompts.git
-   cd designprompts
+   git clone https://github.com/mjolne/promptfinder.git
+   cd promptfinder
    npm install
    ```
 3. **Build:**
