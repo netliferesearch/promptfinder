@@ -133,4 +133,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🐛 [Report a bug](https://github.com/netliferesearch/promptfinder/issues)
 - 💡 [Request a feature](https://github.com/netliferesearch/promptfinder/issues)
-- 📧 [Contact us](mailto:support@designprompts.com)
+- 📧 [Contact us](mailto:effekt@netlife.com)
