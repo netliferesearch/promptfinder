@@ -74,7 +74,7 @@ Want to contribute or run DesignPrompts locally? See our [Development Guide](doc
 1. **Prerequisites**: Node.js and npm
 2. **Clone & Install:**
    ```bash
-   git clone https://github.com/mjolne/designprompts.git
+   git clone https://github.com/netliferesearch/promptfinder.git
    cd designprompts
    npm install
    ```
@@ -131,6 +131,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Questions or Issues?**
 
-- 🐛 [Report a bug](https://github.com/mjolne/designprompts/issues)
-- 💡 [Request a feature](https://github.com/mjolne/designprompts/issues)
+- 🐛 [Report a bug](https://github.com/netliferesearch/promptfinder/issues)
+- 💡 [Request a feature](https://github.com/netliferesearch/promptfinder/issues)
 - 📧 [Contact us](mailto:support@designprompts.com)
